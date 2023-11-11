@@ -9,7 +9,7 @@ resolvers += "Akka library repository".at("https://repo.akka.io/maven")
 
 lazy val root = (project in file("."))
   .settings(
-    name := "akka-backend-tpp",
+    name := "akka-backend-tp",
     libraryDependencies += akkaTyped,
     libraryDependencies += log4jApi,
     libraryDependencies += logback,
