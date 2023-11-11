@@ -10,10 +10,14 @@ resolvers += "Akka library repository".at("https://repo.akka.io/maven")
 lazy val root = (project in file("."))
   .settings(
     name := "akka-backend-tp",
-    libraryDependencies += akkaTyped,
-    libraryDependencies += log4jApi,
-    libraryDependencies += logback,
-    libraryDependencies += munit % Test
+    libraryDependencies ++= Seq(
+      akkaTyped,
+      akkaStream,
+      log4jApi,
+      logback,
+      munit % Test,
+      akkaStreamTestKit % Test,
+    )
   )
 
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
