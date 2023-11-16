@@ -9,23 +9,30 @@ import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Framing
 import akka.util.ByteString
 import server.GameServer
+import akka.actor.typed.ActorRef
 
 object PlayerHandler {
   sealed trait Command
-  final case class Run() extends Command
+  final case class GetIPInfo(replyTo: ActorRef[Response]) extends Command
 
-  def apply(connection: Tcp.IncomingConnection)(implicit system: ActorSystem[GameServer.Command]): Behavior[Command] = {
+  final case class Response(ip: String, port: Int)
+
+  def apply()(implicit system: ActorSystem[GameServer.Command]): Behavior[Command] = {
     Behaviors.setup(ctx => {
-      val player = ctx.spawn(Player(Player.Position(1, 2)), "mainPlayer")
+      // val echo = Flow[ByteString]
+      //   .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 256, allowTruncation = true))
+      //   .map(_.utf8String)
+      //   .map(_ + ctx.self + "!!!\n")
+      //   .map(ByteString(_))
 
-      val echo = Flow[ByteString]
-        .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 256, allowTruncation = true))
-        .map(_.utf8String)
-        .map(_ + ctx.self + "!!!\n")
-        .map(ByteString(_))
-
-      connection.handleWith(echo)
-      Behaviors.empty
+      // connection.handleWith(echo)
+      
+      Behaviors.receiveMessage {
+        case GetIPInfo(replyTo) => {
+          replyTo ! Response("Hello, world!", 123)
+          Behaviors.same
+        }
+      }
     })
   }
 }
