@@ -14,17 +14,15 @@ object PlayerHandler {
   sealed trait Command
   final case class Run() extends Command
 
-  def apply(implicit system: ActorSystem[GameServer.Command], connection: Tcp.IncomingConnection): Behavior[Command] = {
+  def apply(connection: Tcp.IncomingConnection)(implicit system: ActorSystem[GameServer.Command]): Behavior[Command] = {
     Behaviors.setup(ctx => {
       val player = ctx.spawn(Player(Player.Position(1, 2)), "mainPlayer")
 
       val echo = Flow[ByteString]
         .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 256, allowTruncation = true))
         .map(_.utf8String)
-        .map(_ + "!!!\n")
+        .map(_ + ctx.self + "!!!\n")
         .map(ByteString(_))
-
-      //TODO: Parse received input and send corresponding message to Player actor
 
       connection.handleWith(echo)
       Behaviors.empty

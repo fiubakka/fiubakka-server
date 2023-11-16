@@ -15,7 +15,6 @@ import server.GameServer
 
 object PlayerAccepter {
   sealed trait Command
-  final case class Run() extends Command
   final case class Accept(connection: Tcp.IncomingConnection) extends Command
 
   def apply(implicit system: ActorSystem[GameServer.Command]): Behavior[Command] = {
@@ -25,15 +24,11 @@ object PlayerAccepter {
         ctx.self ! Accept(connection)
       }
 
-      //Should this be inside Behaviors.setup or outside?
       Behaviors.receiveMessage {
         case Accept(connection: Tcp.IncomingConnection) => {
           println(s"New connection from: ${connection.remoteAddress}")
-          ctx.spawn(PlayerHandler(system, connection), s"handler${connection.remoteAddress.getPort()}")
+          ctx.spawn(PlayerHandler(connection), s"playerHandler${connection.remoteAddress.getPort()}")
           Behaviors.same
-        }
-        case Run() => {//This is to avoid the warning that the case is not handling every command. Is there a way to avoid explicitly having this?
-          Behaviors.empty
         }
       }
     })
