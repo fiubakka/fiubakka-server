@@ -19,7 +19,7 @@ import java.time.Duration
 object PlayerAccepter {
   sealed trait Command
   final case class Accept(connection: Tcp.IncomingConnection) extends Command
-  final case class HandlerResponse(ip: String, port: Int) extends Command
+  final case class HandlerResponse(ip: String, port: Int, connection: Tcp.IncomingConnection) extends Command
 
   def apply(implicit system: ActorSystem[GameServer.Command]): Behavior[Command] = {
     Behaviors.setup(ctx => {
@@ -32,18 +32,19 @@ object PlayerAccepter {
 
       Behaviors.receiveMessage {
         case Accept(connection: Tcp.IncomingConnection) => {
-          ctx.log.info(s"Accepting new conenction from ${connection.remoteAddress}")
           val playerHandler = ctx.spawn(PlayerHandler(), s"playerHandler${connection.remoteAddress.getPort()}")
-          // Ask the playerHandler to handle the connection, using ask function
           ctx.ask(playerHandler, PlayerHandler.GetIPInfo.apply) {
-            case Success(PlayerHandler.Response(ip, port)) => HandlerResponse(ip, port)
-            case Failure(_)                                => HandlerResponse("error", 0)
+            case Success(PlayerHandler.GetIPInfoResponse(ip, port)) => HandlerResponse(ip, port, connection)
+            case Failure(_)                                         => HandlerResponse("error", 0, connection)
           }
           Behaviors.same
         }
 
-        case HandlerResponse(ip, port) => {
-          ctx.log.info(s"Player handler response: $ip, $port")
+        case HandlerResponse(ip, port, connection) => {
+          connection.handleWith(Flow[ByteString]
+            .merge(Source.single(ByteString(s"$ip:$port\n")))
+            .take(1)
+          )
           Behaviors.same
         }
       }
