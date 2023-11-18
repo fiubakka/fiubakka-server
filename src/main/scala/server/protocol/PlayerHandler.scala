@@ -1,18 +1,19 @@
 package server.protocol
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.Behavior
-import akka.stream.scaladsl.Tcp
+import akka.actor.typed.ActorRef
 import akka.actor.typed.ActorSystem
+import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.Behaviors
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Framing
-import akka.util.ByteString
-import server.GameServer
-import akka.actor.typed.ActorRef
-import scala.util.Success
-import scala.util.Failure
 import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl.Tcp
+import akka.util.ByteString
+import server.GameServer
+
+import scala.util.Failure
+import scala.util.Success
 
 object PlayerHandler {
   sealed trait Command

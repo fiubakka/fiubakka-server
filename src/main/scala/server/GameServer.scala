@@ -1,10 +1,9 @@
 package server
 
+import akka.actor.typed.ActorSystem
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.ActorSystem
 import server.protocol.PlayerAccepter
-import akka.annotation
 
 object GameServer {
   sealed trait Command
@@ -15,7 +14,7 @@ object GameServer {
       msg match {
         case Run(system) => {
           println("Game server is running...")
-          val foo = ctx.spawn(PlayerAccepter(system), "playerAccepter")
+          ctx.spawn(PlayerAccepter(system), "playerAccepter")
           Behaviors.same
         }
       }

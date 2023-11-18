@@ -1,5 +1,6 @@
 import akka.actor.typed.ActorSystem
 import server.GameServer
+
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
