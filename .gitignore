@@ -3,3 +3,4 @@ target/
 .bloop
 .metals/
 metals.sbt
+node_modules/

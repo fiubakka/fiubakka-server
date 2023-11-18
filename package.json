@@ -1,0 +1,18 @@
+{
+  "name": "akka-backend-tp",
+  "version": "1.0.0",
+  "description": "Akka Backend TP",
+  "main": "index.js",
+  "scripts": {
+    "prepare": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github:MarcosRolando/akka-backend-tp.git"
+  },
+  "author": "Marcos Rolando, Ivan Soriano",
+  "license": "ISC",
+  "devDependencies": {
+    "husky": "^8.0.0"
+  }
+}
