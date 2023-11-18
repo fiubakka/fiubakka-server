@@ -11,6 +11,7 @@ import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
 import server.GameServer
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Failure
 import scala.util.Success
 
@@ -23,6 +24,7 @@ object PlayerHandler {
       port: Int,
       replyTo: ActorRef[GetIPInfoResponse]
   ) extends Command
+  final case class ConnectionClosed() extends Command
 
   final case class GetIPInfoResponse(ip: String, port: Int)
 
@@ -41,6 +43,9 @@ object PlayerHandler {
             .map(_.utf8String)
             .map(_ + "!!!\n")
             .map(ByteString(_))
+            .watchTermination() { (_, done) =>
+              done.onComplete(_ => ctx.self ! ConnectionClosed())
+            }
 
           connection.handleWith(clientResponse)
         })
@@ -63,6 +68,11 @@ object PlayerHandler {
         case ServerBinding(ip, port, replyTo) => {
           replyTo ! GetIPInfoResponse(ip, port)
           Behaviors.same
+        }
+
+        case ConnectionClosed() => {
+          ctx.log.info("Closing connection!")
+          Behaviors.stopped
         }
       }
     })
