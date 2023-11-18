@@ -33,7 +33,8 @@ object PlayerHandler {
     Behaviors.setup(ctx => {
       val connectionListener = Tcp(system).bind("localhost", 0)
       val serverBinding = connectionListener
-        .toMat(Sink.foreach { connection =>
+        .take(1)
+        .to(Sink.foreach { connection =>
           val clientResponse = Flow[ByteString]
             .via(
               Framing.delimiter(ByteString("\n"), 256, allowTruncation = true)
@@ -43,7 +44,7 @@ object PlayerHandler {
             .map(ByteString(_))
 
           connection.handleWith(clientResponse)
-        })(Keep.left)
+        })
         .run()
 
       Behaviors.receiveMessage {
