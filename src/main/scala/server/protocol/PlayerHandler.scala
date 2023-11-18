@@ -6,7 +6,6 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Framing
-import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
