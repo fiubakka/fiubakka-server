@@ -4,8 +4,18 @@ ThisBuild / scalaVersion     := "2.13.12"
 ThisBuild / version          := "0.1.0-SNAPSHOT"
 ThisBuild / organization     := "com.example"
 ThisBuild / organizationName := "example"
+ThisBuild / scalacOptions    += "-Ywarn-unused"
 
 resolvers += "Akka library repository".at("https://repo.akka.io/maven")
+
+inThisBuild(
+  List(
+    scalaVersion := "2.13.12",
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision
+    )
+  )
+
 
 lazy val root = (project in file("."))
   .settings(

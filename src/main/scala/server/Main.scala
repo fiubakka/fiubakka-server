@@ -1,6 +1,4 @@
-import akka.actor.typed.{ActorSystem, Behavior}
-import akka.actor.typed.scaladsl.Behaviors
-import server.domain.entities.Player
+import akka.actor.typed.ActorSystem
 import server.GameServer
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration

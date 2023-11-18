@@ -2,7 +2,6 @@ package server.protocol
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.Behavior
-import server.domain.entities.Player
 import akka.stream.scaladsl.Tcp
 import akka.actor.typed.ActorSystem
 import akka.stream.scaladsl.Flow
@@ -14,7 +13,6 @@ import scala.util.Success
 import scala.util.Failure
 import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Source
 
 object PlayerHandler {
   sealed trait Command

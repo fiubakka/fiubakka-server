@@ -2,7 +2,6 @@ package server
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-import server.domain.entities.Player
 import akka.actor.typed.ActorSystem
 import server.protocol.PlayerAccepter
 
@@ -15,8 +14,7 @@ object GameServer {
       msg match {
         case Run(system) => {
           println("Game server is running...")
-          val playerAccepter =
-            ctx.spawn(PlayerAccepter(system), "playerAccepter")
+          ctx.spawn(PlayerAccepter(system), "playerAccepter")
           Behaviors.same
         }
       }
