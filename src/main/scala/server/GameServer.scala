@@ -15,7 +15,8 @@ object GameServer {
       msg match {
         case Run(system) => {
           println("Game server is running...")
-          val playerAccepter = ctx.spawn(PlayerAccepter(system), "playerAccepter")
+          val playerAccepter =
+            ctx.spawn(PlayerAccepter(system), "playerAccepter")
           Behaviors.same
         }
       }
