@@ -4,18 +4,18 @@ import akka.actor.typed.ActorRef
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
+import akka.persistence.typed.PersistenceId
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Framing
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
 import server.GameServer
+import server.domain.entities.Player
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Failure
 import scala.util.Success
-import server.domain.entities.Player
-import akka.persistence.typed.PersistenceId
 
 object PlayerHandler {
   sealed trait Command
@@ -53,7 +53,7 @@ object PlayerHandler {
         })
         .run()
 
-      val player = ctx.spawn(Player(PersistenceId("foo", "bar")), s"player")
+      val player = ctx.spawn(Player(PersistenceId("foo", "bar")), "player")
 
       Behaviors.receiveMessage {
         case GetIPInfo(replyTo) => {

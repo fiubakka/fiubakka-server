@@ -1,9 +1,9 @@
 package server.domain.entities
 
-import akka.serialization.jackson.CborSerializable
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.state.scaladsl.DurableStateBehavior
 import akka.persistence.typed.state.scaladsl.Effect
+import akka.serialization.jackson.CborSerializable
 
 object Player {
   final case class Position(x: Int, y: Int)
@@ -14,7 +14,9 @@ object Player {
 
   final case class State(position: Position) extends CborSerializable
 
-  def apply(persistenceId: PersistenceId): DurableStateBehavior[Command, State] = {
+  def apply(
+      persistenceId: PersistenceId
+  ): DurableStateBehavior[Command, State] = {
     DurableStateBehavior.apply[Command, State](
       persistenceId,
       emptyState = State(Position(0, 0)),
