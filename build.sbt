@@ -23,6 +23,7 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       akkaTyped,
       akkaStream,
+      akkaCluster,
       log4jApi,
       logback,
       munit % Test,

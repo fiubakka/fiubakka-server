@@ -6,7 +6,7 @@ import scala.concurrent.duration.Duration
 
 object Main extends App {
   implicit val system: ActorSystem[GameServer.Command] =
-    ActorSystem(GameServer(), "gameSystem")
+    ActorSystem(GameServer(), "GameSystem")
   system ! GameServer.Run(system)
   Await.result(system.whenTerminated, Duration.Inf)
 }
