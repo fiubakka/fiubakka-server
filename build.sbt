@@ -24,6 +24,7 @@ lazy val root = (project in file("."))
       akkaTyped,
       akkaStream,
       akkaCluster,
+      akkaSerialization,
       log4jApi,
       logback,
       munit % Test,
