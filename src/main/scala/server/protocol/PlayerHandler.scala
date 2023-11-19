@@ -14,6 +14,8 @@ import server.GameServer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Failure
 import scala.util.Success
+import server.domain.entities.Player
+import akka.persistence.typed.PersistenceId
 
 object PlayerHandler {
   sealed trait Command
@@ -51,6 +53,8 @@ object PlayerHandler {
         })
         .run()
 
+      val player = ctx.spawn(Player(PersistenceId("foo", "bar")), s"player")
+
       Behaviors.receiveMessage {
         case GetIPInfo(replyTo) => {
           ctx.pipeToSelf(serverBinding) {
@@ -72,7 +76,10 @@ object PlayerHandler {
 
         case ConnectionClosed() => {
           ctx.log.info("Closing connection!")
-          Behaviors.stopped
+          player ! Player.PrintPosition()
+          player ! Player.Move(Player.Position(1, 1))
+          player ! Player.PrintPosition()
+          Behaviors.same
         }
       }
     })

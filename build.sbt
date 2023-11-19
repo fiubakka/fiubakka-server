@@ -25,10 +25,17 @@ lazy val root = (project in file("."))
       akkaStream,
       akkaCluster,
       akkaSerialization,
+      akkaPersistence,
+      akkaPersistenceJdbc,
+      akkaPersistenceQuery,
+      postgresJdbc,
+      slick,
+      slickHikaricp,
       log4jApi,
       logback,
       munit % Test,
       akkaStreamTestKit % Test,
+      akkaPersistenceTestKit % Test
     )
   )
 
