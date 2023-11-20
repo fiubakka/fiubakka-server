@@ -28,6 +28,6 @@ jobs:
         name: Release and deploy with Dagger
         run: dagger run python .dagger/build.py
         env:
-          DOCKER_USER: ${{ vars.docker_user }}
-          DOCKER_PASSWORD: ${{ secrets.docker_password }}
-          DOCKER_REPO: ${{ vars.docker_repo }}
+          DOCKER_USER: ${{ vars.DOCKER_USER }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASS }}
+          DOCKER_REPO: ${{ vars.DOCKER_REPO }}
