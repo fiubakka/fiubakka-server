@@ -6,8 +6,9 @@ on:
     - main
 
 jobs:
-  dagger:
+  dockerhub:
     runs-on: ubuntu-latest
+    environment: development
     steps:
       -
         name: Checkout
