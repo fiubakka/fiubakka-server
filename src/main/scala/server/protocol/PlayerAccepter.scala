@@ -1,6 +1,4 @@
 package server.protocol
-
-import akka.actor.typed.ActorSystem
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.stream.scaladsl.Flow
@@ -8,7 +6,6 @@ import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
 import akka.util.Timeout
-import server.GameServer
 
 import java.time.Duration
 import scala.concurrent.Future
@@ -24,10 +21,9 @@ object PlayerAccepter {
       connection: Tcp.IncomingConnection
   ) extends Command
 
-  def apply(implicit
-      system: ActorSystem[GameServer.Command]
-  ): Behavior[Command] = {
+  def apply(): Behavior[Command] = {
     Behaviors.setup(ctx => {
+      implicit val system = ctx.system
       implicit val timeout = Timeout.create(Duration.ofSeconds(3))
 
       val connections

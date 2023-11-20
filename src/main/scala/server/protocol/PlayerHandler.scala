@@ -1,16 +1,14 @@
 package server.protocol
 
 import akka.actor.typed.ActorRef
-import akka.actor.typed.ActorSystem
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-import akka.persistence.typed.PersistenceId
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Framing
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
-import server.GameServer
+import server.Sharding
 import server.domain.entities.Player
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -30,10 +28,10 @@ object PlayerHandler {
 
   final case class GetIPInfoResponse(ip: String, port: Int)
 
-  def apply()(implicit
-      system: ActorSystem[GameServer.Command]
-  ): Behavior[Command] = {
-    Behaviors.setup(ctx => {
+  def apply(): Behavior[Command] = {
+    Behaviors.setup { ctx =>
+      implicit val system = ctx.system
+
       val connectionListener = Tcp(system).bind("localhost", 0)
       val serverBinding = connectionListener
         .take(1)
@@ -53,7 +51,10 @@ object PlayerHandler {
         })
         .run()
 
-      val player = ctx.spawn(Player(PersistenceId("foo", "bar")), "player")
+      val player = Sharding().entityRefFor(
+        Player.TypeKey,
+        "player"
+      ) // TODO use random entityId
 
       Behaviors.receiveMessage {
         case GetIPInfo(replyTo) => {
@@ -82,6 +83,6 @@ object PlayerHandler {
           Behaviors.same
         }
       }
-    })
+    }
   }
 }

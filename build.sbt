@@ -24,6 +24,7 @@ lazy val root = (project in file("."))
       akkaTyped,
       akkaStream,
       akkaCluster,
+      akkaClusterSharding,
       akkaSerialization,
       akkaPersistence,
       akkaPersistenceJdbc,

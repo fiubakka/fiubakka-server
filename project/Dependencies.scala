@@ -8,6 +8,7 @@ object Dependencies {
   lazy val akkaTyped = "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion
   lazy val akkaStream = "com.typesafe.akka" %% "akka-stream" % AkkaVersion
   lazy val akkaCluster = "com.typesafe.akka" %% "akka-cluster-typed" % AkkaVersion
+  lazy val akkaClusterSharding = "com.typesafe.akka" %% "akka-cluster-sharding-typed" % AkkaVersion
   lazy val akkaSerialization = "com.typesafe.akka" %% "akka-serialization-jackson" % AkkaVersion
   lazy val akkaPersistence = "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion
   lazy val akkaPersistenceJdbc = "com.lightbend.akka" %% "akka-persistence-jdbc" % "5.3.0"

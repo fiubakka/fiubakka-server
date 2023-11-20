@@ -1,20 +1,18 @@
 package server
-
-import akka.actor.typed.ActorSystem
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import server.protocol.PlayerAccepter
 
 object GameServer {
   sealed trait Command
-  final case class Run(system: ActorSystem[Command]) extends Command
+  final case class Run() extends Command
 
   def apply(): Behavior[Command] = {
     Behaviors.receive((ctx, msg) => {
       msg match {
-        case Run(system) => {
+        case Run() => {
           println("Game server is running...")
-          ctx.spawn(PlayerAccepter(system), "playerAccepter")
+          ctx.spawn(PlayerAccepter(), "playerAccepter")
           Behaviors.same
         }
       }

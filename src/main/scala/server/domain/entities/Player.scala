@@ -1,5 +1,8 @@
 package server.domain.entities
 
+import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.Behaviors
+import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.state.scaladsl.DurableStateBehavior
 import akka.persistence.typed.state.scaladsl.Effect
@@ -14,23 +17,29 @@ object Player {
 
   final case class State(position: Position) extends CborSerializable
 
+  val TypeKey = EntityTypeKey[Command]("Player")
+
   def apply(
+      entityId: String,
       persistenceId: PersistenceId
-  ): DurableStateBehavior[Command, State] = {
-    DurableStateBehavior.apply[Command, State](
-      persistenceId,
-      emptyState = State(Position(0, 0)),
-      commandHandler = (state, command) => {
-        command match {
-          case Move(newPosition) => {
-            Effect.persist(state.copy(position = newPosition))
-          }
-          case PrintPosition() => {
-            println(s"Current position: ${state.position}")
-            Effect.none
+  ): Behavior[Command] = {
+    Behaviors.setup { ctx =>
+      ctx.log.info(s"Starting player $entityId")
+      DurableStateBehavior[Command, State](
+        persistenceId,
+        emptyState = State(Position(0, 0)),
+        commandHandler = (state, command) => {
+          command match {
+            case Move(newPosition) => {
+              Effect.persist(state.copy(position = newPosition))
+            }
+            case PrintPosition() => {
+              println(s"Current position: ${state.position}")
+              Effect.none
+            }
           }
         }
-      }
-    )
+      )
+    }
   }
 }
