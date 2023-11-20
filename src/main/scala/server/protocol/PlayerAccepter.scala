@@ -28,7 +28,7 @@ object PlayerAccepter {
 
       val connections
           : Source[Tcp.IncomingConnection, Future[Tcp.ServerBinding]] =
-        Tcp(system).bind("localhost", 8080)
+        Tcp(system).bind("0.0.0.0", 8080)
       connections.runForeach { connection =>
         ctx.self ! Accept(connection)
       }
