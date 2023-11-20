@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16.1
+    container_name: akka-backend-tp-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: akka
+      POSTGRES_USER: akka
+      POSTGRES_PASSWORD: akka
+    volumes:
+      - .docker/durable_state.sql:/docker-entrypoint-initdb.d/durable_state.sql
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
