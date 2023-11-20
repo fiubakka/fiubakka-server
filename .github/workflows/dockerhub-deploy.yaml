@@ -29,5 +29,5 @@ jobs:
         run: dagger run python .dagger/build.py
         env:
           DOCKER_USER: ${{ vars.DOCKER_USER }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASS }}
+          DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
           DOCKER_REPO: ${{ vars.DOCKER_REPO }}
