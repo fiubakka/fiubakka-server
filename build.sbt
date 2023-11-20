@@ -28,7 +28,7 @@ lazy val root = (project in file("."))
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", xs @ _*)   => MergeStrategy.discard
       case "reference.conf"                => MergeStrategy.concat
-      case "version.conf"                => MergeStrategy.concat
+      case "version.conf"                  => MergeStrategy.concat
       case _                               => MergeStrategy.first
     },
     name := "akka-backend-tp",
