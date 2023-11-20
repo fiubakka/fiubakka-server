@@ -22,6 +22,8 @@ WORKDIR /usr/app
 
 COPY --from=builder /usr/app/target/scala-2.13/akka-backend-tp-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
 
+EXPOSE 8080/tcp
+
 CMD ["java", "-jar", "app.jar"]
 
 
@@ -44,11 +46,15 @@ RUN mkdir /run/postgresql && \
     "
 
 COPY ./.docker/dev-entrypoint.sh /
+COPY ./.docker/akka.sql /var/lib/postgresql/data/akka.sql
 COPY ./.docker/durable_state.sql /var/lib/postgresql/data/durable_state.sql
 
 RUN su - postgres -c " \
         pg_ctl -D /var/lib/postgresql/data start && \
-        psql -U postgres -f /var/lib/postgresql/data/durable_state.sql \
+        psql -f /var/lib/postgresql/data/akka.sql && \
+        PGPASSWORD=akka psql -U akka -d akka -f /var/lib/postgresql/data/durable_state.sql \
     "
+
+EXPOSE 5432/tcp
 
 CMD ["/dev-entrypoint.sh"]
