@@ -4,3 +4,5 @@ target/
 .metals/
 metals.sbt
 node_modules/
+project/project
+.venv

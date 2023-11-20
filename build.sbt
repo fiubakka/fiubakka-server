@@ -19,6 +19,18 @@ inThisBuild(
 
 lazy val root = (project in file("."))
   .settings(
+    assembly / mainClass := Some("Main"),
+    // See https://stackoverflow.com/questions/25144484/sbt-assembly-deduplication-found-error
+    // Basically we are telling sbt-assembly to ignore the META-INF folder for conflicting files
+    //
+    // See https://stackoverflow.com/questions/31011243/no-configuration-setting-found-for-key-akka-version
+    // We need to concat both reference.conf and version.conf files for Akka config to work 
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", xs @ _*)   => MergeStrategy.discard
+      case "reference.conf"                => MergeStrategy.concat
+      case "version.conf"                => MergeStrategy.concat
+      case _                               => MergeStrategy.first
+    },
     name := "akka-backend-tp",
     libraryDependencies ++= Seq(
       akkaTyped,
