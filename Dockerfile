@@ -45,7 +45,6 @@ RUN mkdir /run/postgresql && \
 
 COPY ./.docker/dev-entrypoint.sh /
 COPY ./.docker/durable_state.sql /var/lib/postgresql/data/durable_state.sql
-RUN chmod +x /dev-entrypoint.sh
 
 RUN su - postgres -c " \
         pg_ctl -D /var/lib/postgresql/data start && \
