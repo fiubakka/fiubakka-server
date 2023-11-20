@@ -1,2 +1,3 @@
+sbt 1.9.7
 java temurin-11.0.21+9
 nodejs 18.9.1
