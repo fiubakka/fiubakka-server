@@ -15,11 +15,41 @@ COPY ./src src/
 RUN sbt clean assembly
 
 
-# Runner
-FROM eclipse-temurin:11.0.21_9-jre-alpine
+# Production
+FROM eclipse-temurin:11.0.21_9-jre-alpine as prod
 
 WORKDIR /usr/app
 
 COPY --from=builder /usr/app/target/scala-2.13/akka-backend-tp-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
 
 CMD ["java", "-jar", "app.jar"]
+
+
+# See https://luppeng.wordpress.com/2020/02/28/install-and-start-postgresql-on-alpine-linux/
+# for reference of PostgreSQL on Alpine Linux
+
+# Development
+FROM prod as dev
+
+RUN apk update && apk add --no-cache postgresql
+
+RUN mkdir /run/postgresql && \
+    chown postgres:postgres /run/postgresql && \
+    su - postgres -c " \
+        mkdir /var/lib/postgresql/data && \
+        chmod 0700 /var/lib/postgresql/data && \
+        initdb -D /var/lib/postgresql/data && \
+        echo 'host all all 0.0.0.0/0 md5' >> /var/lib/postgresql/data/pg_hba.conf && \
+        echo \"listen_addresses='*'\" >> /var/lib/postgresql/data/postgresql.conf \
+    "
+
+COPY ./.docker/dev-entrypoint.sh /
+COPY ./.docker/durable_state.sql /var/lib/postgresql/data/durable_state.sql
+RUN chmod +x /dev-entrypoint.sh
+
+RUN su - postgres -c " \
+        pg_ctl -D /var/lib/postgresql/data start && \
+        psql -U postgres -f /var/lib/postgresql/data/durable_state.sql \
+    "
+
+CMD ["/dev-entrypoint.sh"]
