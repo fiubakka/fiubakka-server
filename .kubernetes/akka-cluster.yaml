@@ -58,8 +58,22 @@ spec:
             memory: 1024Mi
 
 ---
-kind: Role
+apiVersion: v1
+kind: Service
+metadata:
+  name: game-system-service
+  namespace: game-system-1
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9090
+      targetPort: 9090
+  selector:
+    app: game-system
+
+---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
   name: pod-reader
   namespace: game-system-1
@@ -72,8 +86,8 @@ rules:
   verbs: ["get", "list"]
 
 ---
-kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
 metadata:
   name: read-pods
   namespace: game-system-1
@@ -88,8 +102,8 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 
 ---
-kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
   name: pod-patcher
   namespace: game-system-1
@@ -99,8 +113,8 @@ rules:
     verbs: ["patch"]
 
 ---
-kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
 metadata:
   name: annotate-pods
   namespace: game-system-1
