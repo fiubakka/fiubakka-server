@@ -48,6 +48,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: KUBERNETES_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         resources:
           # We don't set cpu limit because is not recommended in JVM
           # See https://doc.akka.io/docs/akka-management/current/kubernetes-deployment/preparing-for-production.html
