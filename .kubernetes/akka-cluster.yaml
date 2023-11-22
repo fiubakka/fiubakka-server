@@ -6,7 +6,7 @@ metadata:
   name: game-system
   namespace: game-system-1
 spec:
-  replicas: 2
+  replicas: 4
   selector:
     matchLabels:
       app: game-system
@@ -71,7 +71,7 @@ metadata:
   name: game-system-service
   namespace: game-system-1
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
     - port: 9090
       targetPort: 9090
