@@ -12,7 +12,8 @@ object Player {
   final case class Position(x: Int, y: Int)
 
   sealed trait Command extends CborSerializable
-  final case class Move(position: Position) extends Command
+  // final case class Move(position: Position) extends Command
+  final case class Move(posX: Int, posY: Int) extends Command
   final case class PrintPosition() extends Command
 
   final case class State(position: Position) extends CborSerializable
@@ -30,8 +31,12 @@ object Player {
         emptyState = State(Position(0, 0)),
         commandHandler = (state, command) => {
           command match {
-            case Move(newPosition) => {
-              Effect.persist(state.copy(position = newPosition))
+            case Move(posX, posY) => {
+              Effect.persist(
+                state.copy(position =
+                  Position(state.position.x + posX, state.position.y + posY)
+                )
+              )
             }
             case PrintPosition() => {
               println(s"Current position: ${state.position}")
