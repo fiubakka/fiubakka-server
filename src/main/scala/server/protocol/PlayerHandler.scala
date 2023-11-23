@@ -23,6 +23,8 @@ object PlayerHandler {
   final case class StopMoving() extends Command
   final case class Move(x: Int, y: Int) extends Command
 
+  final case class MoveReply(x: Int, y: Int) extends Command
+
   def apply(connection: Tcp.IncomingConnection): Behavior[Command] = {
     Behaviors.setup { ctx =>
       Behaviors.withTimers { timers =>
@@ -41,7 +43,7 @@ object PlayerHandler {
             val parts = str.split("\\s+")
 
             parts.headOption match {
-              case Some("INIT") if parts.length == 3 =>
+              case Some("INIT") if parts.length == 5 =>
                 Some(Init(parts(1).toInt, parts(2).toInt))
 
               case Some("VEL")
@@ -74,7 +76,7 @@ object PlayerHandler {
 
         val player = Sharding().entityRefFor(
           Player.TypeKey,
-          "player"
+          "player2"
         ) // TODO use random entityId
 
         Behaviors.receiveMessage {
@@ -93,7 +95,7 @@ object PlayerHandler {
 
           case StartMoving(x, y) => {
             ctx.log.info(s"StartMoving message received $x, $y!")
-            timers.startTimerAtFixedRate("move", Move(x, y), 1.second)
+            timers.startTimerAtFixedRate("move", Move(x, y), 16.millis)
             Behaviors.same
           }
 
@@ -104,8 +106,14 @@ object PlayerHandler {
           }
 
           case Move(x, y) => {
+            player ! Player.Move(x, y, ctx.self)
+            ctx.log.info(s"Move message received $x, $y!")
+            // conQueue.offer(ByteString(s"POS $x $y\n"))
+            Behaviors.same
+          }
+
+          case MoveReply(x, y) => {
             conQueue.offer(ByteString(s"POS $x $y\n"))
-            player ! Player.Move(x, y)
             Behaviors.same
           }
         }
