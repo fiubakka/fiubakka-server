@@ -29,7 +29,6 @@ object PlayerHandler {
     Behaviors.setup { ctx =>
       Behaviors.withTimers { timers =>
         implicit val system = ctx.system
-        var currentMovement = Move(0,0)
 
         val (conQueue, conSource) = Source
           .queue[ByteString](256, OverflowStrategy.backpressure)
@@ -96,7 +95,6 @@ object PlayerHandler {
 
           case StartMoving(x, y) => {
             ctx.log.info(s"StartMoving message received $x, $y!")
-            currentMovement = Move(x,y)
             timers.startTimerAtFixedRate("move", Move(x, y), 16666.micro)
             Behaviors.same
           }
@@ -108,11 +106,9 @@ object PlayerHandler {
           }
 
           case Move(x, y) => {
-            if (currentMovement.x == x && currentMovement.y == y) {
-              player ! Player.Move(x, y, ctx.self)
-              ctx.log.info(s"Move message received $x, $y!")
-              // conQueue.offer(ByteString(s"POS $x $y\n"))
-            }
+            player ! Player.Move(x, y, ctx.self)
+            ctx.log.info(s"Move message received $x, $y!")
+            // conQueue.offer(ByteString(s"POS $x $y\n"))
             Behaviors.same
           }
 
