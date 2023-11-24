@@ -25,7 +25,7 @@ object PlayerHandler {
 
   final case class MoveReply(x: Int, y: Int) extends Command
 
-  def apply(connection: Tcp.IncomingConnection): Behavior[Command] = {
+  def apply(connection: Tcp.IncomingConnection, currentMovement: Move = Move(0, 0)): Behavior[Command] = {
     Behaviors.setup { ctx =>
       Behaviors.withTimers { timers =>
         implicit val system = ctx.system
@@ -96,7 +96,8 @@ object PlayerHandler {
           case StartMoving(x, y) => {
             ctx.log.info(s"StartMoving message received $x, $y!")
             timers.startTimerAtFixedRate("move", Move(x, y), 16666.micro)
-            Behaviors.same
+            // Behaviors.same
+            apply(connection, Move(x, y))
           }
 
           case StopMoving() => {
@@ -106,9 +107,11 @@ object PlayerHandler {
           }
 
           case Move(x, y) => {
-            player ! Player.Move(x, y, ctx.self)
-            ctx.log.info(s"Move message received $x, $y!")
-            // conQueue.offer(ByteString(s"POS $x $y\n"))
+            if (currentMovement.x == x && currentMovement.y == y) {
+              player ! Player.Move(x, y, ctx.self)
+              ctx.log.info(s"Move message received $x, $y!")
+              // conQueue.offer(ByteString(s"POS $x $y\n"))
+            }
             Behaviors.same
           }
 
