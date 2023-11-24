@@ -95,7 +95,7 @@ object PlayerHandler {
 
           case StartMoving(x, y) => {
             ctx.log.info(s"StartMoving message received $x, $y!")
-            timers.startTimerAtFixedRate("move", Move(x, y), 16.millis)
+            timers.startTimerAtFixedRate("move", Move(x, y), 16666.micro)
             Behaviors.same
           }
 
