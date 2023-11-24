@@ -25,10 +25,11 @@ object PlayerHandler {
 
   final case class MoveReply(x: Int, y: Int) extends Command
 
-  def apply(connection: Tcp.IncomingConnection, currentMovement: Move = Move(0, 0)): Behavior[Command] = {
+  def apply(connection: Tcp.IncomingConnection): Behavior[Command] = {
     Behaviors.setup { ctx =>
       Behaviors.withTimers { timers =>
         implicit val system = ctx.system
+        var currentMovement = Move(0,0)
 
         val (conQueue, conSource) = Source
           .queue[ByteString](256, OverflowStrategy.backpressure)
@@ -95,9 +96,9 @@ object PlayerHandler {
 
           case StartMoving(x, y) => {
             ctx.log.info(s"StartMoving message received $x, $y!")
+            currentMovement = Move(x,y)
             timers.startTimerAtFixedRate("move", Move(x, y), 16666.micro)
-            // Behaviors.same
-            apply(connection, Move(x, y))
+            Behaviors.same
           }
 
           case StopMoving() => {
