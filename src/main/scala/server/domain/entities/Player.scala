@@ -46,8 +46,8 @@ object Player {
                     )
                   )
                 )
-                .thenReply(replyTo) { _ =>
-                  PlayerHandler.MoveReply(state.position.x, state.position.y)
+                .thenReply(replyTo) { newState =>
+                  PlayerHandler.MoveReply(newState.position.x, newState.position.y)
                 }
             }
             case PrintPosition() => {
