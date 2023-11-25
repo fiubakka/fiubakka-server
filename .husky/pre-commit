@@ -1,6 +1,38 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+check_common_files() {
+    # Get the file lists from git diff --name-only --cached and git diff --name-only
+    git diff --name-only --cached > /tmp/cached_files
+    git diff --name-only > /tmp/all_files
+
+    # Sort the file lists
+    sort /tmp/cached_files -o /tmp/cached_files
+    sort /tmp/all_files -o /tmp/all_files
+
+    # Use comm command to compare the file lists
+    common_files=$(comm -12 /tmp/cached_files /tmp/all_files)
+
+    # Check if there are common files
+    if [ -n "$common_files" ]; then
+        return 0  # There are common files
+    else
+        return 1  # No common files
+    fi
+}
+
 if git diff --name-only --cached | grep -q '^src/'; then
+  echo "Running fix and fmt."
   sbt ";scalafix;scalafmt"
+else
+  exit 0
+fi
+
+# If scalafmt or scalafix modified any file that was staged for commit
+if check_common_files; then
+  echo "A staged file was modified. Please add the changes and commit again"
+  exit 1
+else
+  echo "No formatting or linting issues found."
+  exit 0
 fi
