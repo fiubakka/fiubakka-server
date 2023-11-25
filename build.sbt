@@ -4,7 +4,10 @@ ThisBuild / scalaVersion     := "2.13.12"
 ThisBuild / version          := "0.1.0-SNAPSHOT"
 ThisBuild / organization     := "com.github.MarcosRolando"
 ThisBuild / organizationName := "MarcosRolando"
-ThisBuild / scalacOptions    += "-Ywarn-unused"
+ThisBuild / scalacOptions    ++= Seq(
+  "-Ywarn-unused",
+  "-deprecation"
+)
 
 resolvers += "Akka library repository".at("https://repo.akka.io/maven")
 
