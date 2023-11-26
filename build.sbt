@@ -53,6 +53,8 @@ lazy val root = (project in file("."))
       slickHikaricp,
       log4jApi,
       logback,
+      akkaStreamKafka,
+      jacksonKafka,
       munit % Test,
       akkaStreamTestKit % Test,
       akkaPersistenceTestKit % Test

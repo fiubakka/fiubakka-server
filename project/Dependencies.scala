@@ -5,6 +5,9 @@ object Dependencies {
   val AkkaManagementVersion = "1.5.0"
   val SlickVersion = "3.4.1"
 
+  val AkkaStreamKafka = "3.0.1"
+  val JacksonVersion = "2.11.4"
+
   lazy val munit = "org.scalameta" %% "munit" % "0.7.29"
   lazy val akkaTyped = "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion
   lazy val akkaStream = "com.typesafe.akka" %% "akka-stream" % AkkaVersion
@@ -27,4 +30,7 @@ object Dependencies {
   lazy val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   lazy val akkaStreamTestKit = "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion
   lazy val akkaPersistenceTestKit = "com.typesafe.akka" %% "akka-persistence-testkit" % AkkaVersion
+  //Alpakka
+  lazy val akkaStreamKafka = "com.typesafe.akka" %% "akka-stream-kafka" % AkkaStreamKafka
+  lazy val jacksonKafka = "com.fasterxml.jackson.core" % "jackson-databind" % JacksonVersion
 }
