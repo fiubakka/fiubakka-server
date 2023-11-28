@@ -2,6 +2,8 @@ package server.protocol
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
+import akka.cluster.sharding.typed.scaladsl.Entity
+import akka.persistence.typed.PersistenceId
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Framing
@@ -74,17 +76,36 @@ object PlayerHandler {
 
         connection.handleWith(clientResponse)
 
+        Sharding().init(Entity(typeKey = Player.TypeKey) { entityCtx =>
+          Player(
+            entityCtx.entityId,
+            PersistenceId(entityCtx.entityTypeKey.name, entityCtx.entityId)
+          )
+        })
+
         val player = Sharding().entityRefFor(
           Player.TypeKey,
           "player2"
         ) // TODO use random entityId
 
+        Sharding().init(Entity(typeKey = EventConsumer.TypeKey) { entityCtx =>
+          EventConsumer(
+            entityCtx.entityId,
+            PersistenceId(entityCtx.entityTypeKey.name, entityCtx.entityId),
+            player
+          )
+        })
+
+        val eventConsumer = Sharding().entityRefFor(
+          EventConsumer.TypeKey,
+          "eventConsumer" // TODO concat player entityId
+        ) // TODO capaz lo podemos volar si es que el init no es lazy
+
+        eventConsumer ! EventConsumer.EventReceived("CREATED")
+
         Behaviors.receiveMessage {
           case ConnectionClosed() => {
             ctx.log.info("Closing connection!")
-            player ! Player.PrintPosition()
-            // player ! Player.Move(Player.Position(1, 1))
-            // player ! Player.PrintPosition()
             Behaviors.same
           }
 
@@ -108,7 +129,6 @@ object PlayerHandler {
           case Move(x, y) => {
             player ! Player.Move(x, y, ctx.self)
             ctx.log.info(s"Move message received $x, $y!")
-            // conQueue.offer(ByteString(s"POS $x $y\n"))
             Behaviors.same
           }
 
