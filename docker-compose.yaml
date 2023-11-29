@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:16.1
+    image: postgres:15.5 # Matches the embedded Postgres version in the Dev Image
     container_name: akka-backend-tp-db
     ports:
       - "5432:5432"
@@ -19,7 +19,7 @@ services:
     ports:
       - "2181:2181"
   kafka:
-    image: wurstmeister/kafka 
+    image: wurstmeister/kafka
     ports:
       - "9092:9092"
     environment:
