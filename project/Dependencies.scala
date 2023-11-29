@@ -28,7 +28,9 @@ object Dependencies {
   lazy val slick = "com.typesafe.slick" %% "slick" % SlickVersion
   lazy val slickHikaricp = "com.typesafe.slick" %% "slick-hikaricp" % SlickVersion
   lazy val log4jApi = "org.apache.logging.log4j" % "log4j-api" % "2.21.1"
-  lazy val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
+  lazy val logback = "ch.qos.logback" % "logback-classic" % "1.2.12"
+  // This is needed for conditional statements in logback configuration file
+  lazy val janino = "org.codehaus.janino" % "janino" % "3.1.8"
   lazy val akkaStreamTestKit = "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion
   lazy val akkaPersistenceTestKit = "com.typesafe.akka" %% "akka-persistence-testkit" % AkkaVersion
 }
