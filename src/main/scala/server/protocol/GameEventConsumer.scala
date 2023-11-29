@@ -15,7 +15,7 @@ object GameEventConsumer {
   sealed trait Command
   final case class EventReceived(msg: String) extends Command
 
-  val TypeKey = EntityTypeKey[Command]("EventConsumer")
+  val TypeKey = EntityTypeKey[Command]("GameEventConsumer")
 
   def apply(
       entityId: String,
@@ -32,14 +32,14 @@ object GameEventConsumer {
             new StringDeserializer
           )
             .withGroupId(entityId),
-          Subscriptions.topics("test")
+          Subscriptions.topics("game-zone")
         )
         .map(v => ctx.self ! EventReceived(v.value()))
         .runWith(Sink.ignore)
 
       Behaviors.receiveMessage {
-        case EventReceived(_) => {
-          player ! Player.PrintPosition()
+        case EventReceived(msg) => {
+          ctx.log.info(s"Event received: $msg")
           Behaviors.same
         }
       }
