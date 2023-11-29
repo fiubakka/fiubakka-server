@@ -7,12 +7,11 @@ import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.kafka.ConsumerSettings
 import akka.kafka.Subscriptions
 import akka.kafka.scaladsl.Consumer
-import akka.persistence.typed.PersistenceId
 import akka.stream.scaladsl.Sink
 import org.apache.kafka.common.serialization.StringDeserializer
 import server.domain.entities.Player
 
-object EventConsumer {
+object GameEventConsumer {
   sealed trait Command
   final case class EventReceived(msg: String) extends Command
 
@@ -20,13 +19,10 @@ object EventConsumer {
 
   def apply(
       entityId: String,
-      persistenceId: PersistenceId,
       player: EntityRef[Player.Command]
   ): Behavior[Command] = {
     Behaviors.setup(ctx => {
       implicit val system = ctx.system
-
-      ctx.log.info("HOLA MUNDO SOY EL EVENT CONSUMER")
 
       Consumer
         .plainSource(
@@ -42,8 +38,7 @@ object EventConsumer {
         .runWith(Sink.ignore)
 
       Behaviors.receiveMessage {
-        case EventReceived(v) => {
-          ctx.log.info(s"EVENT RECEIVED $v")
+        case EventReceived(_) => {
           player ! Player.PrintPosition()
           Behaviors.same
         }
