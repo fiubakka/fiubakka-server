@@ -77,7 +77,21 @@ object Player {
           }
         }
 
-        behaviour(PlayerState(PlayerPosition(0, 0)), persistor)
+        setupBehaviour(persistor)
+      }
+    }
+  }
+
+  def setupBehaviour(
+      persistor: EntityRef[PlayerPersistor.Command]
+  ): Behavior[Command] = {
+    Behaviors.receiveMessage {
+      case InitState(initialState) => {
+        behaviour(initialState, persistor)
+      }
+      case _ => {
+        // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
+        Behaviors.same
       }
     }
   }
@@ -88,8 +102,8 @@ object Player {
   ): Behavior[Command] = {
     Behaviors.receive((ctx, msg) => {
       msg match {
-        case InitState(initialState) => {
-          behaviour(initialState, persistor)
+        case InitState(_) => {
+          Behaviors.same // TODO throw error or something, it should not receive this message again
         }
         case Move(velX, velY, replyTo) => {
           val newState = state.copy(
