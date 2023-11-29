@@ -2,8 +2,7 @@ package server.protocol
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.Entity
-import akka.persistence.typed.PersistenceId
+import akka.serialization.jackson.CborSerializable
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Framing
@@ -17,7 +16,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 object PlayerHandler {
-  sealed trait Command
+  sealed trait Command extends CborSerializable
   final case class ConnectionClosed() extends Command
 
   final case class Init(x: Int, y: Int) extends Command
@@ -76,29 +75,14 @@ object PlayerHandler {
 
         connection.handleWith(clientResponse)
 
-        Sharding().init(Entity(typeKey = Player.TypeKey) { entityCtx =>
-          Player(
-            entityCtx.entityId,
-            PersistenceId(entityCtx.entityTypeKey.name, entityCtx.entityId)
-          )
-        })
-
         val player = Sharding().entityRefFor(
           Player.TypeKey,
           "player2"
         ) // TODO use random entityId
 
-        Sharding().init(Entity(typeKey = GameEventConsumer.TypeKey) {
-          entityCtx =>
-            GameEventConsumer(
-              entityCtx.entityId,
-              player
-            )
-        })
-
         val eventConsumer = Sharding().entityRefFor(
           GameEventConsumer.TypeKey,
-          "eventConsumer" // TODO concat player entityId
+          "player2"
         ) // TODO capaz lo podemos volar si es que el init no es lazy
 
         eventConsumer ! GameEventConsumer.EventReceived("CREATED")
