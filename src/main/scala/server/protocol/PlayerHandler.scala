@@ -106,7 +106,7 @@ object PlayerHandler {
         Behaviors.receiveMessage {
           case ConnectionClosed() => {
             ctx.log.info("Closing connection!")
-            Behaviors.same
+            Behaviors.stopped
           }
 
           case Init(x, y) => {
@@ -128,7 +128,6 @@ object PlayerHandler {
 
           case Move(x, y) => {
             player ! Player.Move(x, y, ctx.self)
-            ctx.log.info(s"Move message received $x, $y!")
             Behaviors.same
           }
 
