@@ -13,6 +13,7 @@ import server.Sharding
 import server.domain.structs.PlayerPosition
 import server.domain.structs.PlayerState
 import server.infra.PlayerPersistor
+import server.protocol.GameEventProducer
 import server.protocol.PlayerHandler
 
 import scala.concurrent.duration
@@ -62,6 +63,11 @@ object Player {
           entityId
         )
 
+        val eventProducer = Sharding().entityRefFor(
+          GameEventProducer.TypeKey,
+          "player2"
+        )
+
         ctx.ask(
           persistor,
           PlayerPersistor.GetState.apply
@@ -77,17 +83,18 @@ object Player {
           }
         }
 
-        setupBehaviour(persistor)
+        setupBehaviour(persistor, eventProducer)
       }
     }
   }
 
   def setupBehaviour(
-      persistor: EntityRef[PlayerPersistor.Command]
+      persistor: EntityRef[PlayerPersistor.Command],
+      eventProducer: EntityRef[GameEventProducer.Command]
   ): Behavior[Command] = {
     Behaviors.receiveMessage {
       case InitState(initialState) => {
-        behaviour(initialState, persistor)
+        behaviour(initialState, persistor, eventProducer)
       }
       case _ => {
         // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
@@ -98,7 +105,8 @@ object Player {
 
   def behaviour(
       state: PlayerState,
-      persistor: EntityRef[PlayerPersistor.Command]
+      persistor: EntityRef[PlayerPersistor.Command],
+      eventProducer: EntityRef[GameEventProducer.Command]
   ): Behavior[Command] = {
     Behaviors.receive((ctx, msg) => {
       msg match {
@@ -116,7 +124,10 @@ object Player {
             newState.position.x,
             newState.position.y
           )
-          behaviour(newState, persistor)
+          eventProducer ! GameEventProducer.ProduceEvent(
+            s"Moved to position (${newState.position.x}, ${newState.position.y})"
+          )
+          behaviour(newState, persistor, eventProducer)
         }
         case PrintPosition() => {
           ctx.log.info(s"Current position: ${state.position}")

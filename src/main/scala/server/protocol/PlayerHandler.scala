@@ -85,13 +85,7 @@ object PlayerHandler {
           "player2"
         ) // TODO capaz lo podemos volar si es que el init no es lazy
 
-        val eventProducer = Sharding().entityRefFor(
-          GameEventProducer.TypeKey,
-          "player2"
-        )
-
         eventConsumer ! GameEventConsumer.EventReceived("CREATED")
-        eventProducer ! GameEventProducer.ProduceEvent("INIT")
 
         Behaviors.receiveMessage {
           case ConnectionClosed() => {
