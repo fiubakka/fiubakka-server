@@ -5,6 +5,7 @@ import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.cluster.sharding.typed.scaladsl.Entity
 import akka.persistence.typed.PersistenceId
 import server.domain.entities.Player
+import server.infra.PlayerPersistor
 import server.protocol.GameEventConsumer
 
 object Sharding {
@@ -32,6 +33,12 @@ object Sharding {
       GameEventConsumer(
         entityCtx.entityId,
         Sharding().entityRefFor(Player.TypeKey, entityCtx.entityId)
+      )
+    })
+
+    Sharding().init(Entity(typeKey = PlayerPersistor.TypeKey) { entityCtx =>
+      PlayerPersistor(
+        PersistenceId(entityCtx.entityTypeKey.name, entityCtx.entityId)
       )
     })
   }

@@ -7,12 +7,13 @@ import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.kafka.ConsumerSettings
 import akka.kafka.Subscriptions
 import akka.kafka.scaladsl.Consumer
+import akka.serialization.jackson.CborSerializable
 import akka.stream.scaladsl.Sink
 import org.apache.kafka.common.serialization.StringDeserializer
 import server.domain.entities.Player
 
 object GameEventConsumer {
-  sealed trait Command
+  sealed trait Command extends CborSerializable
   final case class EventReceived(msg: String) extends Command
 
   val TypeKey = EntityTypeKey[Command]("GameEventConsumer")
