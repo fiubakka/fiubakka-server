@@ -13,10 +13,10 @@ import server.Sharding
 import server.domain.structs.PlayerPosition
 import server.domain.structs.PlayerState
 import server.infra.PlayerPersistor
+import server.protocol.GameEventConsumer
 import server.protocol.GameEventProducer
 import server.protocol.PlayerHandler
 
-import scala.concurrent.duration
 import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
@@ -24,6 +24,8 @@ import scala.util.Success
 object Player {
 
   sealed trait Command extends CborSerializable
+  // This message is a dummy for initialization purposes in Player Handler
+  final case class Start() extends Command
   final case class InitState(
       initialState: PlayerState
   ) extends Command
@@ -38,8 +40,7 @@ object Player {
   val TypeKey = EntityTypeKey[Command]("Player")
 
   def apply(
-      entityId: String,
-      persistenceId: PersistenceId
+      entityId: String
   ): Behavior[Command] = {
     Behaviors.setup { ctx =>
       Behaviors.withTimers { timers =>
@@ -48,7 +49,7 @@ object Player {
         timers.startTimerAtFixedRate(
           "persist",
           PersistState(),
-          duration.FiniteDuration(5, "second")
+          30.seconds
         )
         ctx.log.info(s"Starting player $entityId")
 
@@ -63,9 +64,14 @@ object Player {
           entityId
         )
 
-        val eventProducer = Sharding().entityRefFor(
-          GameEventProducer.TypeKey,
-          "player2"
+        ctx.spawn(
+          GameEventConsumer(entityId, ctx.self),
+          s"GameEventConsumer$entityId"
+        )
+
+        val eventProducer = ctx.spawn(
+          GameEventProducer(),
+          s"GameEventProducer$entityId"
         )
 
         ctx.ask(
@@ -90,7 +96,7 @@ object Player {
 
   def setupBehaviour(
       persistor: EntityRef[PlayerPersistor.Command],
-      eventProducer: EntityRef[GameEventProducer.Command]
+      eventProducer: ActorRef[GameEventProducer.Command]
   ): Behavior[Command] = {
     Behaviors.receiveMessage {
       case InitState(initialState) => {
@@ -106,13 +112,10 @@ object Player {
   def behaviour(
       state: PlayerState,
       persistor: EntityRef[PlayerPersistor.Command],
-      eventProducer: EntityRef[GameEventProducer.Command]
+      eventProducer: ActorRef[GameEventProducer.Command]
   ): Behavior[Command] = {
     Behaviors.receive((ctx, msg) => {
       msg match {
-        case InitState(_) => {
-          Behaviors.same // TODO throw error or something, it should not receive this message again
-        }
         case Move(velX, velY, replyTo) => {
           val newState = state.copy(
             position = PlayerPosition(
@@ -135,6 +138,9 @@ object Player {
           ctx.log.info(s"Persisting current state: ${state.position}")
           persistor ! PlayerPersistor.Persist(state)
           Behaviors.same
+        }
+        case _ => {
+          Behaviors.same // TODO throw error or something, it should not receive these message again
         }
       }
     })

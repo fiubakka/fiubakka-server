@@ -79,14 +79,9 @@ object PlayerHandler {
         val player = Sharding().entityRefFor(
           Player.TypeKey,
           "player2"
-        ) // TODO use random entityId
+        ) // TODO use received entityId
 
-        val eventConsumer = Sharding().entityRefFor(
-          GameEventConsumer.TypeKey,
-          "player2"
-        ) // TODO capaz lo podemos volar si es que el init no es lazy
-
-        eventConsumer ! GameEventConsumer.Start()
+        player ! Player.Start()
 
         Behaviors.receiveMessage {
           case ConnectionClosed() => {

@@ -12,7 +12,7 @@ object GameServer {
       msg match {
         case Run() => {
           println("Game server is running...")
-          ctx.spawn(PlayerAccepter(), "playerAccepter")
+          ctx.spawn(PlayerAccepter(), "PlayerAccepter")
           Behaviors.same
         }
       }

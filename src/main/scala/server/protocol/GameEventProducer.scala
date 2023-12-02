@@ -2,7 +2,6 @@ package server.protocol
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.kafka.ProducerSettings
 import akka.kafka.scaladsl.Producer
 import akka.stream.Materializer
@@ -19,11 +18,7 @@ object GameEventProducer {
   sealed trait Command
   final case class PlayerStateUpdate(playerState: PlayerState) extends Command
 
-  val TypeKey = EntityTypeKey[Command]("GameEventProducer")
-
-  def apply(
-      entityId: String
-  ): Behavior[Command] = {
+  def apply(): Behavior[Command] = {
     Behaviors.setup(ctx => {
       implicit val mat = Materializer(ctx)
 

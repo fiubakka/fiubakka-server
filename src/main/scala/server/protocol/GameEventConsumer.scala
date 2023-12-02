@@ -1,9 +1,8 @@
 package server.protocol
 
+import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.EntityRef
-import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.kafka.ConsumerSettings
 import akka.kafka.Subscriptions
 import akka.kafka.scaladsl.Consumer
@@ -20,14 +19,14 @@ object GameEventConsumer {
   final case class EventReceived(playerState: PlayerStateProto) extends Command
   final case class Start() extends Command
 
-  val TypeKey = EntityTypeKey[Command]("GameEventConsumer")
-
   def apply(
-      entityId: String,
-      player: EntityRef[Player.Command]
+      playerId: String,
+      player: ActorRef[Player.Command]
   ): Behavior[Command] = {
     Behaviors.setup(ctx => {
       implicit val mat = Materializer(ctx)
+
+      ctx.log.info("HOLA QUE TAL TU COMO ESTAS")
 
       Consumer
         .plainSource(
@@ -36,7 +35,7 @@ object GameEventConsumer {
             new StringDeserializer,
             new ByteArrayDeserializer
           )
-            .withGroupId(entityId),
+            .withGroupId(playerId),
           Subscriptions.topics("game-zone")
         )
         .map(record => PlayerStateProto.parseFrom(record.value()))
@@ -49,7 +48,7 @@ object GameEventConsumer {
           Behaviors.same
         }
         case Start() => {
-          ctx.log.info(s"Starting consumer for $entityId")
+          ctx.log.info(s"Starting consumer for ${player}")
           Behaviors.same
         }
       }
