@@ -1,6 +1,7 @@
 package server.protocol
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.Tcp
 
@@ -12,11 +13,11 @@ object PlayerAccepter {
 
   def apply(): Behavior[Command] = {
     Behaviors.setup(ctx => {
-      implicit val system = ctx.system
+      implicit val mat = Materializer(ctx)
 
       val connections
           : Source[Tcp.IncomingConnection, Future[Tcp.ServerBinding]] =
-        Tcp(system).bind("0.0.0.0", 9090)
+        Tcp(ctx.system).bind("0.0.0.0", 9090)
       connections.runForeach { connection =>
         ctx.self ! Accept(connection)
       }

@@ -18,6 +18,7 @@ services:
   # for configuration reference
   kafka:
     image: bitnami/kafka:3.6.0
+    container_name: akka-backend-tp-kafka
     ports:
       - "9092:9092"
       - "9094:9094"

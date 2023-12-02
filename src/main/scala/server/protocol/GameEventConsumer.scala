@@ -8,6 +8,7 @@ import akka.kafka.ConsumerSettings
 import akka.kafka.Subscriptions
 import akka.kafka.scaladsl.Consumer
 import akka.serialization.jackson.CborSerializable
+import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import org.apache.kafka.common.serialization.StringDeserializer
 import server.domain.entities.Player
@@ -23,7 +24,7 @@ object GameEventConsumer {
       player: EntityRef[Player.Command]
   ): Behavior[Command] = {
     Behaviors.setup(ctx => {
-      implicit val system = ctx.system
+      implicit val mat = Materializer(ctx)
 
       Consumer
         .plainSource(

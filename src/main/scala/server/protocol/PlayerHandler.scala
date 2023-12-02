@@ -3,6 +3,7 @@ package server.protocol
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.serialization.jackson.CborSerializable
+import akka.stream.Materializer
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Framing
@@ -29,7 +30,7 @@ object PlayerHandler {
   def apply(connection: Tcp.IncomingConnection): Behavior[Command] = {
     Behaviors.setup { ctx =>
       Behaviors.withTimers { timers =>
-        implicit val system = ctx.system
+        implicit val mat = Materializer(ctx)
 
         val (conQueue, conSource) = Source
           .queue[ByteString](256, OverflowStrategy.backpressure)

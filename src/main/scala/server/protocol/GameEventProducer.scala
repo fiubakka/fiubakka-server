@@ -6,6 +6,7 @@ import akka.cluster.sharding.typed.scaladsl.EntityRef
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.kafka.ProducerSettings
 import akka.kafka.scaladsl.Producer
+import akka.stream.Materializer
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Source
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -25,9 +26,9 @@ object GameEventProducer {
       ] // TODO: Necesitamos el player en el producer?
   ): Behavior[Command] = {
     Behaviors.setup(ctx => {
-      implicit val system = ctx.system
+      implicit val mat = Materializer(ctx)
 
-      val config = system.settings.config.getConfig("akka.kafka-producer")
+      val config = ctx.system.settings.config.getConfig("akka.kafka-producer")
       val producerSettings =
         ProducerSettings(config, new StringSerializer, new StringSerializer)
 
