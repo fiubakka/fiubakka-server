@@ -17,7 +17,10 @@ object PlayerAccepter {
 
       val connections
           : Source[Tcp.IncomingConnection, Future[Tcp.ServerBinding]] =
-        Tcp(ctx.system).bind("0.0.0.0", 9090)
+        Tcp(ctx.system).bind(
+          "0.0.0.0",
+          ctx.system.settings.config.getInt("player-accepter.port")
+        )
       connections.runForeach { connection =>
         ctx.self ! Accept(connection)
       }

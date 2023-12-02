@@ -3,10 +3,8 @@ package server.domain.entities
 import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.Entity
 import akka.cluster.sharding.typed.scaladsl.EntityRef
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
-import akka.persistence.typed.PersistenceId
 import akka.serialization.jackson.CborSerializable
 import akka.util.Timeout
 import server.Sharding
@@ -52,12 +50,6 @@ object Player {
           30.seconds
         )
         ctx.log.info(s"Starting player $entityId")
-
-        Sharding().init(Entity(typeKey = PlayerPersistor.TypeKey) { entityCtx =>
-          PlayerPersistor(
-            PersistenceId(entityCtx.entityTypeKey.name, entityId)
-          )
-        })
 
         val persistor = Sharding().entityRefFor(
           PlayerPersistor.TypeKey,

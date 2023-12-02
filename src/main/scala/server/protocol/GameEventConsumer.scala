@@ -26,8 +26,6 @@ object GameEventConsumer {
     Behaviors.setup(ctx => {
       implicit val mat = Materializer(ctx)
 
-      ctx.log.info("HOLA QUE TAL TU COMO ESTAS")
-
       Consumer
         .plainSource(
           ConsumerSettings(

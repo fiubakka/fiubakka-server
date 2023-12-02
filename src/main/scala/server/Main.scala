@@ -11,8 +11,11 @@ object Main extends App {
   implicit val system: ActorSystem[GameServer.Command] =
     ActorSystem(GameServer(), "game-system")
   Sharding.configure(system)
-  AkkaManagement(system).start()
-  ClusterBootstrap(system).start()
+  // Only needed for Kubernetes in production
+  if (sys.env.getOrElse("ENV", "") == "production") {
+    AkkaManagement(system).start()
+    ClusterBootstrap(system).start()
+  }
 
   system ! GameServer.Run()
   Await.result(system.whenTerminated, Duration.Inf)
