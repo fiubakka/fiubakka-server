@@ -86,7 +86,7 @@ object PlayerHandler {
           "player2"
         ) // TODO capaz lo podemos volar si es que el init no es lazy
 
-        eventConsumer ! GameEventConsumer.EventReceived("CREATED")
+        eventConsumer ! GameEventConsumer.Start()
 
         Behaviors.receiveMessage {
           case ConnectionClosed() => {

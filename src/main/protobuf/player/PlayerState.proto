@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package protobuf.player;
+
+message Position {
+  required float x = 1;
+  required float y = 2;
+}
+
+message PlayerState {
+  required string player_id = 1;
+  required Position position = 2;
+}

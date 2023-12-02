@@ -45,8 +45,7 @@ object Sharding {
 
     Sharding().init(Entity(typeKey = GameEventProducer.TypeKey) { entityCtx =>
       GameEventProducer(
-        entityCtx.entityId,
-        Sharding().entityRefFor(Player.TypeKey, entityCtx.entityId)
+        entityCtx.entityId
       )
     })
   }

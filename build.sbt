@@ -34,6 +34,9 @@ lazy val root = (project in file("."))
       case "version.conf"                  => MergeStrategy.concat
       case _                               => MergeStrategy.first
     },
+    Compile / PB.targets := Seq(
+      scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"
+    ),
     name := "akka-backend-tp",
     libraryDependencies ++= Seq(
       akkaTyped,

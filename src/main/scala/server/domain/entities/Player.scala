@@ -124,9 +124,7 @@ object Player {
             newState.position.x,
             newState.position.y
           )
-          eventProducer ! GameEventProducer.ProduceEvent(
-            s"Moved to position (${newState.position.x}, ${newState.position.y})"
-          )
+          eventProducer ! GameEventProducer.PlayerStateUpdate(newState)
           behaviour(newState, persistor, eventProducer)
         }
         case PrintPosition() => {
