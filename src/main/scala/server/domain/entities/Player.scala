@@ -24,6 +24,7 @@ object Player {
   sealed trait Command extends CborSerializable
   // This message is a dummy for initialization purposes in Player Handler
   final case class Start() extends Command
+  final case class Stop() extends Command
   final case class InitState(
       initialState: PlayerState
   ) extends Command
@@ -58,12 +59,12 @@ object Player {
 
         ctx.spawn(
           GameEventConsumer(entityId, ctx.self),
-          s"GameEventConsumer:$entityId"
+          s"GameEventConsumer-$entityId"
         )
 
         val eventProducer = ctx.spawn(
           GameEventProducer(entityId),
-          s"GameEventProducer:$entityId"
+          s"GameEventProducer-$entityId"
         )
 
         ctx.ask(
@@ -130,6 +131,10 @@ object Player {
           ctx.log.info(s"Persisting current state: ${state.position}")
           persistor ! PlayerPersistor.Persist(state)
           Behaviors.same
+        }
+        case Stop() => {
+          ctx.log.info(s"Stopping player ${ctx.self.path.name}")
+          Behaviors.stopped
         }
         case _ => {
           Behaviors.same // TODO throw error or something, it should not receive these message again

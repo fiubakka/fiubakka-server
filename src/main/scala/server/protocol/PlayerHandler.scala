@@ -83,13 +83,14 @@ object PlayerHandler {
             ctx.log.info(s"Init message received from $playerName")
             val player = Sharding().entityRefFor(
               Player.TypeKey,
-              s"player:$playerName"
+              s"Player-$playerName"
             )
             player ! Player.Start()
 
             Behaviors.receiveMessage {
               case ConnectionClosed() => {
                 ctx.log.info("Closing connection!")
+                player ! Player.Stop()
                 Behaviors.stopped
               }
 
