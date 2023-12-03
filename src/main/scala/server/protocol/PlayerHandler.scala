@@ -20,7 +20,7 @@ object PlayerHandler {
   sealed trait Command extends CborSerializable
   final case class ConnectionClosed() extends Command
 
-  final case class Init(x: Int, y: Int) extends Command
+  final case class Init(playerName: String) extends Command
   final case class StartMoving(x: Int, y: Int) extends Command
   final case class StopMoving() extends Command
   final case class Move(x: Int, y: Int) extends Command
@@ -45,8 +45,8 @@ object PlayerHandler {
             val parts = str.split("\\s+")
 
             parts.headOption match {
-              case Some("INIT") if parts.length == 5 =>
-                Some(Init(parts(1).toInt, parts(2).toInt))
+              case Some("INIT") if parts.length == 2 =>
+                Some(Init(parts(1).toString()))
 
               case Some("VEL")
                   if parts.length == 3 && parts(1).toInt == 0 && parts(
@@ -71,17 +71,20 @@ object PlayerHandler {
           .map(ByteString(_))
           .merge(conSource)
           .watchTermination() { (_, done) =>
-            done.onComplete(_ => ctx.self ! ConnectionClosed())
+            done.onComplete(_ => {
+              println("RECEIVED CONNECTION CLOSED MESSAGE")
+              ctx.self ! ConnectionClosed()
+            })
           }
 
         connection.handleWith(clientResponse)
 
         Behaviors.receiveMessage {
-          case Init(x, y) => {
-            ctx.log.info(s"Init message received $x, $y!")
+          case Init(playerName) => {
+            ctx.log.info(s"Init message received from $playerName")
             val player = Sharding().entityRefFor(
               Player.TypeKey,
-              s"player$x$y"
+              s"player:$playerName"
             )
             player ! Player.Start()
 
