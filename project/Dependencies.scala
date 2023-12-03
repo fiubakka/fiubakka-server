@@ -11,7 +11,7 @@ object Dependencies {
   lazy val munit = "org.scalameta" %% "munit" % "0.7.29"
   lazy val akkaTyped = "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion
   lazy val akkaStream = "com.typesafe.akka" %% "akka-stream" % AkkaVersion
-  lazy val akkaStreamAlpakka = "com.typesafe.akka" %% "akka-stream-kafka" % AlpakkaVersion
+  lazy val akkaStreamAlpakkaKafka = "com.typesafe.akka" %% "akka-stream-kafka" % AlpakkaVersion
   lazy val akkaCluster = "com.typesafe.akka" %% "akka-cluster-typed" % AkkaVersion
   lazy val akkaClusterSharding = "com.typesafe.akka" %% "akka-cluster-sharding-typed" % AkkaVersion
   lazy val akkaManagementHttp = "com.lightbend.akka.management" %% "akka-management-cluster-http" % AkkaManagementVersion

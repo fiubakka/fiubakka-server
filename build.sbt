@@ -41,7 +41,7 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       akkaTyped,
       akkaStream,
-      akkaStreamAlpakka,
+      akkaStreamAlpakkaKafka,
       akkaCluster,
       akkaClusterSharding,
       akkaManagementHttp,
