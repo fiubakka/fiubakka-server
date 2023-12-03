@@ -58,12 +58,12 @@ object Player {
 
         ctx.spawn(
           GameEventConsumer(entityId, ctx.self),
-          s"GameEventConsumer$entityId"
+          s"GameEventConsumer:$entityId"
         )
 
         val eventProducer = ctx.spawn(
-          GameEventProducer(),
-          s"GameEventProducer$entityId"
+          GameEventProducer(entityId),
+          s"GameEventProducer:$entityId"
         )
 
         ctx.ask(

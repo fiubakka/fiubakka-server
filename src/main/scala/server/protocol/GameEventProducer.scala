@@ -18,7 +18,7 @@ object GameEventProducer {
   sealed trait Command
   final case class PlayerStateUpdate(playerState: PlayerState) extends Command
 
-  def apply(): Behavior[Command] = {
+  def apply(playerId: String): Behavior[Command] = {
     Behaviors.setup(ctx => {
       implicit val mat = Materializer(ctx)
 
@@ -38,10 +38,10 @@ object GameEventProducer {
 
       Behaviors.receiveMessage {
         case PlayerStateUpdate(playerState) => {
-          ctx.log.info(s"Producing event: $playerState")
+          ctx.log.info(s"$playerId: Producing event: $playerState")
           conQueue.offer(
             ProtoPlayerState(
-              "player2",
+              playerId,
               ProtoPosition(
                 playerState.position.x,
                 playerState.position.y

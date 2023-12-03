@@ -72,8 +72,7 @@ object PlayerHandler {
           .merge(conSource)
           .watchTermination() { (_, done) =>
             done.onComplete(_ => {
-              println("RECEIVED CONNECTION CLOSED MESSAGE")
-              ctx.self ! ConnectionClosed()
+              ctx.self ! ConnectionClosed() // TODO: This is not working
             })
           }
 
