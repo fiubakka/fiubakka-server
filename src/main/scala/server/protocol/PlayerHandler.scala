@@ -76,43 +76,50 @@ object PlayerHandler {
 
         connection.handleWith(clientResponse)
 
-        val player = Sharding().entityRefFor(
-          Player.TypeKey,
-          "player2"
-        ) // TODO use received entityId
-
-        player ! Player.Start()
-
         Behaviors.receiveMessage {
-          case ConnectionClosed() => {
-            ctx.log.info("Closing connection!")
-            Behaviors.stopped
-          }
-
           case Init(x, y) => {
             ctx.log.info(s"Init message received $x, $y!")
-            Behaviors.same
+            val player = Sharding().entityRefFor(
+              Player.TypeKey,
+              s"player$x$y"
+            )
+            player ! Player.Start()
+
+            Behaviors.receiveMessage {
+              case ConnectionClosed() => {
+                ctx.log.info("Closing connection!")
+                Behaviors.stopped
+              }
+
+              case StartMoving(x, y) => {
+                ctx.log.info(s"StartMoving message received $x, $y!")
+                timers.startTimerAtFixedRate("move", Move(x, y), 16666.micro)
+                Behaviors.same
+              }
+
+              case StopMoving() => {
+                ctx.log.info("StopMoving message received!")
+                timers.cancel("move")
+                Behaviors.same
+              }
+
+              case Move(x, y) => {
+                player ! Player.Move(x, y, ctx.self)
+                Behaviors.same
+              }
+
+              case MoveReply(x, y) => {
+                conQueue.offer(ByteString(s"POS $x $y\n"))
+                Behaviors.same
+              }
+
+              case _ => {
+                Behaviors.same
+              }
+            }
           }
 
-          case StartMoving(x, y) => {
-            ctx.log.info(s"StartMoving message received $x, $y!")
-            timers.startTimerAtFixedRate("move", Move(x, y), 16666.micro)
-            Behaviors.same
-          }
-
-          case StopMoving() => {
-            ctx.log.info("StopMoving message received!")
-            timers.cancel("move")
-            Behaviors.same
-          }
-
-          case Move(x, y) => {
-            player ! Player.Move(x, y, ctx.self)
-            Behaviors.same
-          }
-
-          case MoveReply(x, y) => {
-            conQueue.offer(ByteString(s"POS $x $y\n"))
+          case _ => {
             Behaviors.same
           }
         }
