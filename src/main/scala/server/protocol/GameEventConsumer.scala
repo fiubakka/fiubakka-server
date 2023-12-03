@@ -37,16 +37,19 @@ object GameEventConsumer {
           Subscriptions.topics("game-zone")
         )
         .map(record => PlayerStateProto.parseFrom(record.value()))
+        .filter(v => v.playerId != playerId) // Ignore messages from myself
         .map(v => ctx.self ! EventReceived(v))
         .runWith(Sink.ignore)
 
       Behaviors.receiveMessage {
         case EventReceived(msg) => {
-          ctx.log.info(s"Event received: $msg")
+          ctx.log.info(s"$playerId: Event received: $msg")
           Behaviors.same
         }
         case Start() => {
-          ctx.log.info(s"Starting consumer for ${player}")
+          ctx.log.info(
+            s"Starting consumer for ${player}"
+          ) // TODO: Do we need the player here? Or just the playerId
           Behaviors.same
         }
       }
