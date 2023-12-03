@@ -1,5 +1,5 @@
 {
-  "name": "akka-backend-tp",
+  "name": "fiubakka-server",
   "version": "1.0.0",
   "description": "Akka Backend TP",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github:MarcosRolando/akka-backend-tp.git"
+    "url": "git@github:MarcosRolando/fiubakka-server.git"
   },
   "author": "Marcos Rolando, Ivan Soriano",
   "license": "ISC",

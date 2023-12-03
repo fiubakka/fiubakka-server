@@ -20,7 +20,7 @@ FROM eclipse-temurin:11.0.21_9-jre-alpine as prod
 
 WORKDIR /usr/app
 
-COPY --from=builder /usr/app/target/scala-2.13/akka-backend-tp-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
+COPY --from=builder /usr/app/target/scala-2.13/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
 
 EXPOSE 8080/tcp
 

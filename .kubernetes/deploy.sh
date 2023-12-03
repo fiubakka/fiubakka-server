@@ -1,7 +1,7 @@
 #!/bin/bash
 
 NAMESPACE="game-system-1"
-RELEASE_NAME="akka-backend-kafka"
+RELEASE_NAME="fiubakka-kafka"
 
 if ! kubectl get namespace "$NAMESPACE" &> /dev/null; then
     echo "Creating namespace '$NAMESPACE'."

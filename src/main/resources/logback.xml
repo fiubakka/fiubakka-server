@@ -6,10 +6,10 @@
         <then>
             <!-- Production configuration -->
             <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-                <file>akka-backend-tp.log</file>
+                <file>fiubakka-server.log</file>
                 <immediateFlush>false</immediateFlush>
                 <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-                    <fileNamePattern>akka-backend-tp_%d{yyyy-MM-dd}.log</fileNamePattern>
+                    <fileNamePattern>fiubakka-server_%d{yyyy-MM-dd}.log</fileNamePattern>
                 </rollingPolicy>
                 <encoder>
                     <pattern>[%date{ISO8601}] [%level] [%logger] [%marker] [%thread] - %msg MDC: {%mdc}%n</pattern>
@@ -53,7 +53,7 @@
             </appender>
 
             <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-                <file>target/akka-backend-tp-dev.log</file>
+                <file>target/fiubakka-server-dev.log</file>
                 <encoder>
                     <pattern>[%date{ISO8601}] [%level] [%logger] [%marker] [%thread] - %msg MDC: {%mdc}%n</pattern>
                 </encoder>

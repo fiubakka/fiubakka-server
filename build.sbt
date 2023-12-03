@@ -37,7 +37,7 @@ lazy val root = (project in file("."))
     Compile / PB.targets := Seq(
       scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"
     ),
-    name := "akka-backend-tp",
+    name := "fiubakka-server",
     libraryDependencies ++= Seq(
       akkaTyped,
       akkaStream,

@@ -3,7 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15.5 # Matches the embedded Postgres version in the Dev Image
-    container_name: akka-backend-tp-db
+    container_name: fiubakka-server-db
     ports:
       - "5432:5432"
     environment:
@@ -18,7 +18,7 @@ services:
   # for configuration reference
   kafka:
     image: bitnami/kafka:3.6.0
-    container_name: akka-backend-tp-kafka
+    container_name: fiubakka-server-kafka
     ports:
       - "9092:9092"
       - "9094:9094"
