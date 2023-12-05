@@ -1,4 +1,4 @@
-package server.protocol
+package server.protocol.client
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
@@ -12,9 +12,13 @@ import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
 import server.Sharding
 import server.domain.entities.Player
+import scalapb.GeneratedMessageCompanion
+import scalapb.GeneratedMessage
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import protobuf.common.metadata.PBMetadata
+import protobuf.init.player_init.PBPlayerInit
 
 object PlayerHandler {
   sealed trait Command extends CborSerializable
@@ -38,37 +42,36 @@ object PlayerHandler {
 
         val clientResponse = Flow[ByteString]
           .via(
-            Framing.delimiter(ByteString("\n"), 256, allowTruncation = true)
+            Framing.lengthField(
+              fieldLength = 4,
+              maximumFrameLength = 65535,
+              byteOrder = java.nio.ByteOrder.BIG_ENDIAN
+            )
           )
-          .map(_.utf8String)
-          .map { str =>
-            val parts = str.split("\\s+")
-
-            parts.headOption match {
-              case Some("INIT") if parts.length == 2 =>
-                Some(Init(parts(1).toString()))
-
-              case Some("VEL")
-                  if parts.length == 3 && parts(1).toInt == 0 && parts(
-                    2
-                  ).toInt == 0 =>
-                Some(StopMoving())
-
-              case Some("VEL") if parts.length == 3 =>
-                Some(StartMoving(parts(1).toInt, parts(2).toInt))
-
-              case _ =>
-                None // TODO handle bad input
+          .map(msgMetadataBytes => PBMetadata.parseFrom(msgMetadataBytes.toArray))
+          .via(
+            Flow[PBMetadata]
+              .map(msgMetadata => {
+                val msgType = msgMetadata.`type`
+                val msgCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = ClientProtocolMessageMap.messageMap(msgType)
+                Framing.lengthField(
+                  fieldLength = msgMetadata.length,
+                  maximumFrameLength = 65535,
+                  byteOrder = java.nio.ByteOrder.BIG_ENDIAN
+                ) // TODO
+              })
+          )
+          .map(msg => {
+            msg match {
+              case PBPlayerInit(playerInit) => {
+                Init(playerInit.name)
+              }
+              case _ => {
+                ctx.log.info("Unknown message received!")
+                Init("Unknown")
+              }
             }
-          }
-          .collect { case Some(cmd) => cmd }
-          .map { cmd =>
-            ctx.self ! cmd
-            ()
-          }
-          .filter(_ => false) // TODO define protocol
-          .map(_ + "!!!\n")
-          .map(ByteString(_))
+          })
           .merge(conSource)
           .watchTermination() { (_, done) =>
             done.onComplete(_ => {

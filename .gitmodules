@@ -1,3 +1,4 @@
 [submodule "src/main/protobuf/client"]
 	path = src/main/protobuf/client
 	url = git@github.com:fiubakka/fiubakka-protocol-buffers.git
+	branch = main

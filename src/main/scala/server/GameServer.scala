@@ -1,7 +1,7 @@
 package server
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-import server.protocol.PlayerAccepter
+import server.protocol.client.PlayerAccepter
 
 object GameServer {
   sealed trait Command

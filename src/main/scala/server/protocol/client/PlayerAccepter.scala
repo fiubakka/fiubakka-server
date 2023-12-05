@@ -1,4 +1,4 @@
-package server.protocol
+package server.protocol.client
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.stream.Materializer
