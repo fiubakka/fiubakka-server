@@ -1,0 +1,3 @@
+[submodule "src/main/protobuf/client"]
+	path = src/main/protobuf/client
+	url = git@blackpanther:fiubakka/fiubakka-protocol-buffers.git
