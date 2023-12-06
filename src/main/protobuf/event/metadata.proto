@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+package protobuf.event;
+
+message PBEventMetadata {
+    required uint32 length = 1;
+    required PBEventMessageType type = 2;
+}
+
+enum PBEventMessageType {
+    PBPlayerState = 0;
+}

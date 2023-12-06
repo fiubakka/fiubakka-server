@@ -10,13 +10,14 @@ import akka.stream.scaladsl.Source
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringSerializer
-import protobuf.player.PlayerState.{PlayerState => ProtoPlayerState}
-import protobuf.player.PlayerState.{Position => ProtoPosition}
-import server.domain.structs.PlayerState
+import protobuf.event.state.game_entity_state.PBGameEntityPosition
+import protobuf.event.state.game_entity_state.PBGameEntityState
+import server.domain.structs.DurablePlayerState
 
 object GameEventProducer {
   sealed trait Command
-  final case class PlayerStateUpdate(playerState: PlayerState) extends Command
+  final case class PlayerStateUpdate(playerState: DurablePlayerState)
+      extends Command
 
   def apply(playerId: String): Behavior[Command] = {
     Behaviors.setup(ctx => {
@@ -40,9 +41,9 @@ object GameEventProducer {
         case PlayerStateUpdate(playerState) => {
           ctx.log.info(s"$playerId: Producing event: $playerState")
           conQueue.offer(
-            ProtoPlayerState(
+            PBGameEntityState(
               playerId,
-              ProtoPosition(
+              PBGameEntityPosition(
                 playerState.position.x,
                 playerState.position.y
               )

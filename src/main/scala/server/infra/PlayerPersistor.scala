@@ -7,30 +7,31 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.state.scaladsl.DurableStateBehavior
 import akka.persistence.typed.state.scaladsl.Effect
 import akka.serialization.jackson.CborSerializable
+import server.domain.structs.DurablePlayerState
 import server.domain.structs.PlayerPosition
-import server.domain.structs.PlayerState
 
 object PlayerPersistor {
   sealed trait Command extends CborSerializable
-  final case class Persist(newState: PlayerState) extends Command
+  final case class Persist(newState: DurablePlayerState) extends Command
   final case class GetState(replyTo: ActorRef[GetStateResponse]) extends Command
 
-  final case class GetStateResponse(state: PlayerState) extends CborSerializable
+  final case class GetStateResponse(state: DurablePlayerState)
+      extends CborSerializable
 
   val TypeKey = EntityTypeKey[Command]("PlayerPersistor")
 
   def apply(persistenceId: PersistenceId): Behavior[Command] = {
-    DurableStateBehavior[Command, PlayerState](
+    DurableStateBehavior[Command, DurablePlayerState](
       persistenceId,
-      emptyState = PlayerState(PlayerPosition(0, 0)),
+      emptyState = DurablePlayerState(PlayerPosition(0, 0)),
       commandHandler = commandHandler
     )
   }
 
   private def commandHandler(
-      state: PlayerState,
+      state: DurablePlayerState,
       command: Command
-  ): Effect[PlayerState] = {
+  ): Effect[DurablePlayerState] = {
     command match {
       case Persist(newState) => {
         Effect.persist(newState)

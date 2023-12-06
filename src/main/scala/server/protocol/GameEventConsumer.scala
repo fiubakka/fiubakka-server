@@ -11,12 +11,14 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
-import protobuf.player.PlayerState.{PlayerState => PlayerStateProto}
+import protobuf.event.state.game_entity_state.PBGameEntityState
 import server.domain.entities.Player
+import server.domain.structs.GameEntityPosition
+import server.domain.structs.GameEntityState
 
 object GameEventConsumer {
   sealed trait Command extends CborSerializable
-  final case class EventReceived(playerState: PlayerStateProto) extends Command
+  final case class EventReceived(entityState: PBGameEntityState) extends Command
   final case class Start() extends Command
 
   def apply(
@@ -36,20 +38,29 @@ object GameEventConsumer {
             .withGroupId(playerId),
           Subscriptions.topics("game-zone")
         )
-        .map(record => PlayerStateProto.parseFrom(record.value()))
-        .filter(v => v.playerId != playerId) // Ignore messages from myself
-        .map(v => ctx.self ! EventReceived(v))
+        .map(record => PBGameEntityState.parseFrom(record.value()))
+        .filter(e => e.entityId != playerId) // Ignore messages from myself
+        .map(e => ctx.self ! EventReceived(e))
         .runWith(Sink.ignore)
 
       Behaviors.receiveMessage {
         case EventReceived(msg) => {
           ctx.log.info(s"$playerId: Event received: $msg")
+          player ! Player.UpdateEntityState(
+            msg.entityId,
+            GameEntityState(
+              GameEntityPosition(
+                msg.position.x,
+                msg.position.y
+              )
+            )
+          )
           Behaviors.same
         }
         case Start() => {
           ctx.log.info(
             s"Starting consumer for ${player}"
-          ) // TODO: Do we need the player here? Or just the playerId
+          )
           Behaviors.same
         }
       }
