@@ -6,7 +6,6 @@ import scalapb.GeneratedMessageCompanion
 import scalapb.GeneratedMessage
 
 object ClientProtocolMessageMap {
-  // Use the companion object, not the type
   val messageMap: Map[PBMessageType, GeneratedMessageCompanion[_ <: GeneratedMessage]] = Map(
     PBMessageType.PBPlayerInit -> PBPlayerInit
   )

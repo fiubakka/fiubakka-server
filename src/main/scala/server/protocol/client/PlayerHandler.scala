@@ -12,13 +12,14 @@ import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
 import server.Sharding
 import server.domain.entities.Player
-import scalapb.GeneratedMessageCompanion
-import scalapb.GeneratedMessage
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import protobuf.common.metadata.PBMetadata
 import protobuf.init.player_init.PBPlayerInit
+import akka.actor.typed.scaladsl.ActorContext
+import akka.NotUsed
+import scalapb.GeneratedMessage
 
 object PlayerHandler {
   sealed trait Command extends CborSerializable
@@ -40,46 +41,7 @@ object PlayerHandler {
           .queue[ByteString](256, OverflowStrategy.backpressure)
           .preMaterialize()
 
-        val clientResponse = Flow[ByteString]
-          .via(
-            Framing.lengthField(
-              fieldLength = 4,
-              maximumFrameLength = 65535,
-              byteOrder = java.nio.ByteOrder.BIG_ENDIAN
-            )
-          )
-          .map(msgMetadataBytes => PBMetadata.parseFrom(msgMetadataBytes.toArray))
-          .via(
-            Flow[PBMetadata]
-              .map(msgMetadata => {
-                val msgType = msgMetadata.`type`
-                val msgCompanion: GeneratedMessageCompanion[_ <: GeneratedMessage] = ClientProtocolMessageMap.messageMap(msgType)
-                Framing.lengthField(
-                  fieldLength = msgMetadata.length,
-                  maximumFrameLength = 65535,
-                  byteOrder = java.nio.ByteOrder.BIG_ENDIAN
-                ) // TODO
-              })
-          )
-          .map(msg => {
-            msg match {
-              case PBPlayerInit(playerInit) => {
-                Init(playerInit.name)
-              }
-              case _ => {
-                ctx.log.info("Unknown message received!")
-                Init("Unknown")
-              }
-            }
-          })
-          .merge(conSource)
-          .watchTermination() { (_, done) =>
-            done.onComplete(_ => {
-              ctx.self ! ConnectionClosed() // TODO: This is not working
-            })
-          }
-
-        connection.handleWith(clientResponse)
+        connection.handleWith(clientStreamHandler(ctx, conSource))
 
         Behaviors.receiveMessage {
           case Init(playerName) => {
@@ -131,5 +93,43 @@ object PlayerHandler {
         }
       }
     }
+  }
+
+  private def clientStreamHandler(ctx: ActorContext[Command], conSource: Source[ByteString, NotUsed]) = {
+    Flow[ByteString]
+      .via(
+        Framing.lengthField(
+          fieldLength = 4,
+          maximumFrameLength = 65535,
+          byteOrder = java.nio.ByteOrder.BIG_ENDIAN
+        )
+      )
+      .map { messageBytes =>
+        try {
+          val msgBytes = messageBytes.drop(4) // Ignore the length field from the frame, we don't need it
+          val metadataSize = msgBytes.take(4).iterator.getInt(java.nio.ByteOrder.BIG_ENDIAN)
+          val metadata = PBMetadata.parseFrom(msgBytes.drop(4).take(metadataSize).toArray)
+          val (messageSize, messageType) = (metadata.length, metadata.`type`)
+          Some(ClientProtocolMessageMap.messageMap(messageType).parseFrom(msgBytes.drop(4 + metadataSize).take(messageSize).toArray))
+        } catch {
+          case _: Throwable => None
+        }
+      }
+      .collect { case Some(msg) => msg }
+      .map(commandFromClientMessage)
+      .map { msg =>
+        ctx.self ! msg
+        ByteString.empty
+      }
+      .merge(conSource)
+      .watchTermination() { (_, done) =>
+        done.onComplete(_ => {
+          ctx.self ! ConnectionClosed()
+        })
+      }
+  }
+
+  private val commandFromClientMessage: PartialFunction[GeneratedMessage, Command] = {
+    case PBPlayerInit(playerName, _) => Init(playerName)
   }
 }

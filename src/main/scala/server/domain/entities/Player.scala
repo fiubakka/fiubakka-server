@@ -13,7 +13,7 @@ import server.domain.structs.PlayerState
 import server.infra.PlayerPersistor
 import server.protocol.GameEventConsumer
 import server.protocol.GameEventProducer
-import server.protocol.PlayerHandler
+import server.protocol.client.PlayerHandler
 
 import scala.concurrent.duration._
 import scala.util.Failure
