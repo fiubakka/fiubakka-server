@@ -112,8 +112,8 @@ object Player {
         case Move(velX, velY, replyTo) => {
           val newState = state.copy(
             position = PlayerPosition(
-              state.position.x + (velX * 20),
-              state.position.y + (velY * 20)
+              state.position.x + (velX * 5),
+              state.position.y + (velY * 5)
             )
           )
           replyTo ! PlayerHandler.MoveReply(

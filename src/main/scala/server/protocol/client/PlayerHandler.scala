@@ -148,6 +148,7 @@ object PlayerHandler {
   private val commandFromClientMessage
       : PartialFunction[GeneratedMessage, Command] = {
     case PBPlayerInit(playerName, _) => Init(playerName)
+    case PBPlayerVelocity(0, 0, _)   => StopMoving()
     case PBPlayerVelocity(x, y, _)   => StartMoving(x, y)
   }
 }
