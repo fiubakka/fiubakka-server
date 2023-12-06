@@ -1,6 +1,8 @@
 package server.protocol.client
 
+import akka.NotUsed
 import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.scaladsl.Behaviors
 import akka.serialization.jackson.CborSerializable
 import akka.stream.Materializer
@@ -10,16 +12,14 @@ import akka.stream.scaladsl.Framing
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
+import protobuf.common.metadata.PBMetadata
+import protobuf.init.player_init.PBPlayerInit
+import scalapb.GeneratedMessage
 import server.Sharding
 import server.domain.entities.Player
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import protobuf.common.metadata.PBMetadata
-import protobuf.init.player_init.PBPlayerInit
-import akka.actor.typed.scaladsl.ActorContext
-import akka.NotUsed
-import scalapb.GeneratedMessage
 
 object PlayerHandler {
   sealed trait Command extends CborSerializable
@@ -95,7 +95,10 @@ object PlayerHandler {
     }
   }
 
-  private def clientStreamHandler(ctx: ActorContext[Command], conSource: Source[ByteString, NotUsed]) = {
+  private def clientStreamHandler(
+      ctx: ActorContext[Command],
+      conSource: Source[ByteString, NotUsed]
+  ) = {
     Flow[ByteString]
       .via(
         Framing.lengthField(
@@ -106,11 +109,21 @@ object PlayerHandler {
       )
       .map { messageBytes =>
         try {
-          val msgBytes = messageBytes.drop(4) // Ignore the length field from the frame, we don't need it
-          val metadataSize = msgBytes.take(4).iterator.getInt(java.nio.ByteOrder.BIG_ENDIAN)
-          val metadata = PBMetadata.parseFrom(msgBytes.drop(4).take(metadataSize).toArray)
+          val msgBytes = messageBytes.drop(
+            4
+          ) // Ignore the length field from the frame, we don't need it
+          val metadataSize =
+            msgBytes.take(4).iterator.getInt(java.nio.ByteOrder.BIG_ENDIAN)
+          val metadata =
+            PBMetadata.parseFrom(msgBytes.drop(4).take(metadataSize).toArray)
           val (messageSize, messageType) = (metadata.length, metadata.`type`)
-          Some(ClientProtocolMessageMap.messageMap(messageType).parseFrom(msgBytes.drop(4 + metadataSize).take(messageSize).toArray))
+          Some(
+            ClientProtocolMessageMap
+              .messageMap(messageType)
+              .parseFrom(
+                msgBytes.drop(4 + metadataSize).take(messageSize).toArray
+              )
+          )
         } catch {
           case _: Throwable => None
         }
@@ -129,7 +142,8 @@ object PlayerHandler {
       }
   }
 
-  private val commandFromClientMessage: PartialFunction[GeneratedMessage, Command] = {
+  private val commandFromClientMessage
+      : PartialFunction[GeneratedMessage, Command] = {
     case PBPlayerInit(playerName, _) => Init(playerName)
   }
 }
