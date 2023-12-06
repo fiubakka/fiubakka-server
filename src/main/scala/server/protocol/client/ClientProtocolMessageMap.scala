@@ -1,14 +1,15 @@
 package server.protocol.client
 
-import protobuf.common.metadata.PBMessageType
-import protobuf.init.player_init.PBPlayerInit
+import protobuf.client.init.player_init.PBPlayerInit
+import protobuf.client.metadata.PBClientMessageType
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
 
 object ClientProtocolMessageMap {
-  val messageMap
-      : Map[PBMessageType, GeneratedMessageCompanion[_ <: GeneratedMessage]] =
+  val messageMap: Map[PBClientMessageType, GeneratedMessageCompanion[
+    _ <: GeneratedMessage
+  ]] =
     Map(
-      PBMessageType.PBPlayerInit -> PBPlayerInit
+      PBClientMessageType.PBPlayerInit -> PBPlayerInit
     )
 }

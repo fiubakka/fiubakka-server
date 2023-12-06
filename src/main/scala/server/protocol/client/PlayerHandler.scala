@@ -12,8 +12,9 @@ import akka.stream.scaladsl.Framing
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
-import protobuf.common.metadata.PBMetadata
-import protobuf.init.player_init.PBPlayerInit
+import protobuf.client.init.player_init.PBPlayerInit
+import protobuf.client.metadata.PBClientMetadata
+import protobuf.client.movement.player_velocity.PBPlayerVelocity
 import scalapb.GeneratedMessage
 import server.Sharding
 import server.domain.entities.Player
@@ -26,11 +27,11 @@ object PlayerHandler {
   final case class ConnectionClosed() extends Command
 
   final case class Init(playerName: String) extends Command
-  final case class StartMoving(x: Int, y: Int) extends Command
+  final case class StartMoving(x: Float, y: Float) extends Command
   final case class StopMoving() extends Command
-  final case class Move(x: Int, y: Int) extends Command
+  final case class Move(x: Float, y: Float) extends Command
 
-  final case class MoveReply(x: Int, y: Int) extends Command
+  final case class MoveReply(x: Float, y: Float) extends Command
 
   def apply(connection: Tcp.IncomingConnection): Behavior[Command] = {
     Behaviors.setup { ctx =>
@@ -115,7 +116,9 @@ object PlayerHandler {
           val metadataSize =
             msgBytes.take(4).iterator.getInt(java.nio.ByteOrder.BIG_ENDIAN)
           val metadata =
-            PBMetadata.parseFrom(msgBytes.drop(4).take(metadataSize).toArray)
+            PBClientMetadata.parseFrom(
+              msgBytes.drop(4).take(metadataSize).toArray
+            )
           val (messageSize, messageType) = (metadata.length, metadata.`type`)
           Some(
             ClientProtocolMessageMap
@@ -145,5 +148,6 @@ object PlayerHandler {
   private val commandFromClientMessage
       : PartialFunction[GeneratedMessage, Command] = {
     case PBPlayerInit(playerName, _) => Init(playerName)
+    case PBPlayerVelocity(x, y, _)   => StartMoving(x, y)
   }
 }

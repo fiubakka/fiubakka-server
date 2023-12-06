@@ -29,8 +29,8 @@ object Player {
       initialState: PlayerState
   ) extends Command
   final case class Move(
-      velX: Int,
-      velY: Int,
+      velX: Float,
+      velY: Float,
       replyTo: ActorRef[PlayerHandler.MoveReply]
   ) extends Command
   final case class PrintPosition() extends Command
