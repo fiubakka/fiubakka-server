@@ -21,6 +21,10 @@ import server.domain.entities.Player
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import java.nio.ByteBuffer
+import protobuf.server.metadata.PBServerMetadata
+import protobuf.server.position.player_position.PBPlayerPosition
+import protobuf.server.metadata.PBServerMessageType
 
 object PlayerHandler {
   sealed trait Command extends CborSerializable
@@ -79,7 +83,14 @@ object PlayerHandler {
               }
 
               case MoveReply(x, y) => {
-                conQueue.offer(ByteString(s"POS $x $y\n"))
+                // conQueue.offer(ByteString(s"POS $x $y\n"))
+                val message = PBPlayerPosition.of(x, y).toByteArray
+                val metadata = PBServerMetadata.of(message.length, PBServerMessageType.PBPlayerPosition).toByteArray
+
+                val frameSize = 4 + metadata.length + message.length//metadata length + metadata + message
+                val buffer = ByteBuffer.allocate(frameSize + 4)//Allocate 4 more bytes for the frameSize
+                val msg = buffer.putInt(frameSize).putInt(metadata.length).put(metadata).put(message).array()
+                conQueue.offer(ByteString.fromArray(msg))
                 Behaviors.same
               }
 
@@ -139,6 +150,10 @@ object PlayerHandler {
         ByteString.empty
       }
       .merge(conSource)
+      .map { msg =>
+        println(s"SENDING: $msg")
+        msg
+      }
       .watchTermination() { (_, done) =>
         done.onComplete(_ => {
           ctx.self ! ConnectionClosed()
