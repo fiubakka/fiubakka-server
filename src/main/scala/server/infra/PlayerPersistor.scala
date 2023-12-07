@@ -23,7 +23,8 @@ object PlayerPersistor {
   def apply(persistenceId: PersistenceId): Behavior[Command] = {
     DurableStateBehavior[Command, DurablePlayerState](
       persistenceId,
-      emptyState = DurablePlayerState(PlayerPosition(0, 0)),
+      // Use null as a dummy PlayerHandler, the Player should never read this value anyway
+      emptyState = DurablePlayerState(null, PlayerPosition(0, 0)),
       commandHandler = commandHandler
     )
   }

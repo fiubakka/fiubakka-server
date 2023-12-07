@@ -83,10 +83,8 @@ object Player {
             InitState(initialState)
           }
           case Failure(ex) => {
-            ctx.log.error(s"Failed to get state: $ex")
-            InitState(
-              DurablePlayerState(PlayerPosition(0, 0))
-            ) // TODO throw error or something
+            ctx.log.error(s"Failed to get player state: $ex")
+            throw ex
           }
         }
 
@@ -100,40 +98,43 @@ object Player {
       eventProducer: ActorRef[GameEventProducer.Command],
       playerHandler: Option[ActorRef[PlayerHandler.Command]] = None
   ): Behavior[Command] = {
-    Behaviors.receive { (ctx, msg) =>
-      msg match {
-        case InitState(initialState) => {
-          playerHandler match {
-            case Some(handler) => {
-              behaviour(
-                PlayerState(
-                  dState = initialState,
-                  tState = TransientPlayerState(Map.empty)
-                ),
-                persistor,
-                eventProducer,
-                handler
-              )
-            }
-            case None => {
-              // This should never happen though, as the Start message is the one that triggers the Entity
-              // but we add this just in case
-              ctx.log.error(
-                s"Tried to initialize player ${ctx.self} without a PlayerHandler"
-              )
-              throw new IllegalStateException(
-                "Tried to initialize player without a PlayerHandler"
-              )
-            }
+    Behaviors.receiveMessage {
+      case InitState(initialState) => {
+        playerHandler match {
+          // This case corresponds to the one where the PlayerHandler is new, becasue we received the Start message
+          case Some(handler) => {
+            val newDState = initialState.copy(handler)
+            persistor ! PlayerPersistor.Persist(newDState)
+            behaviour(
+              PlayerState(
+                // We override the PlayerHandler to the new one
+                dState = newDState,
+                tState = TransientPlayerState(Map.empty)
+              ),
+              persistor,
+              eventProducer
+            )
           }
+          // This case corresponds to the one where the PlayerHandler is the same, so the Player is being restarted
+          // While technically there is the chance that the PlayerHandler is still null here, it is very unlikely
+          // and in case of failure the client should just reconnect and it should work (evenutally anyway)
+          case None =>
+            behaviour(
+              PlayerState(
+                dState = initialState,
+                tState = TransientPlayerState(Map.empty)
+              ),
+              persistor,
+              eventProducer
+            )
         }
-        case Start(playerHandler) => {
-          setupBehaviour(persistor, eventProducer, Some(playerHandler))
-        }
-        case _ => {
-          // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
-          Behaviors.same
-        }
+      }
+      case Start(playerHandler) => {
+        setupBehaviour(persistor, eventProducer, Some(playerHandler))
+      }
+      case _ => {
+        // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
+        Behaviors.same
       }
     }
   }
@@ -141,8 +142,7 @@ object Player {
   def behaviour(
       state: PlayerState,
       persistor: EntityRef[PlayerPersistor.Command],
-      eventProducer: ActorRef[GameEventProducer.Command],
-      playerHandler: ActorRef[PlayerHandler.Command]
+      eventProducer: ActorRef[GameEventProducer.Command]
   ): Behavior[Command] = {
     Behaviors.receive((ctx, msg) => {
       msg match {
@@ -160,7 +160,7 @@ object Player {
             newState.dState.position.y
           )
           eventProducer ! GameEventProducer.PlayerStateUpdate(newState.dState)
-          behaviour(newState, persistor, eventProducer, playerHandler)
+          behaviour(newState, persistor, eventProducer)
         }
         case PersistState() => {
           ctx.log.info(s"Persisting current state: ${state.dState}")
@@ -174,11 +174,11 @@ object Player {
               state.tState.knownGameEntities + (entityId -> GameEntity(
                 entityId,
                 newEntityState
-              )) // TODO this + might break if it already exists
+              ))
           )
           ctx.log.info(s"New tState: $newTState")
 
-          playerHandler ! PlayerHandler.NotifyEntityStateUpdate(
+          state.dState.handler ! PlayerHandler.NotifyEntityStateUpdate(
             entityId,
             newEntityState
           )
@@ -186,16 +186,23 @@ object Player {
           behaviour(
             state.copy(tState = newTState),
             persistor,
-            eventProducer,
-            playerHandler
+            eventProducer
           )
         }
         case Stop() => {
           ctx.log.info(s"Stopping player ${ctx.self.path.name}")
           Behaviors.stopped
         }
+        // If the PlayerHandler failed and the client inits a new connection, we need to update the PlayerHandler
+        case Start(playerHandler) => {
+          behaviour(
+            state.copy(dState = state.dState.copy(handler = playerHandler)),
+            persistor,
+            eventProducer
+          )
+        }
         case _ => {
-          Behaviors.same // TODO throw error or something, it should not receive these message again
+          Behaviors.same // TODO throw error or something, it should not receive these messages again
         }
       }
     })
