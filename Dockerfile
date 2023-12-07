@@ -28,12 +28,17 @@ CMD ["java", "-jar", "app.jar"]
 
 
 # See https://luppeng.wordpress.com/2020/02/28/install-and-start-postgresql-on-alpine-linux/
-# for reference of PostgreSQL on Alpine Linux
+# for reference on PostgreSQL installation on Alpine Linux
+
+# See https://kafka.apache.org/quickstart
+# for reference on Kafka installation
 
 # Development
 FROM prod as dev
 
-RUN apk update && apk add --no-cache postgresql
+# Install PostgreSQL
+
+RUN apk update && apk add --no-cache postgresql curl
 
 RUN mkdir /run/postgresql && \
     chown postgres:postgres /run/postgresql && \
@@ -55,6 +60,18 @@ RUN su - postgres -c " \
         PGPASSWORD=akka psql -U akka -d akka -f /var/lib/postgresql/data/durable_state.sql \
     "
 
+# Install Kafka
+
+RUN curl https://dlcdn.apache.org/kafka/3.6.1/kafka_2.13-3.6.1.tgz -o kafka_2.13-3.6.1.tgz \
+    && tar -xzf kafka_2.13-3.6.1.tgz \
+    && cd kafka_2.13-3.6.1 \
+    && KAFKA_CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)" \
+    && bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c config/kraft/server.properties \
+    && bin/kafka-server-start.sh -daemon config/kraft/server.properties \
+    && bin/kafka-topics.sh --create --topic game-zone --bootstrap-server localhost:9092
+
 EXPOSE 5432/tcp
+
+ENV KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 
 CMD ["/dev-entrypoint.sh"]
