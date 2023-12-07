@@ -25,8 +25,8 @@ import scala.util.Success
 
 object Player {
   sealed trait Command extends CborSerializable
-  // This message is a dummy for initialization purposes in Player Handler
-  final case class Start() extends Command
+  final case class Start(playerHandler: ActorRef[PlayerHandler.Command])
+      extends Command
   final case class Stop() extends Command
   final case class InitState(
       initialState: DurablePlayerState
@@ -97,22 +97,43 @@ object Player {
 
   def setupBehaviour(
       persistor: EntityRef[PlayerPersistor.Command],
-      eventProducer: ActorRef[GameEventProducer.Command]
+      eventProducer: ActorRef[GameEventProducer.Command],
+      playerHandler: Option[ActorRef[PlayerHandler.Command]] = None
   ): Behavior[Command] = {
-    Behaviors.receiveMessage {
-      case InitState(initialState) => {
-        behaviour(
-          PlayerState(
-            dState = initialState,
-            tState = TransientPlayerState(Map.empty)
-          ),
-          persistor,
-          eventProducer
-        )
-      }
-      case _ => {
-        // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
-        Behaviors.same
+    Behaviors.receive { (ctx, msg) =>
+      msg match {
+        case InitState(initialState) => {
+          playerHandler match {
+            case Some(handler) => {
+              behaviour(
+                PlayerState(
+                  dState = initialState,
+                  tState = TransientPlayerState(Map.empty)
+                ),
+                persistor,
+                eventProducer,
+                handler
+              )
+            }
+            case None => {
+              // This should never happen though, as the Start message is the one that triggers the Entity
+              // but we add this just in case
+              ctx.log.error(
+                s"Tried to initialize player ${ctx.self} without a PlayerHandler"
+              )
+              throw new IllegalStateException(
+                "Tried to initialize player without a PlayerHandler"
+              )
+            }
+          }
+        }
+        case Start(playerHandler) => {
+          setupBehaviour(persistor, eventProducer, Some(playerHandler))
+        }
+        case _ => {
+          // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
+          Behaviors.same
+        }
       }
     }
   }
@@ -120,7 +141,8 @@ object Player {
   def behaviour(
       state: PlayerState,
       persistor: EntityRef[PlayerPersistor.Command],
-      eventProducer: ActorRef[GameEventProducer.Command]
+      eventProducer: ActorRef[GameEventProducer.Command],
+      playerHandler: ActorRef[PlayerHandler.Command]
   ): Behavior[Command] = {
     Behaviors.receive((ctx, msg) => {
       msg match {
@@ -138,7 +160,7 @@ object Player {
             newState.dState.position.y
           )
           eventProducer ! GameEventProducer.PlayerStateUpdate(newState.dState)
-          behaviour(newState, persistor, eventProducer)
+          behaviour(newState, persistor, eventProducer, playerHandler)
         }
         case PersistState() => {
           ctx.log.info(s"Persisting current state: ${state.dState}")
@@ -155,7 +177,12 @@ object Player {
               )) // TODO this + might break if it already exists
           )
           ctx.log.info(s"New tState: $newTState")
-          behaviour(state.copy(tState = newTState), persistor, eventProducer)
+          behaviour(
+            state.copy(tState = newTState),
+            persistor,
+            eventProducer,
+            playerHandler
+          )
         }
         case Stop() => {
           ctx.log.info(s"Stopping player ${ctx.self.path.name}")

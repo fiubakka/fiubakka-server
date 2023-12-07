@@ -47,11 +47,12 @@ object PlayerHandler {
         Behaviors.receiveMessage {
           case Init(playerName) => {
             ctx.log.info(s"Init message received from $playerName")
+
             val player = Sharding().entityRefFor(
               Player.TypeKey,
               s"Player-$playerName"
             )
-            player ! Player.Start()
+            player ! Player.Start(ctx.self)
 
             Behaviors.receiveMessage {
               case ConnectionClosed() => {
