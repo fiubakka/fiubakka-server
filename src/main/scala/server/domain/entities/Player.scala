@@ -177,6 +177,12 @@ object Player {
               )) // TODO this + might break if it already exists
           )
           ctx.log.info(s"New tState: $newTState")
+
+          playerHandler ! PlayerHandler.NotifyEntityStateUpdate(
+            entityId,
+            newEntityState
+          )
+
           behaviour(
             state.copy(tState = newTState),
             persistor,

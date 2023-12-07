@@ -15,16 +15,19 @@ import akka.util.ByteString
 import protobuf.client.init.player_init.PBPlayerInit
 import protobuf.client.metadata.PBClientMetadata
 import protobuf.client.movement.player_velocity.PBPlayerVelocity
+import protobuf.server.metadata.PBServerMessageType
+import protobuf.server.metadata.PBServerMetadata
+import protobuf.server.position.player_position.PBPlayerPosition
+import protobuf.server.state.game_entity_state.PBGameEntityPosition
+import protobuf.server.state.game_entity_state.PBGameEntityState
 import scalapb.GeneratedMessage
 import server.Sharding
 import server.domain.entities.Player
+import server.domain.structs.GameEntityState
 
+import java.nio.ByteBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import java.nio.ByteBuffer
-import protobuf.server.metadata.PBServerMetadata
-import protobuf.server.position.player_position.PBPlayerPosition
-import protobuf.server.metadata.PBServerMessageType
 
 object PlayerHandler {
   sealed trait Command extends CborSerializable
@@ -36,6 +39,10 @@ object PlayerHandler {
   final case class Move(x: Float, y: Float) extends Command
 
   final case class MoveReply(x: Float, y: Float) extends Command
+  final case class NotifyEntityStateUpdate(
+      entityId: String,
+      newEntityState: GameEntityState
+  ) extends Command
 
   def apply(connection: Tcp.IncomingConnection): Behavior[Command] = {
     Behaviors.setup { ctx =>
@@ -83,13 +90,49 @@ object PlayerHandler {
               }
 
               case MoveReply(x, y) => {
-                // conQueue.offer(ByteString(s"POS $x $y\n"))
                 val message = PBPlayerPosition.of(x, y).toByteArray
-                val metadata = PBServerMetadata.of(message.length, PBServerMessageType.PBPlayerPosition).toByteArray
+                val metadata = PBServerMetadata
+                  .of(message.length, PBServerMessageType.PBPlayerPosition)
+                  .toByteArray
 
-                val frameSize = 4 + metadata.length + message.length//metadata length + metadata + message
-                val buffer = ByteBuffer.allocate(frameSize + 4)//Allocate 4 more bytes for the frameSize
-                val msg = buffer.putInt(frameSize).putInt(metadata.length).put(metadata).put(message).array()
+                val frameSize =
+                  4 + metadata.length + message.length // metadata length + metadata + message
+                val buffer = ByteBuffer.allocate(
+                  frameSize + 4
+                ) // Allocate 4 more bytes for the frameSize
+                val msg = buffer
+                  .putInt(frameSize)
+                  .putInt(metadata.length)
+                  .put(metadata)
+                  .put(message)
+                  .array()
+                conQueue.offer(ByteString.fromArray(msg))
+                Behaviors.same
+              }
+
+              case NotifyEntityStateUpdate(entityId, newEntityState) => {
+                val message = PBGameEntityState
+                  .of(
+                    entityId,
+                    PBGameEntityPosition
+                      .of(newEntityState.position.x, newEntityState.position.y)
+                  )
+                  .toByteArray
+                val metadata = PBServerMetadata
+                  .of(message.length, PBServerMessageType.PBGameEntityState)
+                  .toByteArray
+
+                val frameSize =
+                  4 + metadata.length + message.length // metadata length + metadata + message
+                val buffer = ByteBuffer.allocate(
+                  frameSize + 4
+                ) // Allocate 4 more bytes for the frameSize
+                val msg = buffer
+                  .putInt(frameSize)
+                  .putInt(metadata.length)
+                  .put(metadata)
+                  .put(message)
+                  .array()
                 conQueue.offer(ByteString.fromArray(msg))
                 Behaviors.same
               }
@@ -150,10 +193,6 @@ object PlayerHandler {
         ByteString.empty
       }
       .merge(conSource)
-      .map { msg =>
-        println(s"SENDING: $msg")
-        msg
-      }
       .watchTermination() { (_, done) =>
         done.onComplete(_ => {
           ctx.self ! ConnectionClosed()
