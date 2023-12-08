@@ -29,7 +29,9 @@ object PlayerAccepter {
         case Accept(connection: Tcp.IncomingConnection) => {
           ctx.spawn(
             PlayerHandler(connection),
-            s"PlayerHandler${connection.localAddress.getPort()}"
+            s"PlayerHandler-${connection.remoteAddress
+                .getAddress()
+                .getHostAddress()}-${connection.remoteAddress.getPort()}"
           )
           Behaviors.same
         }
