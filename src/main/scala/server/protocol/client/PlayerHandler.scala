@@ -8,7 +8,6 @@ import akka.serialization.jackson.CborSerializable
 import akka.stream.Materializer
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
-import akka.stream.scaladsl.Framing
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
@@ -24,6 +23,7 @@ import scalapb.GeneratedMessage
 import server.Sharding
 import server.domain.entities.Player
 import server.domain.structs.GameEntityState
+import server.protocol.flows.MessageFlow
 
 import java.nio.ByteBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -157,36 +157,8 @@ object PlayerHandler {
   ) = {
     Flow[ByteString]
       .via(
-        Framing.lengthField(
-          fieldLength = 4,
-          maximumFrameLength = 65535,
-          byteOrder = java.nio.ByteOrder.BIG_ENDIAN
-        )
+        MessageFlow(PBClientMetadata, ClientProtocolMessageMap.messageMap)
       )
-      .map { messageBytes =>
-        try {
-          val msgBytes = messageBytes.drop(
-            4
-          ) // Ignore the length field from the frame, we don't need it
-          val metadataSize =
-            msgBytes.take(4).iterator.getInt(java.nio.ByteOrder.BIG_ENDIAN)
-          val metadata =
-            PBClientMetadata.parseFrom(
-              msgBytes.drop(4).take(metadataSize).toArray
-            )
-          val (messageSize, messageType) = (metadata.length, metadata.`type`)
-          Some(
-            ClientProtocolMessageMap
-              .messageMap(messageType)
-              .parseFrom(
-                msgBytes.drop(4 + metadataSize).take(messageSize).toArray
-              )
-          )
-        } catch {
-          case _: Throwable => None
-        }
-      }
-      .collect { case Some(msg) => msg }
       .map(commandFromClientMessage)
       .map { msg =>
         ctx.self ! msg

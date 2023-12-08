@@ -15,9 +15,9 @@ import server.domain.structs.PlayerPosition
 import server.domain.structs.PlayerState
 import server.domain.structs.TransientPlayerState
 import server.infra.PlayerPersistor
-import server.protocol.GameEventConsumer
-import server.protocol.GameEventProducer
 import server.protocol.client.PlayerHandler
+import server.protocol.event.GameEventConsumer
+import server.protocol.event.GameEventProducer
 
 import scala.concurrent.duration._
 import scala.util.Failure

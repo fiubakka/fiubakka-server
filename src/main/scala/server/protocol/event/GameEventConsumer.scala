@@ -1,4 +1,4 @@
-package server.protocol
+package server.protocol.event
 
 import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
