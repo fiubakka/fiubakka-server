@@ -12,6 +12,7 @@ import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
+import protobuf.event.chat.message.PBPlayerMessage
 import protobuf.event.metadata.PBEventMetadata
 import protobuf.event.state.game_entity_state.PBGameEntityState
 import scalapb.GeneratedMessage
@@ -87,5 +88,7 @@ object GameEventConsumer {
           )
         )
       )
+    case PBPlayerMessage(entityId, msg, _) =>
+      Player.ReceiveMessage(entityId, msg)
   }
 }
