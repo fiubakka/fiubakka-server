@@ -23,7 +23,7 @@ inThisBuild(
 // for reference
 // Lightbend Telemetry config
 cinnamonSuppressRepoWarnings := true
-// run / cinnamon := true
+run / cinnamon := false // Set to True to enable Cinnamon agent used for Telemetry
 cinnamonLogLevel := "INFO"
 
 lazy val root = (project in file("."))
@@ -62,6 +62,9 @@ lazy val root = (project in file("."))
       Cinnamon.library.cinnamonAkkaTyped,
       Cinnamon.library.cinnamonAkkaPersistence,
       Cinnamon.library.cinnamonAkkaStream,
+      Cinnamon.library.cinnamonPrometheus,
+      Cinnamon.library.cinnamonAkkaCluster,
+      Cinnamon.library.cinnamonPrometheusHttpServer,
       postgresJdbc,
       slick,
       slickHikaricp,
