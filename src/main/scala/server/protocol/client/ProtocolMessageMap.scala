@@ -4,6 +4,7 @@ import protobuf.client.chat.message.PBPlayerMessage
 import protobuf.client.init.player_init.PBPlayerInit
 import protobuf.client.metadata.PBClientMessageType
 import protobuf.client.movement.player_velocity.PBPlayerVelocity
+import protobuf.server.chat.message.PBPlayerMessage
 import protobuf.server.metadata.PBServerMessageType
 import protobuf.server.position.player_position.PBPlayerPosition
 import protobuf.server.state.game_entity_state.PBGameEntityState
@@ -23,6 +24,7 @@ object ProtocolMessageMap {
   val serverMessageMap: Map[String, PBServerMessageType] =
     Map(
       PBPlayerPosition.getClass.toString -> PBServerMessageType.PBPlayerPosition,
-      PBGameEntityState.getClass.toString -> PBServerMessageType.PBGameEntityState
+      PBGameEntityState.getClass.toString -> PBServerMessageType.PBGameEntityState,
+      PBPlayerMessage.getclass.toString -> PBServerMessageType.PBPlayerMessage
     )
 }
