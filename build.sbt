@@ -19,6 +19,12 @@ inThisBuild(
     )
   )
 
+// See https://developer.lightbend.com/docs/telemetry/current//setup/cinnamon-agent-sbt.html
+// for reference
+// Lightbend Telemetry config
+cinnamonSuppressRepoWarnings := true
+// run / cinnamon := true
+cinnamonLogLevel := "INFO"
 
 lazy val root = (project in file("."))
   .settings(
@@ -52,6 +58,10 @@ lazy val root = (project in file("."))
       akkaPersistence,
       akkaPersistenceJdbc,
       akkaPersistenceQuery,
+      Cinnamon.library.cinnamonAkka,
+      Cinnamon.library.cinnamonAkkaTyped,
+      Cinnamon.library.cinnamonAkkaPersistence,
+      Cinnamon.library.cinnamonAkkaStream,
       postgresJdbc,
       slick,
       slickHikaricp,
@@ -60,8 +70,11 @@ lazy val root = (project in file("."))
       janino,
       munit % Test,
       akkaStreamTestKit % Test,
-      akkaPersistenceTestKit % Test
+      akkaPersistenceTestKit % Test,
     )
+  )
+  .enablePlugins(
+    Cinnamon
   )
 
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
