@@ -14,18 +14,20 @@ import akka.util.ByteString
 import protobuf.client.init.player_init.PBPlayerInit
 import protobuf.client.metadata.PBClientMetadata
 import protobuf.client.movement.player_velocity.PBPlayerVelocity
+import protobuf.dummy.PBDummy
 import protobuf.server.metadata.PBServerMessageType
 import protobuf.server.metadata.PBServerMetadata
 import protobuf.server.position.player_position.PBPlayerPosition
 import protobuf.server.state.game_entity_state.PBGameEntityPosition
 import protobuf.server.state.game_entity_state.PBGameEntityState
+import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import server.Sharding
 import server.domain.entities.Player
 import server.domain.structs.GameEntityState
-import server.protocol.flows.MessageFlow
+import server.protocol.flows.InMessageFlow
+import server.protocol.flows.server.protocol.flows.OutMessageFlow
 
-import java.nio.ByteBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
@@ -50,7 +52,7 @@ object PlayerHandler {
         implicit val mat = Materializer(ctx)
 
         val (conQueue, conSource) = Source
-          .queue[ByteString](256, OverflowStrategy.backpressure)
+          .queue[GeneratedMessage](256, OverflowStrategy.backpressure)
           .preMaterialize()
 
         connection.handleWith(clientStreamHandler(ctx, conSource))
@@ -90,23 +92,7 @@ object PlayerHandler {
               }
 
               case MoveReply(x, y) => {
-                val message = PBPlayerPosition.of(x, y).toByteArray
-                val metadata = PBServerMetadata
-                  .of(message.length, PBServerMessageType.PBPlayerPosition)
-                  .toByteArray
-
-                val frameSize =
-                  4 + metadata.length + message.length // metadata length + metadata + message
-                val buffer = ByteBuffer.allocate(
-                  frameSize + 4
-                ) // Allocate 4 more bytes for the frameSize
-                val msg = buffer
-                  .putInt(frameSize)
-                  .putInt(metadata.length)
-                  .put(metadata)
-                  .put(message)
-                  .array()
-                conQueue.offer(ByteString.fromArray(msg))
+                conQueue.offer(PBPlayerPosition.of(x, y))
                 Behaviors.same
               }
 
@@ -117,23 +103,7 @@ object PlayerHandler {
                     PBGameEntityPosition
                       .of(newEntityState.position.x, newEntityState.position.y)
                   )
-                  .toByteArray
-                val metadata = PBServerMetadata
-                  .of(message.length, PBServerMessageType.PBGameEntityState)
-                  .toByteArray
-
-                val frameSize =
-                  4 + metadata.length + message.length // metadata length + metadata + message
-                val buffer = ByteBuffer.allocate(
-                  frameSize + 4
-                ) // Allocate 4 more bytes for the frameSize
-                val msg = buffer
-                  .putInt(frameSize)
-                  .putInt(metadata.length)
-                  .put(metadata)
-                  .put(message)
-                  .array()
-                conQueue.offer(ByteString.fromArray(msg))
+                conQueue.offer(message)
                 Behaviors.same
               }
 
@@ -153,18 +123,27 @@ object PlayerHandler {
 
   private def clientStreamHandler(
       ctx: ActorContext[Command],
-      conSource: Source[ByteString, NotUsed]
+      conSource: Source[GeneratedMessage, NotUsed]
   ) = {
     Flow[ByteString]
       .via(
-        MessageFlow(PBClientMetadata, ClientProtocolMessageMap.messageMap)
+        InMessageFlow(PBClientMetadata, ProtocolMessageMap.clientMessageMap)
       )
       .map(commandFromClientMessage)
       .map { msg =>
         ctx.self ! msg
-        ByteString.empty
+        // Trick the Scala compiler, we don't need any value here but null breaks Akka Stream
+        PBDummy()
       }
+      .filter(_ => false) // Drop all
       .merge(conSource)
+      .via {
+        OutMessageFlow(
+          (length: Int, `type`: GeneratedEnum) =>
+            PBServerMetadata(length, `type`.asInstanceOf[PBServerMessageType]),
+          ProtocolMessageMap.serverMessageMap
+        )
+      }
       .watchTermination() { (_, done) =>
         done.onComplete(_ => {
           ctx.self ! ConnectionClosed()

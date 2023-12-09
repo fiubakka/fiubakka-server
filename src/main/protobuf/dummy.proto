@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package protobuf;
+
+// We need this message to allow Scala to compile the Akka Streams code
+// used for the Client and Kafka. It is not used for anything else.
+// Using null also compiles but it seems that it breaks Akka Streams internal logic.
+message PBDummy {}

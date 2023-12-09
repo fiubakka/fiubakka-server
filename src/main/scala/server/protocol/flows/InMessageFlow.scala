@@ -7,7 +7,7 @@ import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
 
-object MessageFlow {
+object InMessageFlow {
   def apply[A <: GeneratedEnum, B <: GeneratedMessageCompanion[
     _ <: GeneratedMessage { def length: Int; def `type`: A }
   ]](
