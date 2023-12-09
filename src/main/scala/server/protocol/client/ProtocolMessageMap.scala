@@ -3,9 +3,9 @@ package server.protocol.client
 import protobuf.client.init.player_init.PBPlayerInit
 import protobuf.client.metadata.PBClientMessageType
 import protobuf.client.movement.player_velocity.PBPlayerVelocity
-import protobuf.event.state.game_entity_state.PBGameEntityState
 import protobuf.server.metadata.PBServerMessageType
 import protobuf.server.position.player_position.PBPlayerPosition
+import protobuf.server.state.game_entity_state.PBGameEntityState
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
 

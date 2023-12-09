@@ -10,9 +10,14 @@ import akka.stream.scaladsl.Source
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringSerializer
+import protobuf.event.metadata.PBEventMessageType
+import protobuf.event.metadata.PBEventMetadata
 import protobuf.event.state.game_entity_state.PBGameEntityPosition
 import protobuf.event.state.game_entity_state.PBGameEntityState
+import scalapb.GeneratedEnum
+import scalapb.GeneratedMessage
 import server.domain.structs.DurablePlayerState
+import server.protocol.flows.server.protocol.flows.OutMessageFlow
 
 object GameEventProducer {
   sealed trait Command
@@ -28,13 +33,19 @@ object GameEventProducer {
         ProducerSettings(config, new StringSerializer, new ByteArraySerializer)
 
       val (conQueue, conSource) = Source
-        .queue[Array[Byte]](256, OverflowStrategy.backpressure)
+        .queue[GeneratedMessage](256, OverflowStrategy.backpressure)
         .preMaterialize()
 
       conSource
-        .map(value =>
-          new ProducerRecord[String, Array[Byte]]("game-zone", value)
+        .via(
+          OutMessageFlow(
+            (length: Int, `type`: GeneratedEnum) =>
+              PBEventMetadata(length, `type`.asInstanceOf[PBEventMessageType]),
+            ProtocolMessageMap.eventProducerMessageMap
+          )
         )
+        .map(_.toArray)
+        .map(value => new ProducerRecord("game-zone", playerId, value))
         .runWith(Producer.plainSink(producerSettings))
 
       Behaviors.receiveMessage {
@@ -47,7 +58,7 @@ object GameEventProducer {
                 playerState.position.x,
                 playerState.position.y
               )
-            ).toByteArray
+            )
           )
           Behaviors.same
         }

@@ -8,5 +8,5 @@ message PBEventMetadata {
 }
 
 enum PBEventMessageType {
-    PBPlayerState = 0;
+    PBGameEntityState = 0;
 }
