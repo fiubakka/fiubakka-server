@@ -77,8 +77,8 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-    - port: 1010
-      targetPort: 1010
+    - port: 2020
+      targetPort: 2020
       protocol: TCP
   selector:
     app: game-system

@@ -23,7 +23,7 @@ inThisBuild(
 // for reference
 // Lightbend Telemetry config
 cinnamonSuppressRepoWarnings := true
-run / cinnamon := true // Set to True to enable Cinnamon agent used for Telemetry
+run / cinnamon := false // Set to True to enable Cinnamon agent used for Telemetry
 cinnamonLogLevel := "INFO"
 
 lazy val root = (project in file("."))
