@@ -11,10 +11,12 @@ import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
+import protobuf.client.chat.message.{PBPlayerMessage => PBPlayerMessageClient}
 import protobuf.client.init.player_init.PBPlayerInit
 import protobuf.client.metadata.PBClientMetadata
 import protobuf.client.movement.player_velocity.PBPlayerVelocity
 import protobuf.dummy.PBDummy
+import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
 import protobuf.server.metadata.PBServerMessageType
 import protobuf.server.metadata.PBServerMetadata
 import protobuf.server.position.player_position.PBPlayerPosition
@@ -39,11 +41,16 @@ object PlayerHandler {
   final case class StartMoving(x: Float, y: Float) extends Command
   final case class StopMoving() extends Command
   final case class Move(x: Float, y: Float) extends Command
+  final case class AddMessage(msg: String) extends Command
 
   final case class MoveReply(x: Float, y: Float) extends Command
   final case class NotifyEntityStateUpdate(
       entityId: String,
       newEntityState: GameEntityState
+  ) extends Command
+  final case class NotifyMessageReceived(
+      entityId: String,
+      msg: String
   ) extends Command
 
   def apply(connection: Tcp.IncomingConnection): Behavior[Command] = {
@@ -107,6 +114,17 @@ object PlayerHandler {
                 Behaviors.same
               }
 
+              case AddMessage(msg) => {
+                player ! Player.AddMessage(msg)
+                Behaviors.same
+              }
+
+              case NotifyMessageReceived(entityId, msg) => {
+                val message = PBPlayerMessageServer.of(entityId, msg)
+                conQueue.offer(message)
+                Behaviors.same
+              }
+
               case _ => {
                 Behaviors.same
               }
@@ -153,8 +171,9 @@ object PlayerHandler {
 
   private val commandFromClientMessage
       : PartialFunction[GeneratedMessage, Command] = {
-    case PBPlayerInit(playerName, _) => Init(playerName)
-    case PBPlayerVelocity(0, 0, _)   => StopMoving()
-    case PBPlayerVelocity(x, y, _)   => StartMoving(x, y)
+    case PBPlayerInit(playerName, _)   => Init(playerName)
+    case PBPlayerVelocity(0, 0, _)     => StopMoving()
+    case PBPlayerVelocity(x, y, _)     => StartMoving(x, y)
+    case PBPlayerMessageClient(msg, _) => AddMessage(msg)
   }
 }

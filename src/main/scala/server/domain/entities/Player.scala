@@ -36,6 +36,13 @@ object Player {
       velY: Float,
       replyTo: ActorRef[PlayerHandler.MoveReply]
   ) extends Command
+  final case class AddMessage(
+      msg: String
+  ) extends Command
+  final case class ReceiveMessage(
+      entityId: String,
+      msg: String
+  ) extends Command
   final case class UpdateEntityState(
       entityId: String,
       newEntityState: GameEntityState
@@ -188,6 +195,17 @@ object Player {
             persistor,
             eventProducer
           )
+        }
+        case AddMessage(msg) => {
+          eventProducer ! GameEventProducer.AddMessage(msg)
+          Behaviors.same
+        }
+        case ReceiveMessage(entityId, msg) => {
+          state.dState.handler ! PlayerHandler.NotifyMessageReceived(
+            entityId,
+            msg
+          )
+          Behaviors.same
         }
         case Stop() => {
           ctx.log.info(s"Stopping player ${ctx.self.path.name}")

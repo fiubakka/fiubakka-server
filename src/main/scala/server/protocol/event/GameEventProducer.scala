@@ -10,6 +10,7 @@ import akka.stream.scaladsl.Source
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringSerializer
+import protobuf.event.chat.message.PBPlayerMessage
 import protobuf.event.metadata.PBEventMessageType
 import protobuf.event.metadata.PBEventMetadata
 import protobuf.event.state.game_entity_state.PBGameEntityPosition
@@ -23,6 +24,7 @@ object GameEventProducer {
   sealed trait Command
   final case class PlayerStateUpdate(playerState: DurablePlayerState)
       extends Command
+  final case class AddMessage(msg: String) extends Command
 
   def apply(playerId: String): Behavior[Command] = {
     Behaviors.setup(ctx => {
@@ -60,6 +62,11 @@ object GameEventProducer {
               )
             )
           )
+          Behaviors.same
+        }
+        case AddMessage(msg) => {
+          ctx.log.info(s"$playerId: Adding message: $msg")
+          conQueue.offer(PBPlayerMessage(playerId, msg))
           Behaviors.same
         }
       }
