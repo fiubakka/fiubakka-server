@@ -15,15 +15,15 @@ import protobuf.event.metadata.PBEventMessageType
 import protobuf.event.metadata.PBEventMetadata
 import protobuf.event.state.game_entity_state.PBGameEntityPosition
 import protobuf.event.state.game_entity_state.PBGameEntityState
+import protobuf.event.state.game_entity_state.PBGameEntityVelocity
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
-import server.domain.structs.DurablePlayerState
+import server.domain.structs.PlayerState
 import server.protocol.flows.server.protocol.flows.OutMessageFlow
 
 object GameEventProducer {
   sealed trait Command
-  final case class PlayerStateUpdate(playerState: DurablePlayerState)
-      extends Command
+  final case class PlayerStateUpdate(playerState: PlayerState) extends Command
   final case class AddMessage(msg: String) extends Command
 
   def apply(playerId: String): Behavior[Command] = {
@@ -57,8 +57,12 @@ object GameEventProducer {
             PBGameEntityState(
               playerId,
               PBGameEntityPosition(
-                playerState.position.x,
-                playerState.position.y
+                playerState.dState.position.x,
+                playerState.dState.position.y
+              ),
+              PBGameEntityVelocity(
+                playerState.tState.velocity.velX,
+                playerState.tState.velocity.velY
               )
             )
           )

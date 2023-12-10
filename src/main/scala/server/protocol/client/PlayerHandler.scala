@@ -22,6 +22,7 @@ import protobuf.server.metadata.PBServerMetadata
 import protobuf.server.position.player_position.PBPlayerPosition
 import protobuf.server.state.game_entity_state.PBGameEntityPosition
 import protobuf.server.state.game_entity_state.PBGameEntityState
+import protobuf.server.state.game_entity_state.PBGameEntityVelocity
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import server.Sharding
@@ -108,7 +109,12 @@ object PlayerHandler {
                   .of(
                     entityId,
                     PBGameEntityPosition
-                      .of(newEntityState.position.x, newEntityState.position.y)
+                      .of(newEntityState.position.x, newEntityState.position.y),
+                    PBGameEntityVelocity
+                      .of(
+                        newEntityState.velocity.velX,
+                        newEntityState.velocity.velY
+                      )
                   )
                 conQueue.offer(message)
                 Behaviors.same

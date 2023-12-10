@@ -5,9 +5,15 @@ package protobuf.event.state;
 message PBGameEntityState {
   required string entityId = 1;
   required PBGameEntityPosition position = 2;
+  required PBGameEntityVelocity velocity = 3;
 }
 
 message PBGameEntityPosition {
   required float x = 1;
   required float y = 2;
+}
+
+message PBGameEntityVelocity {
+  required float velX = 1;
+  required float velY = 2;
 }

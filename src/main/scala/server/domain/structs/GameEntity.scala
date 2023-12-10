@@ -5,8 +5,14 @@ final case class GameEntityPosition(
     y: Float
 )
 
+final case class GameEntityVelocity(
+    velX: Float,
+    velY: Float
+)
+
 final case class GameEntityState(
-    position: GameEntityPosition
+    position: GameEntityPosition,
+    velocity: GameEntityVelocity
 )
 
 final case class GameEntity(

@@ -19,6 +19,7 @@ import scalapb.GeneratedMessage
 import server.domain.entities.Player
 import server.domain.structs.GameEntityPosition
 import server.domain.structs.GameEntityState
+import server.domain.structs.GameEntityVelocity
 import server.protocol.flows.InMessageFlow
 
 object GameEventConsumer {
@@ -78,13 +79,17 @@ object GameEventConsumer {
 
   private val commandFromEventMessage
       : PartialFunction[GeneratedMessage, Player.Command] = {
-    case PBGameEntityState(entityId, position, _) =>
+    case PBGameEntityState(entityId, position, velocity, _) =>
       Player.UpdateEntityState(
         entityId,
         GameEntityState(
           GameEntityPosition(
             position.x,
             position.y
+          ),
+          GameEntityVelocity(
+            velocity.velX,
+            velocity.velY
           )
         )
       )

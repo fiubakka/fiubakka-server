@@ -13,6 +13,7 @@ import server.domain.structs.GameEntity
 import server.domain.structs.GameEntityState
 import server.domain.structs.PlayerPosition
 import server.domain.structs.PlayerState
+import server.domain.structs.PlayerVelocity
 import server.domain.structs.TransientPlayerState
 import server.infra.PlayerPersistor
 import server.protocol.client.PlayerHandler
@@ -116,7 +117,7 @@ object Player {
               PlayerState(
                 // We override the PlayerHandler to the new one
                 dState = newDState,
-                tState = TransientPlayerState(Map.empty)
+                tState = TransientPlayerState(Map.empty, PlayerVelocity(0, 0))
               ),
               persistor,
               eventProducer
@@ -129,7 +130,7 @@ object Player {
             behaviour(
               PlayerState(
                 dState = initialState,
-                tState = TransientPlayerState(Map.empty)
+                tState = TransientPlayerState(Map.empty, PlayerVelocity(0, 0))
               ),
               persistor,
               eventProducer
@@ -160,13 +161,16 @@ object Player {
                 state.dState.position.x + (velX * 5),
                 state.dState.position.y + (velY * 5)
               )
+            ),
+            tState = state.tState.copy(
+              velocity = PlayerVelocity(velX, velY)
             )
           )
           replyTo ! PlayerHandler.MoveReply(
             newState.dState.position.x,
             newState.dState.position.y
           )
-          eventProducer ! GameEventProducer.PlayerStateUpdate(newState.dState)
+          eventProducer ! GameEventProducer.PlayerStateUpdate(newState)
           behaviour(newState, persistor, eventProducer)
         }
         case PersistState() => {

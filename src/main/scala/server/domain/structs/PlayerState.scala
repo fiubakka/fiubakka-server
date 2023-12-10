@@ -5,6 +5,7 @@ import akka.serialization.jackson.CborSerializable
 import server.protocol.client.PlayerHandler
 
 final case class PlayerPosition(x: Float, y: Float)
+final case class PlayerVelocity(velX: Float, velY: Float)
 
 final case class DurablePlayerState(
     handler: ActorRef[PlayerHandler.Command],
@@ -12,7 +13,8 @@ final case class DurablePlayerState(
 ) extends CborSerializable
 
 final case class TransientPlayerState(
-    knownGameEntities: Map[String, GameEntity]
+    knownGameEntities: Map[String, GameEntity],
+    velocity: PlayerVelocity
 )
 
 final case class PlayerState(
