@@ -168,7 +168,9 @@ object Player {
           )
           replyTo ! PlayerHandler.MoveReply(
             newState.dState.position.x,
-            newState.dState.position.y
+            newState.dState.position.y,
+            newState.tState.velocity.velX,
+            newState.tState.velocity.velY
           )
           eventProducer ! GameEventProducer.PlayerStateUpdate(newState)
           behaviour(newState, persistor, eventProducer)

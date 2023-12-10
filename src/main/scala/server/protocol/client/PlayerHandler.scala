@@ -44,7 +44,8 @@ object PlayerHandler {
   final case class Move(x: Float, y: Float) extends Command
   final case class AddMessage(msg: String) extends Command
 
-  final case class MoveReply(x: Float, y: Float) extends Command
+  final case class MoveReply(x: Float, y: Float, velX: Float, velY: Float)
+      extends Command
   final case class NotifyEntityStateUpdate(
       entityId: String,
       newEntityState: GameEntityState
@@ -99,8 +100,8 @@ object PlayerHandler {
                 Behaviors.same
               }
 
-              case MoveReply(x, y) => {
-                conQueue.offer(PBPlayerPosition.of(x, y))
+              case MoveReply(x, y, velX, velY) => {
+                conQueue.offer(PBPlayerPosition.of(x, y, velX, velY))
                 Behaviors.same
               }
 
