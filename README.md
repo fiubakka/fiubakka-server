@@ -8,7 +8,11 @@ To be completed.
 
 ## How to run the server
 ### Using the docker image
-  * TODO
+  ```console
+> docker pull mrmarcosrolando/akka-backend-tp:latest
+> docker run -p 2020:2020 mrmarcosrolando/akka-backend-tp:latest
+```
+
 
 ### Using the run script
 After cloning the repository, the protobuf submodule needs to be updated using the command:
