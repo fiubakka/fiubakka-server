@@ -92,6 +92,7 @@ object PlayerHandler {
               case StopMoving() => {
                 ctx.log.info("StopMoving message received!")
                 timers.cancel("move")
+                player ! Player.StopMoving()
                 Behaviors.same
               }
 

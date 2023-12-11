@@ -37,6 +37,7 @@ object Player {
       velY: Float,
       replyTo: ActorRef[PlayerHandler.MoveReply]
   ) extends Command
+  final case class StopMoving() extends Command
   final case class AddMessage(
       msg: String
   ) extends Command
@@ -171,6 +172,15 @@ object Player {
             newState.dState.position.y,
             newState.tState.velocity.velX,
             newState.tState.velocity.velY
+          )
+          eventProducer ! GameEventProducer.PlayerStateUpdate(newState)
+          behaviour(newState, persistor, eventProducer)
+        }
+        case StopMoving() => {
+          val newState = state.copy(
+            tState = state.tState.copy(
+              velocity = PlayerVelocity(0, 0)
+            )
           )
           eventProducer ! GameEventProducer.PlayerStateUpdate(newState)
           behaviour(newState, persistor, eventProducer)
