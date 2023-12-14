@@ -1,5 +1,5 @@
 sbt 1.9.7
 java temurin-11.0.21+9
 nodejs 18.9.1
-python 3.12.0
+python 3.12.1
 helm 3.9.4
