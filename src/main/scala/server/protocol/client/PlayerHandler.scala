@@ -72,7 +72,7 @@ object PlayerHandler {
 
             val player = Sharding().entityRefFor(
               Player.TypeKey,
-              s"Player-$playerName"
+              playerName
             )
             player ! Player.Start(ctx.self)
 
