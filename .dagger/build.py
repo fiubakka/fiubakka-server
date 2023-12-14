@@ -4,7 +4,7 @@ import subprocess
 import os
 
 async def build():
-    subprocess.run(["git", "submodule", "update", "--init", "--recursive"])
+    subprocess.run(["git", "submodule", "update", "--init"])
 
     for env_var in ["DOCKER_USER", "DOCKER_PASS", "DOCKER_REPO"]:
         if env_var not in os.environ:
