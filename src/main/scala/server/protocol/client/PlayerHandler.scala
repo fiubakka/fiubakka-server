@@ -39,8 +39,6 @@ object PlayerHandler {
   final case class ConnectionClosed() extends Command
 
   final case class Init(playerName: String) extends Command
-  final case class StartMoving(x: Float, y: Float) extends Command
-  final case class StopMoving() extends Command
   final case class Move(x: Float, y: Float) extends Command
   final case class AddMessage(msg: String) extends Command
 
@@ -57,91 +55,76 @@ object PlayerHandler {
 
   def apply(connection: Tcp.IncomingConnection): Behavior[Command] = {
     Behaviors.setup { ctx =>
-      Behaviors.withTimers { timers =>
-        implicit val mat = Materializer(ctx)
+      implicit val mat = Materializer(ctx)
 
-        val (conQueue, conSource) = Source
-          .queue[GeneratedMessage](256, OverflowStrategy.backpressure)
-          .preMaterialize()
+      val (conQueue, conSource) = Source
+        .queue[GeneratedMessage](256, OverflowStrategy.backpressure)
+        .preMaterialize()
 
-        connection.handleWith(clientStreamHandler(ctx, conSource))
+      connection.handleWith(clientStreamHandler(ctx, conSource))
 
-        Behaviors.receiveMessage {
-          case Init(playerName) => {
-            ctx.log.info(s"Init message received from $playerName")
+      Behaviors.receiveMessage {
+        case Init(playerName) => {
+          ctx.log.info(s"Init message received from $playerName")
 
-            val player = Sharding().entityRefFor(
-              Player.TypeKey,
-              playerName
-            )
-            player ! Player.Start(ctx.self)
+          val player = Sharding().entityRefFor(
+            Player.TypeKey,
+            playerName
+          )
+          player ! Player.Start(ctx.self)
 
-            Behaviors.receiveMessage {
-              case ConnectionClosed() => {
-                ctx.log.info("Closing connection!")
-                player ! Player.Stop()
-                Behaviors.stopped
-              }
+          Behaviors.receiveMessage {
+            case ConnectionClosed() => {
+              ctx.log.info("Closing connection!")
+              player ! Player.Stop()
+              Behaviors.stopped
+            }
 
-              case StartMoving(x, y) => {
-                ctx.log.info(s"StartMoving message received $x, $y!")
-                timers.startTimerAtFixedRate("move", Move(x, y), 16666.micro)
-                Behaviors.same
-              }
+            case Move(x, y) => {
+              player ! Player.Move(x, y, ctx.self)
+              Behaviors.same
+            }
 
-              case StopMoving() => {
-                ctx.log.info("StopMoving message received!")
-                timers.cancel("move")
-                player ! Player.StopMoving()
-                Behaviors.same
-              }
+            case MoveReply(x, y, velX, velY) => {
+              conQueue.offer(PBPlayerPosition.of(x, y, velX, velY))
+              Behaviors.same
+            }
 
-              case Move(x, y) => {
-                player ! Player.Move(x, y, ctx.self)
-                Behaviors.same
-              }
+            case NotifyEntityStateUpdate(entityId, newEntityState) => {
+              val message = PBGameEntityState
+                .of(
+                  entityId,
+                  PBGameEntityPosition
+                    .of(newEntityState.position.x, newEntityState.position.y),
+                  PBGameEntityVelocity
+                    .of(
+                      newEntityState.velocity.velX,
+                      newEntityState.velocity.velY
+                    )
+                )
+              conQueue.offer(message)
+              Behaviors.same
+            }
 
-              case MoveReply(x, y, velX, velY) => {
-                conQueue.offer(PBPlayerPosition.of(x, y, velX, velY))
-                Behaviors.same
-              }
+            case AddMessage(msg) => {
+              player ! Player.AddMessage(msg)
+              Behaviors.same
+            }
 
-              case NotifyEntityStateUpdate(entityId, newEntityState) => {
-                val message = PBGameEntityState
-                  .of(
-                    entityId,
-                    PBGameEntityPosition
-                      .of(newEntityState.position.x, newEntityState.position.y),
-                    PBGameEntityVelocity
-                      .of(
-                        newEntityState.velocity.velX,
-                        newEntityState.velocity.velY
-                      )
-                  )
-                conQueue.offer(message)
-                Behaviors.same
-              }
+            case NotifyMessageReceived(entityId, msg) => {
+              val message = PBPlayerMessageServer.of(entityId, msg)
+              conQueue.offer(message)
+              Behaviors.same
+            }
 
-              case AddMessage(msg) => {
-                player ! Player.AddMessage(msg)
-                Behaviors.same
-              }
-
-              case NotifyMessageReceived(entityId, msg) => {
-                val message = PBPlayerMessageServer.of(entityId, msg)
-                conQueue.offer(message)
-                Behaviors.same
-              }
-
-              case _ => {
-                Behaviors.same
-              }
+            case _ => {
+              Behaviors.same
             }
           }
+        }
 
-          case _ => {
-            Behaviors.same
-          }
+        case _ => {
+          Behaviors.same
         }
       }
     }
@@ -155,6 +138,7 @@ object PlayerHandler {
       .via(
         InMessageFlow(PBClientMetadata, ProtocolMessageMap.clientMessageMap)
       )
+      .throttle(60, 1.second) // 60hz tick rate
       .map(commandFromClientMessage)
       .map { msg =>
         ctx.self ! msg
@@ -180,8 +164,7 @@ object PlayerHandler {
   private val commandFromClientMessage
       : PartialFunction[GeneratedMessage, Command] = {
     case PBPlayerInit(playerName, _)   => Init(playerName)
-    case PBPlayerVelocity(0, 0, _)     => StopMoving()
-    case PBPlayerVelocity(x, y, _)     => StartMoving(x, y)
+    case PBPlayerVelocity(x, y, _)     => Move(x, y)
     case PBPlayerMessageClient(msg, _) => AddMessage(msg)
   }
 }
