@@ -51,7 +51,6 @@ RUN mkdir /run/postgresql && \
         echo \"listen_addresses='*'\" >> /var/lib/postgresql/data/postgresql.conf \
     "
 
-COPY ./.docker/dev-entrypoint.sh /
 COPY ./.docker/akka.sql /var/lib/postgresql/data/akka.sql
 COPY ./.docker/durable_state.sql /var/lib/postgresql/data/durable_state.sql
 
@@ -74,5 +73,7 @@ RUN curl https://dlcdn.apache.org/kafka/3.6.1/kafka_2.13-3.6.1.tgz -o kafka_2.13
 EXPOSE 5432/tcp
 
 ENV KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+
+COPY ./.docker/dev-entrypoint.sh /
 
 CMD ["/dev-entrypoint.sh"]
