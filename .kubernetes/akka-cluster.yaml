@@ -6,7 +6,7 @@ metadata:
   name: game-system
   namespace: game-system-1
 spec:
-  replicas: 4
+  replicas: 2
   selector:
     matchLabels:
       app: game-system

@@ -11,7 +11,7 @@ object Main extends App {
   implicit val system: ActorSystem[GameServer.Command] =
     ActorSystem(GameServer(), "game-system")
   Sharding.configure(system)
-  // Only needed for Kubernetes in production
+  // Only needed for Kubernetes
   if (sys.env.getOrElse("ENV", "") == "production") {
     AkkaManagement(system).start()
     ClusterBootstrap(system).start()
