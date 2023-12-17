@@ -24,7 +24,14 @@ if ! helm list -n "$NAMESPACE" | grep -q "$POSTGRES_RELEASE_NAME"; then
     echo "Installing Helm release '$POSTGRES_RELEASE_NAME' in namespace '$NAMESPACE'."
     helm install \
         "$POSTGRES_RELEASE_NAME" oci://registry-1.docker.io/bitnamicharts/postgresql \
+        --set auth.enablePostgresUser=true \
+        --set auth.postgresPassword=postgres \
         --namespace "$NAMESPACE"
 fi
+
+echo "Waiting for Postgres deployment to be ready..."
+kubectl wait --for=condition=ready pod/fiubakka-postgres-postgresql-0 --timeout=60s
+
+kubectl apply -f .kubernetes/db-setup.yaml -n "$NAMESPACE"
 
 kubectl apply -f .kubernetes/akka-cluster.yaml -n "$NAMESPACE"
