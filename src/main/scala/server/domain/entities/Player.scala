@@ -240,7 +240,6 @@ object Player {
         }
 
         case Heartbeat() => {
-          ctx.log.info("Receiving heartbeat!")
           val newState = state.copy(
             tState = state.tState.copy(
               lastHeartbeatTime = LocalDateTime.now()
