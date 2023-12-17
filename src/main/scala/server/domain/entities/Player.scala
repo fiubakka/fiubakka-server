@@ -20,11 +20,10 @@ import server.protocol.client.PlayerHandler
 import server.protocol.event.GameEventConsumer
 import server.protocol.event.GameEventProducer
 
+import java.time.LocalDateTime
 import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
-import java.time.LocalDateTime
-import scala.annotation.switch
 
 object Player {
   sealed trait Command extends CborSerializable
@@ -129,10 +128,13 @@ object Player {
                 PlayerState(
                   // We override the PlayerHandler to the new one
                   dState = newDState,
-                  tState = TransientPlayerState(LocalDateTime.now(), PlayerVelocity(0, 0))
-                  ),
-                  persistor,
-                  eventProducer
+                  tState = TransientPlayerState(
+                    LocalDateTime.now(),
+                    PlayerVelocity(0, 0)
+                  )
+                ),
+                persistor,
+                eventProducer
               )
             }
           }
@@ -143,7 +145,10 @@ object Player {
             behaviour(
               PlayerState(
                 dState = initialState,
-                tState = TransientPlayerState(LocalDateTime.now(), PlayerVelocity(0, 0))
+                tState = TransientPlayerState(
+                  LocalDateTime.now(),
+                  PlayerVelocity(0, 0)
+                )
               ),
               persistor,
               eventProducer
@@ -246,13 +251,15 @@ object Player {
 
         case CheckHeartbeat() => {
           val lastHeartbeatTime = state.tState.lastHeartbeatTime
-          val heartStopped = LocalDateTime.now().isAfter(lastHeartbeatTime.plusSeconds(10))
+          val heartStopped =
+            LocalDateTime.now().isAfter(lastHeartbeatTime.plusSeconds(10))
           heartStopped match {
             case true =>
               ctx.log.warn(
                 s"Player ${ctx.self.path.name} has not sent a heartbeat in the last 10 seconds, disconnecting"
               )
-              state.dState.handler ! PlayerHandler.ConnectionClosed() // It's most likely dead but just in case
+              state.dState.handler ! PlayerHandler
+                .ConnectionClosed() // It's most likely dead but just in case
               Behaviors.stopped
             case false =>
               Behaviors.same

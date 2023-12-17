@@ -3,6 +3,7 @@ package server.domain.structs
 import akka.actor.typed.ActorRef
 import akka.serialization.jackson.CborSerializable
 import server.protocol.client.PlayerHandler
+
 import java.time.LocalDateTime
 
 final case class PlayerPosition(x: Float, y: Float)

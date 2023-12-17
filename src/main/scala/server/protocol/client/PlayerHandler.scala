@@ -37,7 +37,7 @@ import scala.concurrent.duration._
 object PlayerHandler {
   sealed trait Command extends CborSerializable
   final case class ConnectionClosed() extends Command
-  
+
   final case class SendHeartbeat() extends Command
   final case class Init(playerName: String) extends Command
   final case class Move(x: Float, y: Float) extends Command
@@ -65,7 +65,11 @@ object PlayerHandler {
 
         connection.handleWith(clientStreamHandler(ctx, conSource))
 
-        timers.startTimerWithFixedDelay("sendHeartbeat", SendHeartbeat(), 2.seconds)
+        timers.startTimerWithFixedDelay(
+          "sendHeartbeat",
+          SendHeartbeat(),
+          2.seconds
+        )
 
         Behaviors.receiveMessage {
           case Init(playerName) => {
@@ -122,7 +126,7 @@ object PlayerHandler {
               }
 
               case SendHeartbeat() => {
-                // player ! Player.Heartbeat()
+                player ! Player.Heartbeat()
                 Behaviors.same
               }
 
