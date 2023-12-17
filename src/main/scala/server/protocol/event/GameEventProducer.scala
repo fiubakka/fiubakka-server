@@ -52,7 +52,7 @@ object GameEventProducer {
 
       Behaviors.receiveMessage {
         case PlayerStateUpdate(playerState) => {
-          ctx.log.info(s"$playerId: Producing event: $playerState")
+          ctx.log.debug(s"$playerId: Producing event: $playerState")
           conQueue.offer(
             PBGameEntityState(
               playerId,

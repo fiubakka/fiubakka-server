@@ -37,7 +37,8 @@ import scala.concurrent.duration._
 object PlayerHandler {
   sealed trait Command extends CborSerializable
   final case class ConnectionClosed() extends Command
-
+  
+  final case class SendHeartbeat() extends Command
   final case class Init(playerName: String) extends Command
   final case class Move(x: Float, y: Float) extends Command
   final case class AddMessage(msg: String) extends Command
@@ -55,76 +56,85 @@ object PlayerHandler {
 
   def apply(connection: Tcp.IncomingConnection): Behavior[Command] = {
     Behaviors.setup { ctx =>
-      implicit val mat = Materializer(ctx)
+      Behaviors.withTimers { timers =>
+        implicit val mat = Materializer(ctx)
 
-      val (conQueue, conSource) = Source
-        .queue[GeneratedMessage](256, OverflowStrategy.backpressure)
-        .preMaterialize()
+        val (conQueue, conSource) = Source
+          .queue[GeneratedMessage](256, OverflowStrategy.backpressure)
+          .preMaterialize()
 
-      connection.handleWith(clientStreamHandler(ctx, conSource))
+        connection.handleWith(clientStreamHandler(ctx, conSource))
 
-      Behaviors.receiveMessage {
-        case Init(playerName) => {
-          ctx.log.info(s"Init message received from $playerName")
+        timers.startTimerWithFixedDelay("sendHeartbeat", SendHeartbeat(), 2.seconds)
 
-          val player = Sharding().entityRefFor(
-            Player.TypeKey,
-            playerName
-          )
-          player ! Player.Start(ctx.self)
+        Behaviors.receiveMessage {
+          case Init(playerName) => {
+            ctx.log.info(s"Init message received from $playerName")
 
-          Behaviors.receiveMessage {
-            case ConnectionClosed() => {
-              ctx.log.info("Closing connection!")
-              player ! Player.Stop()
-              Behaviors.stopped
-            }
+            val player = Sharding().entityRefFor(
+              Player.TypeKey,
+              playerName
+            )
+            player ! Player.Start(ctx.self)
 
-            case Move(x, y) => {
-              player ! Player.Move(x, y, ctx.self)
-              Behaviors.same
-            }
+            Behaviors.receiveMessage {
+              case ConnectionClosed() => {
+                ctx.log.info("Closing connection!")
+                player ! Player.Stop()
+                Behaviors.stopped
+              }
 
-            case MoveReply(x, y, velX, velY) => {
-              conQueue.offer(PBPlayerPosition.of(x, y, velX, velY))
-              Behaviors.same
-            }
+              case Move(x, y) => {
+                player ! Player.Move(x, y, ctx.self)
+                Behaviors.same
+              }
 
-            case NotifyEntityStateUpdate(entityId, newEntityState) => {
-              val message = PBGameEntityState
-                .of(
-                  entityId,
-                  PBGameEntityPosition
-                    .of(newEntityState.position.x, newEntityState.position.y),
-                  PBGameEntityVelocity
-                    .of(
-                      newEntityState.velocity.velX,
-                      newEntityState.velocity.velY
-                    )
-                )
-              conQueue.offer(message)
-              Behaviors.same
-            }
+              case MoveReply(x, y, velX, velY) => {
+                conQueue.offer(PBPlayerPosition.of(x, y, velX, velY))
+                Behaviors.same
+              }
 
-            case AddMessage(msg) => {
-              player ! Player.AddMessage(msg)
-              Behaviors.same
-            }
+              case NotifyEntityStateUpdate(entityId, newEntityState) => {
+                val message = PBGameEntityState
+                  .of(
+                    entityId,
+                    PBGameEntityPosition
+                      .of(newEntityState.position.x, newEntityState.position.y),
+                    PBGameEntityVelocity
+                      .of(
+                        newEntityState.velocity.velX,
+                        newEntityState.velocity.velY
+                      )
+                  )
+                conQueue.offer(message)
+                Behaviors.same
+              }
 
-            case NotifyMessageReceived(entityId, msg) => {
-              val message = PBPlayerMessageServer.of(entityId, msg)
-              conQueue.offer(message)
-              Behaviors.same
-            }
+              case AddMessage(msg) => {
+                player ! Player.AddMessage(msg)
+                Behaviors.same
+              }
 
-            case _ => {
-              Behaviors.same
+              case NotifyMessageReceived(entityId, msg) => {
+                val message = PBPlayerMessageServer.of(entityId, msg)
+                conQueue.offer(message)
+                Behaviors.same
+              }
+
+              case SendHeartbeat() => {
+                // player ! Player.Heartbeat()
+                Behaviors.same
+              }
+
+              case _ => {
+                Behaviors.same
+              }
             }
           }
-        }
 
-        case _ => {
-          Behaviors.same
+          case _ => {
+            Behaviors.same
+          }
         }
       }
     }
