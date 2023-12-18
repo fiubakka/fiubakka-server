@@ -3,7 +3,7 @@ package server.protocol.client
 import protobuf.client.chat.message.{PBPlayerMessage => PBClientPlayerMessage}
 import protobuf.client.init.player_init.PBPlayerInit
 import protobuf.client.metadata.PBClientMessageType
-import protobuf.client.movement.player_velocity.PBPlayerVelocity
+import protobuf.client.movement.player_movement.PBPlayerMovement
 import protobuf.server.chat.message.{PBPlayerMessage => PBServerPlayerMessage}
 import protobuf.server.metadata.PBServerMessageType
 import protobuf.server.position.player_position.PBPlayerPosition
@@ -17,7 +17,7 @@ object ProtocolMessageMap {
   ]] =
     Map(
       PBClientMessageType.PBPlayerInit -> PBPlayerInit,
-      PBClientMessageType.PBPlayerVelocity -> PBPlayerVelocity,
+      PBClientMessageType.PBPlayerMovement -> PBPlayerMovement,
       PBClientMessageType.PBPlayerMessage -> PBClientPlayerMessage
     )
 

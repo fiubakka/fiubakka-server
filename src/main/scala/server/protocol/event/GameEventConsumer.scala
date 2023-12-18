@@ -17,9 +17,9 @@ import protobuf.event.metadata.PBEventMetadata
 import protobuf.event.state.game_entity_state.PBGameEntityState
 import scalapb.GeneratedMessage
 import server.domain.entities.Player
-import server.domain.structs.GameEntityPosition
 import server.domain.structs.GameEntityState
-import server.domain.structs.GameEntityVelocity
+import server.domain.structs.movement.Position
+import server.domain.structs.movement.Velocity
 import server.protocol.flows.InMessageFlow
 
 object GameEventConsumer {
@@ -83,11 +83,11 @@ object GameEventConsumer {
       Player.UpdateEntityState(
         entityId,
         GameEntityState(
-          GameEntityPosition(
+          Position(
             position.x,
             position.y
           ),
-          GameEntityVelocity(
+          Velocity(
             velocity.velX,
             velocity.velY
           )

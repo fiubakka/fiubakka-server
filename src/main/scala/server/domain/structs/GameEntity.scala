@@ -1,18 +1,10 @@
 package server.domain.structs
-
-final case class GameEntityPosition(
-    x: Float,
-    y: Float
-)
-
-final case class GameEntityVelocity(
-    velX: Float,
-    velY: Float
-)
+import server.domain.structs.movement.Position
+import server.domain.structs.movement.Velocity
 
 final case class GameEntityState(
-    position: GameEntityPosition,
-    velocity: GameEntityVelocity
+    position: Position,
+    velocity: Velocity
 )
 
 final case class GameEntity(

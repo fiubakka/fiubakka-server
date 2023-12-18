@@ -14,7 +14,7 @@ import akka.util.ByteString
 import protobuf.client.chat.message.{PBPlayerMessage => PBPlayerMessageClient}
 import protobuf.client.init.player_init.PBPlayerInit
 import protobuf.client.metadata.PBClientMetadata
-import protobuf.client.movement.player_velocity.PBPlayerVelocity
+import protobuf.client.movement.player_movement.PBPlayerMovement
 import protobuf.dummy.PBDummy
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
 import protobuf.server.metadata.PBServerMessageType
@@ -28,6 +28,8 @@ import scalapb.GeneratedMessage
 import server.Sharding
 import server.domain.entities.Player
 import server.domain.structs.GameEntityState
+import server.domain.structs.movement.Position
+import server.domain.structs.movement.Velocity
 import server.protocol.flows.InMessageFlow
 import server.protocol.flows.server.protocol.flows.OutMessageFlow
 
@@ -40,10 +42,10 @@ object PlayerHandler {
 
   final case class SendHeartbeat() extends Command
   final case class Init(playerName: String) extends Command
-  final case class Move(x: Float, y: Float) extends Command
+  final case class Move(velocity: Velocity, position: Position) extends Command
   final case class AddMessage(msg: String) extends Command
 
-  final case class MoveReply(x: Float, y: Float, velX: Float, velY: Float)
+  final case class MoveReply(velocity: Velocity, position: Position)
       extends Command
   final case class NotifyEntityStateUpdate(
       entityId: String,
@@ -88,13 +90,20 @@ object PlayerHandler {
                 Behaviors.stopped
               }
 
-              case Move(x, y) => {
-                player ! Player.Move(x, y, ctx.self)
+              case Move(velocity, position) => {
+                player ! Player.Move(velocity, position, ctx.self)
                 Behaviors.same
               }
 
-              case MoveReply(x, y, velX, velY) => {
-                conQueue.offer(PBPlayerPosition.of(x, y, velX, velY))
+              case MoveReply(velocity, position) => {
+                conQueue.offer(
+                  PBPlayerPosition.of(
+                    position.x,
+                    position.y,
+                    velocity.x,
+                    velocity.y
+                  )
+                )
                 Behaviors.same
               }
 
@@ -106,8 +115,8 @@ object PlayerHandler {
                       .of(newEntityState.position.x, newEntityState.position.y),
                     PBGameEntityVelocity
                       .of(
-                        newEntityState.velocity.velX,
-                        newEntityState.velocity.velY
+                        newEntityState.velocity.x,
+                        newEntityState.velocity.y
                       )
                   )
                 conQueue.offer(message)
@@ -177,8 +186,9 @@ object PlayerHandler {
 
   private val commandFromClientMessage
       : PartialFunction[GeneratedMessage, Command] = {
-    case PBPlayerInit(playerName, _)   => Init(playerName)
-    case PBPlayerVelocity(x, y, _)     => Move(x, y)
+    case PBPlayerInit(playerName, _) => Init(playerName)
+    case PBPlayerMovement(velocity, position, _) =>
+      Move(Velocity(velocity.x, velocity.y), Position(position.x, position.y))
     case PBPlayerMessageClient(msg, _) => AddMessage(msg)
   }
 }

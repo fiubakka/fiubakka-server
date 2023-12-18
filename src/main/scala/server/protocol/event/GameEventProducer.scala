@@ -61,8 +61,8 @@ object GameEventProducer {
                 playerState.dState.position.y
               ),
               PBGameEntityVelocity(
-                playerState.tState.velocity.velX,
-                playerState.tState.velocity.velY
+                playerState.tState.velocity.x,
+                playerState.tState.velocity.y
               )
             )
           )

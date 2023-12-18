@@ -11,10 +11,10 @@ import server.Sharding
 import server.domain.structs.DurablePlayerState
 import server.domain.structs.GameEntity
 import server.domain.structs.GameEntityState
-import server.domain.structs.PlayerPosition
 import server.domain.structs.PlayerState
-import server.domain.structs.PlayerVelocity
 import server.domain.structs.TransientPlayerState
+import server.domain.structs.movement.Position
+import server.domain.structs.movement.Velocity
 import server.infra.PlayerPersistor
 import server.protocol.client.PlayerHandler
 import server.protocol.event.GameEventConsumer
@@ -37,8 +37,8 @@ object Player {
       initialState: DurablePlayerState
   ) extends Command
   final case class Move(
-      velX: Float,
-      velY: Float,
+      velocity: Velocity,
+      position: Position,
       replyTo: ActorRef[PlayerHandler.MoveReply]
   ) extends Command
   final case class AddMessage(
@@ -130,7 +130,7 @@ object Player {
                   dState = newDState,
                   tState = TransientPlayerState(
                     LocalDateTime.now(),
-                    PlayerVelocity(0, 0)
+                    Velocity(0, 0)
                   )
                 ),
                 persistor,
@@ -147,7 +147,7 @@ object Player {
                 dState = initialState,
                 tState = TransientPlayerState(
                   LocalDateTime.now(),
-                  PlayerVelocity(0, 0)
+                  Velocity(0, 0)
                 )
               ),
               persistor,
@@ -175,23 +175,18 @@ object Player {
     Behaviors.receive((ctx, msg) => {
       msg match {
 
-        case Move(velX, velY, replyTo) => {
+        case Move(newVelocity, newPosition, replyTo) => {
           val newState = state.copy(
             dState = state.dState.copy(
-              position = PlayerPosition(
-                state.dState.position.x + (velX * 5),
-                state.dState.position.y + (velY * 5)
-              )
+              position = newPosition
             ),
             tState = state.tState.copy(
-              velocity = PlayerVelocity(velX, velY)
+              velocity = newVelocity
             )
           )
           replyTo ! PlayerHandler.MoveReply(
-            newState.dState.position.x,
-            newState.dState.position.y,
-            newState.tState.velocity.velX,
-            newState.tState.velocity.velY
+            newState.tState.velocity,
+            newState.dState.position
           )
           eventProducer ! GameEventProducer.PlayerStateUpdate(newState)
           behaviour(newState, persistor, eventProducer)

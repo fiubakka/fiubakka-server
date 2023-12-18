@@ -8,7 +8,7 @@ import akka.persistence.typed.state.scaladsl.DurableStateBehavior
 import akka.persistence.typed.state.scaladsl.Effect
 import akka.serialization.jackson.CborSerializable
 import server.domain.structs.DurablePlayerState
-import server.domain.structs.PlayerPosition
+import server.domain.structs.movement.Position
 
 object PlayerPersistor {
   sealed trait Command extends CborSerializable
@@ -24,7 +24,7 @@ object PlayerPersistor {
     DurableStateBehavior[Command, DurablePlayerState](
       persistenceId,
       // Use null as a dummy PlayerHandler, the Player should never read this value anyway
-      emptyState = DurablePlayerState(null, PlayerPosition(20, 20)),
+      emptyState = DurablePlayerState(null, Position(20, 20)),
       commandHandler = commandHandler
     )
   }
