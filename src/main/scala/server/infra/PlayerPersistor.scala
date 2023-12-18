@@ -24,7 +24,7 @@ object PlayerPersistor {
     DurableStateBehavior[Command, DurablePlayerState](
       persistenceId,
       // Use null as a dummy PlayerHandler, the Player should never read this value anyway
-      emptyState = DurablePlayerState(null, PlayerPosition(0, 0)),
+      emptyState = DurablePlayerState(null, PlayerPosition(20, 20)),
       commandHandler = commandHandler
     )
   }
