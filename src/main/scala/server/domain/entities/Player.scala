@@ -16,7 +16,6 @@ import server.domain.structs.TransientPlayerState
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 import server.infra.PlayerPersistor
-import server.protocol.client.PlayerHandler
 import server.protocol.event.GameEventConsumer
 import server.protocol.event.GameEventProducer
 
@@ -27,19 +26,20 @@ import scala.util.Success
 
 object Player {
   sealed trait Command extends CborSerializable
+  sealed trait ReplyCommand extends CborSerializable
+
+  // Command
 
   final case class Heartbeat() extends Command
   final case class CheckHeartbeat() extends Command
-  final case class Start(playerHandler: ActorRef[PlayerHandler.Command])
-      extends Command
+  final case class Start(playerHandler: ActorRef[ReplyCommand]) extends Command
   final case class Stop() extends Command
   final case class InitState(
       initialState: DurablePlayerState
   ) extends Command
   final case class Move(
       velocity: Velocity,
-      position: Position,
-      replyTo: ActorRef[PlayerHandler.MoveReply]
+      position: Position
   ) extends Command
   final case class AddMessage(
       msg: String
@@ -53,6 +53,18 @@ object Player {
       newEntityState: GameEntityState
   ) extends Command
   final case class PersistState() extends Command
+
+  // ReplyCommand
+
+  final case class NotifyEntityStateUpdate(
+      entityId: String,
+      newEntityState: GameEntityState
+  ) extends ReplyCommand
+  final case class NotifyMessageReceived(
+      entityId: String,
+      msg: String
+  ) extends ReplyCommand
+  final case class ReplyStop() extends ReplyCommand
 
   Map[String, GameEntity]()
 
@@ -108,7 +120,7 @@ object Player {
   def setupBehaviour(
       persistor: EntityRef[PlayerPersistor.Command],
       eventProducer: ActorRef[GameEventProducer.Command],
-      playerHandler: Option[ActorRef[PlayerHandler.Command]] = None
+      playerHandler: Option[ActorRef[ReplyCommand]] = None
   ): Behavior[Command] = {
     Behaviors.receiveMessage {
 
@@ -175,7 +187,7 @@ object Player {
     Behaviors.receive((ctx, msg) => {
       msg match {
 
-        case Move(newVelocity, newPosition, replyTo) => {
+        case Move(newVelocity, newPosition) => {
           val newState = state.copy(
             dState = state.dState.copy(
               position = newPosition
@@ -183,10 +195,6 @@ object Player {
             tState = state.tState.copy(
               velocity = newVelocity
             )
-          )
-          replyTo ! PlayerHandler.MoveReply(
-            newState.tState.velocity,
-            newState.dState.position
           )
           eventProducer ! GameEventProducer.PlayerStateUpdate(newState)
           behaviour(newState, persistor, eventProducer)
@@ -199,7 +207,7 @@ object Player {
         }
 
         case UpdateEntityState(entityId, newEntityState) => {
-          state.dState.handler ! PlayerHandler.NotifyEntityStateUpdate(
+          state.dState.handler ! NotifyEntityStateUpdate(
             entityId,
             newEntityState
           )
@@ -213,7 +221,7 @@ object Player {
         }
 
         case ReceiveMessage(entityId, msg) => {
-          state.dState.handler ! PlayerHandler.NotifyMessageReceived(
+          state.dState.handler ! NotifyMessageReceived(
             entityId,
             msg
           )
@@ -252,8 +260,7 @@ object Player {
               ctx.log.warn(
                 s"Player ${ctx.self.path.name} has not sent a heartbeat in the last 10 seconds, disconnecting"
               )
-              state.dState.handler ! PlayerHandler
-                .ConnectionClosed() // It's most likely dead but just in case
+              state.dState.handler ! ReplyStop() // Player handler it's most likely dead but just in case
               Behaviors.stopped
             case false =>
               Behaviors.same

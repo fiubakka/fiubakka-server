@@ -2,14 +2,14 @@ package server.domain.structs
 
 import akka.actor.typed.ActorRef
 import akka.serialization.jackson.CborSerializable
+import server.domain.entities.Player
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
-import server.protocol.client.PlayerHandler
 
 import java.time.LocalDateTime
 
 final case class DurablePlayerState(
-    handler: ActorRef[PlayerHandler.Command],
+    handler: ActorRef[Player.ReplyCommand],
     position: Position
 ) extends CborSerializable
 

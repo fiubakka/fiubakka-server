@@ -1,5 +1,6 @@
 /.bsp/
 target/
+logs/
 .bloop
 .metals/
 metals.sbt

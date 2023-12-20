@@ -1,6 +1,7 @@
 package server
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
+import server.misc.Bot
 import server.protocol.client.PlayerAccepter
 
 object GameServer {
@@ -13,6 +14,9 @@ object GameServer {
         case Run() => {
           println("Game server is running...")
           ctx.spawn(PlayerAccepter(), "PlayerAccepter")
+
+          (1 to 30).foreach(i => ctx.spawn(Bot(), s"Bot$i"))
+
           Behaviors.same
         }
       }

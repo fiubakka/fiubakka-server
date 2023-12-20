@@ -1,6 +1,7 @@
 package server.protocol.client
 
 import akka.NotUsed
+import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.scaladsl.Behaviors
@@ -19,7 +20,6 @@ import protobuf.dummy.PBDummy
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
 import protobuf.server.metadata.PBServerMessageType
 import protobuf.server.metadata.PBServerMetadata
-import protobuf.server.position.player_position.PBPlayerPosition
 import protobuf.server.state.game_entity_state.PBGameEntityPosition
 import protobuf.server.state.game_entity_state.PBGameEntityState
 import protobuf.server.state.game_entity_state.PBGameEntityVelocity
@@ -27,7 +27,7 @@ import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import server.Sharding
 import server.domain.entities.Player
-import server.domain.structs.GameEntityState
+import server.domain.entities.Player.ReplyStop
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 import server.protocol.flows.InMessageFlow
@@ -45,16 +45,7 @@ object PlayerHandler {
   final case class Move(velocity: Velocity, position: Position) extends Command
   final case class AddMessage(msg: String) extends Command
 
-  final case class MoveReply(velocity: Velocity, position: Position)
-      extends Command
-  final case class NotifyEntityStateUpdate(
-      entityId: String,
-      newEntityState: GameEntityState
-  ) extends Command
-  final case class NotifyMessageReceived(
-      entityId: String,
-      msg: String
-  ) extends Command
+  final case class PlayerReplyCommand(cmd: Player.ReplyCommand) extends Command
 
   def apply(connection: Tcp.IncomingConnection): Behavior[Command] = {
     Behaviors.setup { ctx =>
@@ -73,6 +64,9 @@ object PlayerHandler {
           2.seconds
         )
 
+        val playerResponseMapper: ActorRef[Player.ReplyCommand] =
+          ctx.messageAdapter(rsp => PlayerReplyCommand(rsp))
+
         Behaviors.receiveMessage {
           case Init(playerName) => {
             ctx.log.info(s"Init message received from $playerName")
@@ -81,7 +75,7 @@ object PlayerHandler {
               Player.TypeKey,
               playerName
             )
-            player ! Player.Start(ctx.self)
+            player ! Player.Start(playerResponseMapper)
 
             Behaviors.receiveMessage {
               case ConnectionClosed() => {
@@ -91,35 +85,7 @@ object PlayerHandler {
               }
 
               case Move(velocity, position) => {
-                player ! Player.Move(velocity, position, ctx.self)
-                Behaviors.same
-              }
-
-              case MoveReply(velocity, position) => {
-                conQueue.offer(
-                  PBPlayerPosition.of(
-                    position.x,
-                    position.y,
-                    velocity.x,
-                    velocity.y
-                  )
-                )
-                Behaviors.same
-              }
-
-              case NotifyEntityStateUpdate(entityId, newEntityState) => {
-                val message = PBGameEntityState
-                  .of(
-                    entityId,
-                    PBGameEntityPosition
-                      .of(newEntityState.position.x, newEntityState.position.y),
-                    PBGameEntityVelocity
-                      .of(
-                        newEntityState.velocity.x,
-                        newEntityState.velocity.y
-                      )
-                  )
-                conQueue.offer(message)
+                player ! Player.Move(velocity, position)
                 Behaviors.same
               }
 
@@ -128,10 +94,41 @@ object PlayerHandler {
                 Behaviors.same
               }
 
-              case NotifyMessageReceived(entityId, msg) => {
-                val message = PBPlayerMessageServer.of(entityId, msg)
-                conQueue.offer(message)
-                Behaviors.same
+              case PlayerReplyCommand(cmd) => {
+                cmd match {
+                  case Player.NotifyEntityStateUpdate(
+                        entityId,
+                        newEntityState
+                      ) => {
+                    val message = PBGameEntityState
+                      .of(
+                        entityId,
+                        PBGameEntityPosition
+                          .of(
+                            newEntityState.position.x,
+                            newEntityState.position.y
+                          ),
+                        PBGameEntityVelocity
+                          .of(
+                            newEntityState.velocity.x,
+                            newEntityState.velocity.y
+                          )
+                      )
+                    conQueue.offer(message)
+                    Behaviors.same
+                  }
+
+                  case Player.NotifyMessageReceived(entityId, msg) => {
+                    val message = PBPlayerMessageServer.of(entityId, msg)
+                    conQueue.offer(message)
+                    Behaviors.same
+                  }
+
+                  case ReplyStop() => {
+                    ctx.log.info("Player stopped!")
+                    Behaviors.stopped
+                  }
+                }
               }
 
               case SendHeartbeat() => {

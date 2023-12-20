@@ -53,7 +53,7 @@
             </appender>
 
             <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-                <file>target/fiubakka-server-dev.log</file>
+                <file>logs/fiubakka-server-dev.log</file>
                 <encoder>
                     <pattern>[%date{ISO8601}] [%level] [%logger] [%marker] [%thread] - %msg MDC: {%mdc}%n</pattern>
                 </encoder>
