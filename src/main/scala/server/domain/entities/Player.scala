@@ -130,12 +130,12 @@ object Player {
           case Some(handler) => {
             val newDState = initialState.copy(handler)
             persistor ! PlayerPersistor.Persist(newDState)
-            Behaviors.withTimers { timers =>
-              timers.startTimerAtFixedRate(
-                "checkHeartbeat",
-                CheckHeartbeat(),
-                5.seconds
-              )
+            Behaviors.withTimers { _ =>
+              // timers.startTimerAtFixedRate(
+              //   "checkHeartbeat",
+              //   CheckHeartbeat(),
+              //   5.seconds
+              // )
               behaviour(
                 PlayerState(
                   // We override the PlayerHandler to the new one

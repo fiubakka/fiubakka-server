@@ -9,6 +9,7 @@ import server.domain.entities.Player
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 
+import scala.concurrent.duration._
 import scala.util.Random
 
 object Bot {
@@ -24,9 +25,7 @@ object Bot {
 
   def apply(): Behavior[Command] = {
     Behaviors.setup { ctx =>
-      Behaviors.withTimers { _ =>
-        Thread.sleep(Random.nextInt(100))
-
+      Behaviors.withTimers { timers =>
         val playerBot = Sharding().entityRefFor(
           Player.TypeKey,
           Random.alphanumeric.take(20).mkString
@@ -36,12 +35,12 @@ object Bot {
           ctx.messageAdapter(rsp => PlayerReplyCommand(rsp))
 
         playerBot ! Player.Start(playerResponseMapper)
-        // timers.startTimerWithFixedDelay(RandomMove(), 100.millis)
+        timers.startTimerWithFixedDelay(RandomMove(), 16.millis)
 
         behaviour(
           State(
             playerBot,
-            Position(Random.nextInt(500).toFloat, Random.nextInt(500).toFloat)
+            Position(20, Random.nextInt(100).toFloat)
           )
         )
 

@@ -3,15 +3,10 @@ package server.protocol.event
 import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-import akka.kafka.ConsumerSettings
-import akka.kafka.Subscriptions
-import akka.kafka.scaladsl.Consumer
 import akka.serialization.jackson.CborSerializable
 import akka.stream.Materializer
-import akka.stream.scaladsl.Sink
+import akka.stream.OverflowStrategy
 import akka.util.ByteString
-import org.apache.kafka.common.serialization.ByteArrayDeserializer
-import org.apache.kafka.common.serialization.StringDeserializer
 import protobuf.event.chat.message.PBPlayerMessage
 import protobuf.event.metadata.PBEventMetadata
 import protobuf.event.state.game_entity_state.PBGameEntityState
@@ -20,6 +15,7 @@ import server.domain.entities.Player
 import server.domain.structs.GameEntityState
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
+import server.protocol.event.kafka.KafkaConsumer
 import server.protocol.flows.InMessageFlow
 
 object GameEventConsumer {
@@ -34,19 +30,11 @@ object GameEventConsumer {
     Behaviors.setup(ctx => {
       implicit val mat = Materializer(ctx)
 
-      Consumer
-        .plainSource(
-          ConsumerSettings(
-            ctx.system.settings.config.getConfig("akka.kafka-consumer"),
-            new StringDeserializer,
-            new ByteArrayDeserializer
-          )
-            .withGroupId(playerId),
-          Subscriptions.topics("game-zone")
-        )
-        .filter(record =>
+      KafkaConsumer()
+        .buffer(64000, OverflowStrategy.dropHead)
+        .filter(record => {
           (record.key == null || record.key != playerId)
-        ) // Ignore messages from myself
+        }) // Ignore messages from myself
         .map { record =>
           ByteString(record.value)
         }
@@ -59,11 +47,11 @@ object GameEventConsumer {
         .map { msg =>
           ctx.self ! EventReceived(msg)
         }
-        .runWith(Sink.ignore)
+        .run()
 
       Behaviors.receiveMessage {
         case EventReceived(msg) => {
-          ctx.log.info(s"$playerId: Event received: $msg")
+          ctx.log.debug(s"$playerId: Event received: $msg")
           player ! commandFromEventMessage(msg)
           Behaviors.same
         }

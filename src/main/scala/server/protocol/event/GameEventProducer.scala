@@ -19,6 +19,7 @@ import protobuf.event.state.game_entity_state.PBGameEntityVelocity
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import server.domain.structs.PlayerState
+import server.protocol.event.kafka.KafkaProducer
 import server.protocol.flows.server.protocol.flows.OutMessageFlow
 
 object GameEventProducer {
@@ -33,6 +34,7 @@ object GameEventProducer {
       val config = ctx.system.settings.config.getConfig("akka.kafka-producer")
       val producerSettings =
         ProducerSettings(config, new StringSerializer, new ByteArraySerializer)
+          .withProducer(KafkaProducer())
 
       val (conQueue, conSource) = Source
         .queue[GeneratedMessage](256, OverflowStrategy.backpressure)

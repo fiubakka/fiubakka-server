@@ -53,7 +53,7 @@ object PlayerHandler {
         implicit val mat = Materializer(ctx)
 
         val (conQueue, conSource) = Source
-          .queue[GeneratedMessage](256, OverflowStrategy.backpressure)
+          .queue[GeneratedMessage](64000, OverflowStrategy.dropHead)
           .preMaterialize()
 
         connection.handleWith(clientStreamHandler(ctx, conSource))
