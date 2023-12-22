@@ -2,21 +2,21 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: game-system
-  name: game-system
-  namespace: game-system-1
+    app: fiubakka-server
+  name: fiubakka-server
+  namespace: fiubakka-server-1
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: game-system
+      app: fiubakka-server
   template:
     metadata:
       labels:
-        app: game-system
+        app: fiubakka-server
     spec:
       containers:
-      - name: game-system
+      - name: fiubakka-server
         image: fiubakka-server:1.0
         readinessProbe:
           httpGet:
@@ -46,9 +46,9 @@ spec:
         - name: ENV
           value: production
         - name: DB_HOST
-          value: fiubakka-postgres-postgresql.game-system-1.svc.cluster.local:5432
+          value: fiubakka-postgres-postgresql.fiubakka-server-1.svc.cluster.local:5432
         - name: KAFKA_BOOTSTRAP_SERVERS
-          value: fiubakka-kafka.game-system-1.svc.cluster.local:9092
+          value: fiubakka-kafka.fiubakka-server-1.svc.cluster.local:9092
         - name: KUBERNETES_POD_NAME
           valueFrom:
             fieldRef:
@@ -74,8 +74,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: game-system-service
-  namespace: game-system-1
+  name: fiubakka-server-service
+  namespace: fiubakka-server-1
 spec:
   type: LoadBalancer
   ports:
@@ -83,14 +83,14 @@ spec:
       targetPort: 2020
       protocol: TCP
   selector:
-    app: game-system
+    app: fiubakka-server
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: pod-reader
-  namespace: game-system-1
+  namespace: fiubakka-server-1
 rules:
 - apiGroups: [""]
   resources: ["pods"]
@@ -104,10 +104,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: read-pods
-  namespace: game-system-1
+  namespace: fiubakka-server-1
 subjects:
 - kind: User
-  name: system:serviceaccount:game-system-1:default
+  name: system:serviceaccount:fiubakka-server-1:default
 - kind: ServiceAccount
   name: default
 roleRef:
@@ -120,7 +120,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: pod-patcher
-  namespace: game-system-1
+  namespace: fiubakka-server-1
 rules:
   - apiGroups: [""]
     resources: ["pods"]
@@ -131,10 +131,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: annotate-pods
-  namespace: game-system-1
+  namespace: fiubakka-server-1
 subjects:
   - kind: User
-    name: system:serviceaccount:game-system-1:default
+    name: system:serviceaccount:fiubakka-server-1:default
 roleRef:
   kind: Role
   name: pod-patcher

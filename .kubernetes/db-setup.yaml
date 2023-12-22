@@ -47,8 +47,8 @@ spec:
       - name: postgres-client
         image: bitnami/postgresql:15.5.0
         command: ["/bin/bash", "-c"]
-        args: ["PGPASSWORD=postgres psql -U postgres -h fiubakka-postgres-postgresql.game-system-1.svc.cluster.local -f /var/lib/postgresql/data/akka.sql && \
-                PGPASSWORD=akka psql -U akka -h fiubakka-postgres-postgresql.game-system-1.svc.cluster.local -f /var/lib/postgresql/data/durable_state.sql"]
+        args: ["PGPASSWORD=postgres psql -U postgres -h fiubakka-postgres-postgresql.fiubakka-server-1.svc.cluster.local -f /var/lib/postgresql/data/akka.sql && \
+                PGPASSWORD=akka psql -U akka -h fiubakka-postgres-postgresql.fiubakka-server-1.svc.cluster.local -f /var/lib/postgresql/data/durable_state.sql"]
         securityContext:
           runAsUser: 0
         volumeMounts:

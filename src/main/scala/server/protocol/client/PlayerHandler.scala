@@ -25,13 +25,13 @@ import protobuf.server.state.game_entity_state.PBGameEntityState
 import protobuf.server.state.game_entity_state.PBGameEntityVelocity
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
-import server.Sharding
 import server.domain.entities.Player
 import server.domain.entities.Player.ReplyStop
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 import server.protocol.flows.InMessageFlow
 import server.protocol.flows.server.protocol.flows.OutMessageFlow
+import server.sharding.Sharding
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

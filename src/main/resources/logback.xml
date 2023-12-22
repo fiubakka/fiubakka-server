@@ -59,10 +59,10 @@
                 </encoder>
             </appender>
 
-            <!-- <root level="DEBUG">
+            <root level="DEBUG">
                 <appender-ref ref="STDOUT"/>
                 <appender-ref ref="FILE"/>
-            </root> -->
+            </root>
         </else>
     </if>
 

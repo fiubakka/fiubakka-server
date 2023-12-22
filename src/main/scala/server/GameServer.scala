@@ -21,9 +21,13 @@ object GameServer {
             println("Game server is running...")
             ctx.spawn(PlayerAccepter(), "PlayerAccepter")
 
-            (1 to 200).foreach(i => ctx.spawn(Bot(), s"Bot$i"))
+            if (scala.util.Random.nextInt(2) == 0) {
+              println("Spawning bots...")
+              (1 to 64).foreach(i => ctx.spawn(Bot(), s"Bot$i"))
+            }
 
             Behaviors.same
+
           }
         }
       })

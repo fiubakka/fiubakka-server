@@ -4,10 +4,10 @@ import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityRef
-import server.Sharding
 import server.domain.entities.Player
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
+import server.sharding.Sharding
 
 import scala.concurrent.duration._
 import scala.util.Random
@@ -16,6 +16,7 @@ object Bot {
   sealed trait Command
 
   final case class RandomMove() extends Command
+  final case class Heartbeat() extends Command
   final case class PlayerReplyCommand(cmd: Player.ReplyCommand) extends Command
 
   final case class State(
@@ -35,6 +36,7 @@ object Bot {
           ctx.messageAdapter(rsp => PlayerReplyCommand(rsp))
 
         playerBot ! Player.Start(playerResponseMapper)
+        timers.startTimerAtFixedRate(Heartbeat(), 2.seconds)
         timers.startTimerWithFixedDelay(RandomMove(), 16.millis)
 
         behaviour(
@@ -62,6 +64,11 @@ object Bot {
           position = newPosition
         )
         behaviour(state.copy(position = newPosition))
+
+      case Heartbeat() => {
+        state.playerBot ! Player.Heartbeat()
+        Behaviors.same
+      }
 
       case _ => Behaviors.same
     }

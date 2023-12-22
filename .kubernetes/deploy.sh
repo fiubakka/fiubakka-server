@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NAMESPACE="game-system-1"
+NAMESPACE="fiubakka-server-1"
 KAFKA_RELEASE_NAME="fiubakka-kafka"
 POSTGRES_RELEASE_NAME="fiubakka-postgres"
 

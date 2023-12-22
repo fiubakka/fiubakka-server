@@ -7,7 +7,6 @@ import akka.cluster.sharding.typed.scaladsl.EntityRef
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.serialization.jackson.CborSerializable
 import akka.util.Timeout
-import server.Sharding
 import server.domain.structs.DurablePlayerState
 import server.domain.structs.GameEntity
 import server.domain.structs.GameEntityState
@@ -18,6 +17,7 @@ import server.domain.structs.movement.Velocity
 import server.infra.PlayerPersistor
 import server.protocol.event.GameEventConsumer
 import server.protocol.event.GameEventProducer
+import server.sharding.Sharding
 
 import java.time.LocalDateTime
 import scala.concurrent.duration._
@@ -112,6 +112,8 @@ object Player {
           }
         }
 
+        println("ALIVE!")
+
         setupBehaviour(persistor, eventProducer)
       }
     }
@@ -122,24 +124,42 @@ object Player {
       eventProducer: ActorRef[GameEventProducer.Command],
       playerHandler: Option[ActorRef[ReplyCommand]] = None
   ): Behavior[Command] = {
-    Behaviors.receiveMessage {
+    Behaviors.withTimers { timers =>
+      Behaviors.receiveMessage {
 
-      case InitState(initialState) => {
-        playerHandler match {
-          // This case corresponds to the one where the PlayerHandler is new, becasue we received the Start message
-          case Some(handler) => {
-            val newDState = initialState.copy(handler)
-            persistor ! PlayerPersistor.Persist(newDState)
-            Behaviors.withTimers { _ =>
-              // timers.startTimerAtFixedRate(
-              //   "checkHeartbeat",
-              //   CheckHeartbeat(),
-              //   5.seconds
-              // )
+        case InitState(initialState) => {
+          playerHandler match {
+            // This case corresponds to the one where the PlayerHandler is new, becasue we received the Start message
+            case Some(handler) => {
+              val newDState = initialState.copy(handler)
+              persistor ! PlayerPersistor.Persist(newDState)
+              Behaviors.withTimers { _ =>
+                timers.startTimerAtFixedRate(
+                  "checkHeartbeat",
+                  CheckHeartbeat(),
+                  5.seconds
+                )
+                behaviour(
+                  PlayerState(
+                    // We override the PlayerHandler to the new one
+                    dState = newDState,
+                    tState = TransientPlayerState(
+                      LocalDateTime.now(),
+                      Velocity(0, 0)
+                    )
+                  ),
+                  persistor,
+                  eventProducer
+                )
+              }
+            }
+            // This case corresponds to the one where the PlayerHandler is the same, so the Player is being restarted
+            // While technically there is the chance that the PlayerHandler is still null here, it is very unlikely
+            // and in case of failure the client should just reconnect and it should work (evenutally anyway)
+            case None =>
               behaviour(
                 PlayerState(
-                  // We override the PlayerHandler to the new one
-                  dState = newDState,
+                  dState = initialState,
                   tState = TransientPlayerState(
                     LocalDateTime.now(),
                     Velocity(0, 0)
@@ -148,33 +168,17 @@ object Player {
                 persistor,
                 eventProducer
               )
-            }
           }
-          // This case corresponds to the one where the PlayerHandler is the same, so the Player is being restarted
-          // While technically there is the chance that the PlayerHandler is still null here, it is very unlikely
-          // and in case of failure the client should just reconnect and it should work (evenutally anyway)
-          case None =>
-            behaviour(
-              PlayerState(
-                dState = initialState,
-                tState = TransientPlayerState(
-                  LocalDateTime.now(),
-                  Velocity(0, 0)
-                )
-              ),
-              persistor,
-              eventProducer
-            )
         }
-      }
 
-      case Start(playerHandler) => {
-        setupBehaviour(persistor, eventProducer, Some(playerHandler))
-      }
+        case Start(playerHandler) => {
+          setupBehaviour(persistor, eventProducer, Some(playerHandler))
+        }
 
-      case _ => {
-        // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
-        Behaviors.same
+        case _ => {
+          // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
+          Behaviors.same
+        }
       }
     }
   }
