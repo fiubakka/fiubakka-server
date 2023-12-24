@@ -23,7 +23,7 @@ object GameServer {
 
             if (scala.util.Random.nextInt(2) == 0) {
               println("Spawning bots...")
-              (1 to 64).foreach(i => ctx.spawn(Bot(), s"Bot$i"))
+              (1 to 2).foreach(i => ctx.spawn(Bot(), s"Bot$i"))
             }
 
             Behaviors.same
