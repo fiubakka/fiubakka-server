@@ -112,8 +112,6 @@ object Player {
           }
         }
 
-        println("ALIVE!")
-
         setupBehaviour(persistor, eventProducer)
       }
     }
