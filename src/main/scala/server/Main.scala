@@ -6,6 +6,8 @@ import server.sharding.Sharding
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import akka.rollingupdate.kubernetes.PodDeletionCost
+import akka.rollingupdate.kubernetes.AppVersionRevision
 
 object Main extends App {
   implicit val system: ActorSystem[GameServer.Command] =
@@ -15,6 +17,8 @@ object Main extends App {
   if (sys.env.getOrElse("ENV", "") == "production") {
     AkkaManagement(system).start()
     ClusterBootstrap(system).start()
+    PodDeletionCost(system).start()
+    AppVersionRevision(system).start()
   }
 
   system ! GameServer.Run()

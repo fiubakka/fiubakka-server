@@ -9,8 +9,7 @@ To be completed.
 ## How to run the server
 ### Using the docker image
   ```console
-> docker pull mrmarcosrolando/akka-backend-tp:latest
-> docker run -p 2020:2020 mrmarcosrolando/akka-backend-tp:latest
+> docker run -p 2020:2020 mrmarcosrolando/fiubakka-server:latest
 ```
 
 

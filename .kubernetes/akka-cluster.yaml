@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: fiubakka-server
-        image: fiubakka-server:1.0
+        image: mrmarcosrolando/fiubakka-server:1.0
         readinessProbe:
           httpGet:
             path: "/ready"
