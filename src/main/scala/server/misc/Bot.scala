@@ -35,22 +35,23 @@ object Bot {
         val playerResponseMapper: ActorRef[Player.ReplyCommand] =
           ctx.messageAdapter(rsp => PlayerReplyCommand(rsp))
 
-        playerBot ! Player.Start(playerResponseMapper)
-        timers.startTimerAtFixedRate(Heartbeat(), 2.seconds)
+        playerBot ! Player.Heartbeat(playerResponseMapper)
+        timers.startTimerWithFixedDelay(Heartbeat(), 2.seconds)
         timers.startTimerWithFixedDelay(RandomMove(), 16.millis)
 
         behaviour(
           State(
             playerBot,
-            Position(20, Random.nextInt(100).toFloat)
-          )
+            Position(20, 20)
+          ),
+          playerResponseMapper
         )
 
       }
     }
   }
 
-  def behaviour(state: State): Behavior[Command] = {
+  def behaviour(state: State, adapter: ActorRef[Player.ReplyCommand]): Behavior[Command] = {
     Behaviors.receiveMessage {
       case RandomMove() =>
         // Generate random velocity with magnitude 1
@@ -63,10 +64,10 @@ object Bot {
           velocity = randVelocity,
           position = newPosition
         )
-        behaviour(state.copy(position = newPosition))
+        behaviour(state.copy(position = newPosition), adapter)
 
       case Heartbeat() => {
-        state.playerBot ! Player.Heartbeat()
+        state.playerBot ! Player.Heartbeat(adapter)
         Behaviors.same
       }
 

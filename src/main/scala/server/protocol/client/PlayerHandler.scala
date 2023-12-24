@@ -58,14 +58,14 @@ object PlayerHandler {
 
         connection.handleWith(clientStreamHandler(ctx, conSource))
 
+        val playerResponseMapper: ActorRef[Player.ReplyCommand] =
+          ctx.messageAdapter(rsp => PlayerReplyCommand(rsp))
+
         timers.startTimerWithFixedDelay(
           "sendHeartbeat",
           SendHeartbeat(),
           2.seconds
         )
-
-        val playerResponseMapper: ActorRef[Player.ReplyCommand] =
-          ctx.messageAdapter(rsp => PlayerReplyCommand(rsp))
 
         Behaviors.receiveMessage {
           case Init(playerName) => {
@@ -75,7 +75,8 @@ object PlayerHandler {
               Player.TypeKey,
               playerName
             )
-            player ! Player.Start(playerResponseMapper)
+
+            player ! Player.Heartbeat(playerResponseMapper) // Forces the Player to start
 
             Behaviors.receiveMessage {
               case ConnectionClosed() => {
@@ -132,7 +133,7 @@ object PlayerHandler {
               }
 
               case SendHeartbeat() => {
-                player ! Player.Heartbeat()
+                player ! Player.Heartbeat(playerResponseMapper)
                 Behaviors.same
               }
 

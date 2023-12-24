@@ -9,11 +9,11 @@ import server.domain.structs.movement.Velocity
 import java.time.LocalDateTime
 
 final case class DurablePlayerState(
-    handler: ActorRef[Player.ReplyCommand],
     position: Position
 ) extends CborSerializable
 
 final case class TransientPlayerState(
+    handler: ActorRef[Player.ReplyCommand],
     lastHeartbeatTime: LocalDateTime,
     velocity: Velocity
 )

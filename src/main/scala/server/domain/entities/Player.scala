@@ -30,9 +30,9 @@ object Player {
 
   // Command
 
-  final case class Heartbeat() extends Command
+  // We also use the Heartbeat for synchronization with the PlayerHandler actor ref
+  final case class Heartbeat(handler: ActorRef[ReplyCommand]) extends Command
   final case class CheckHeartbeat() extends Command
-  final case class Start(playerHandler: ActorRef[ReplyCommand]) extends Command
   final case class Stop() extends Command
   final case class InitState(
       initialState: DurablePlayerState
@@ -77,7 +77,7 @@ object Player {
       Behaviors.withTimers { timers =>
         implicit val askTimeout = Timeout(5.seconds)
 
-        timers.startTimerAtFixedRate(
+        timers.startTimerWithFixedDelay(
           "persist",
           PersistState(),
           30.seconds
@@ -120,63 +120,67 @@ object Player {
   def setupBehaviour(
       persistor: EntityRef[PlayerPersistor.Command],
       eventProducer: ActorRef[GameEventProducer.Command],
-      playerHandler: Option[ActorRef[ReplyCommand]] = None
+      handler: Option[ActorRef[ReplyCommand]] = None
   ): Behavior[Command] = {
-    Behaviors.withTimers { timers =>
-      Behaviors.receiveMessage {
+    Behaviors.receiveMessage {
 
-        case InitState(initialState) => {
-          playerHandler match {
-            // This case corresponds to the one where the PlayerHandler is new, becasue we received the Start message
-            case Some(handler) => {
-              val newDState = initialState.copy(handler)
-              persistor ! PlayerPersistor.Persist(newDState)
-              Behaviors.withTimers { _ =>
-                timers.startTimerAtFixedRate(
-                  "checkHeartbeat",
-                  CheckHeartbeat(),
-                  5.seconds
+      case InitState(initialState) => {
+        Behaviors.withTimers { timers =>
+          timers.startTimerWithFixedDelay(
+            "checkHeartbeat",
+            CheckHeartbeat(),
+            5.seconds
+          )
+
+          handler match {
+            case Some(handler) => behaviour(
+              PlayerState(
+                initialState,
+                tState = TransientPlayerState(
+                  handler,
+                  LocalDateTime.now(),
+                  Velocity(0, 0)
                 )
-                behaviour(
-                  PlayerState(
-                    // We override the PlayerHandler to the new one
-                    dState = newDState,
-                    tState = TransientPlayerState(
-                      LocalDateTime.now(),
-                      Velocity(0, 0)
-                    )
-                  ),
-                  persistor,
-                  eventProducer
-                )
+              ),
+              persistor,
+              eventProducer
+            )
+
+            case None => {
+              Behaviors.receiveMessage {
+                case Heartbeat(handler) => {
+                  behaviour(
+                    PlayerState(
+                      initialState,
+                      tState = TransientPlayerState(
+                        handler,
+                        LocalDateTime.now(),
+                        Velocity(0, 0)
+                      )
+                    ),
+                    persistor,
+                    eventProducer
+                  )
+                }
+
+                // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
+                case _ => {
+                  Behaviors.same
+                }
               }
             }
-            // This case corresponds to the one where the PlayerHandler is the same, so the Player is being restarted
-            // While technically there is the chance that the PlayerHandler is still null here, it is very unlikely
-            // and in case of failure the client should just reconnect and it should work (evenutally anyway)
-            case None =>
-              behaviour(
-                PlayerState(
-                  dState = initialState,
-                  tState = TransientPlayerState(
-                    LocalDateTime.now(),
-                    Velocity(0, 0)
-                  )
-                ),
-                persistor,
-                eventProducer
-              )
           }
         }
+      }
 
-        case Start(playerHandler) => {
-          setupBehaviour(persistor, eventProducer, Some(playerHandler))
-        }
+      // Optimization to avoid waiting for the second Heartbeat to start
+      case Heartbeat(handler) => {
+        setupBehaviour(persistor, eventProducer, Some(handler))
+      }
 
-        case _ => {
-          // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
-          Behaviors.same
-        }
+      case _ => {
+        // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
+        Behaviors.same
       }
     }
   }
@@ -209,7 +213,7 @@ object Player {
         }
 
         case UpdateEntityState(entityId, newEntityState) => {
-          state.dState.handler ! NotifyEntityStateUpdate(
+          state.tState.handler ! NotifyEntityStateUpdate(
             entityId,
             newEntityState
           )
@@ -223,7 +227,7 @@ object Player {
         }
 
         case ReceiveMessage(entityId, msg) => {
-          state.dState.handler ! NotifyMessageReceived(
+          state.tState.handler ! NotifyMessageReceived(
             entityId,
             msg
           )
@@ -236,21 +240,16 @@ object Player {
         }
 
         // If the PlayerHandler failed and the client inits a new connection, we need to update the PlayerHandler
-        case Start(playerHandler) => {
+        // We also use the Heartbeat for synchronization with the PlayerHandler actor ref
+        case Heartbeat(syncHandler) => {
           behaviour(
-            state.copy(dState = state.dState.copy(handler = playerHandler)),
+            state.copy(tState = state.tState.copy(
+              lastHeartbeatTime = LocalDateTime.now(),
+              handler = syncHandler
+            )),
             persistor,
             eventProducer
           )
-        }
-
-        case Heartbeat() => {
-          val newState = state.copy(
-            tState = state.tState.copy(
-              lastHeartbeatTime = LocalDateTime.now()
-            )
-          )
-          behaviour(newState, persistor, eventProducer)
         }
 
         case CheckHeartbeat() => {
@@ -262,7 +261,7 @@ object Player {
               ctx.log.warn(
                 s"Player ${ctx.self.path.name} has not sent a heartbeat in the last 10 seconds, disconnecting"
               )
-              state.dState.handler ! ReplyStop() // Player handler it's most likely dead but just in case
+              state.tState.handler ! ReplyStop() // Player handler it's most likely dead but just in case
               Behaviors.stopped
             case false =>
               Behaviors.same
