@@ -207,7 +207,7 @@ object Player {
         }
 
         case PersistState() => {
-          ctx.log.info(s"Persisting current state: ${state.dState}")
+          ctx.log.debug(s"Persisting current state: ${state.dState}")
           persistor ! PlayerPersistor.Persist(state.dState)
           Behaviors.same
         }
