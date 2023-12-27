@@ -51,7 +51,10 @@ object Bot {
     }
   }
 
-  def behaviour(state: State, adapter: ActorRef[Player.ReplyCommand]): Behavior[Command] = {
+  def behaviour(
+      state: State,
+      adapter: ActorRef[Player.ReplyCommand]
+  ): Behavior[Command] = {
     Behaviors.receiveMessage {
       case RandomMove() =>
         // Generate random velocity with magnitude 1

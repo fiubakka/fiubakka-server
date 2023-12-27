@@ -1,13 +1,13 @@
 import akka.actor.typed.ActorSystem
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
+import akka.rollingupdate.kubernetes.AppVersionRevision
+import akka.rollingupdate.kubernetes.PodDeletionCost
 import server.GameServer
 import server.sharding.Sharding
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import akka.rollingupdate.kubernetes.PodDeletionCost
-import akka.rollingupdate.kubernetes.AppVersionRevision
 
 object Main extends App {
   implicit val system: ActorSystem[GameServer.Command] =

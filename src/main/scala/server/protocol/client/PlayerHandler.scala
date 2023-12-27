@@ -18,6 +18,9 @@ import protobuf.client.metadata.PBClientMetadata
 import protobuf.client.movement.player_movement.PBPlayerMovement
 import protobuf.dummy.PBDummy
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
+import protobuf.server.init.player_init_ready.PBPlayerInitReady
+import protobuf.server.init.player_init_ready.PBPlayerInitialState
+import protobuf.server.init.player_init_ready.PBPlayerPosition
 import protobuf.server.metadata.PBServerMessageType
 import protobuf.server.metadata.PBServerMetadata
 import protobuf.server.state.game_entity_state.PBGameEntityPosition
@@ -26,7 +29,6 @@ import protobuf.server.state.game_entity_state.PBGameEntityVelocity
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import server.domain.entities.Player
-import server.domain.entities.Player.ReplyStop
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 import server.protocol.flows.InMessageFlow
@@ -76,7 +78,9 @@ object PlayerHandler {
               playerName
             )
 
-            player ! Player.Heartbeat(playerResponseMapper) // Forces the Player to start
+            player ! Player.Heartbeat(
+              playerResponseMapper
+            ) // Forces the Player to start
 
             Behaviors.receiveMessage {
               case ConnectionClosed() => {
@@ -125,9 +129,22 @@ object PlayerHandler {
                     Behaviors.same
                   }
 
-                  case ReplyStop() => {
+                  case Player.ReplyStop() => {
                     ctx.log.info("Player stopped!")
                     Behaviors.stopped
+                  }
+
+                  case Player.PlayerInitReady(initialState) => {
+                    val message = PBPlayerInitReady.of(
+                      PBPlayerInitialState.of(
+                        PBPlayerPosition.of(
+                          initialState.position.x,
+                          initialState.position.y
+                        )
+                      )
+                    )
+                    conQueue.offer(message)
+                    Behaviors.same
                   }
                 }
               }

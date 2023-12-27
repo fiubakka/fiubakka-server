@@ -65,6 +65,8 @@ object Player {
       msg: String
   ) extends ReplyCommand
   final case class ReplyStop() extends ReplyCommand
+  final case class PlayerInitReady(initialState: DurablePlayerState)
+      extends ReplyCommand
 
   Map[String, GameEntity]()
 
@@ -133,22 +135,28 @@ object Player {
           )
 
           handler match {
-            case Some(handler) => behaviour(
-              PlayerState(
-                initialState,
-                tState = TransientPlayerState(
-                  handler,
-                  LocalDateTime.now(),
-                  Velocity(0, 0)
-                )
-              ),
-              persistor,
-              eventProducer
-            )
+            case Some(handler) =>
+              handler ! PlayerInitReady(initialState)
+              behaviour(
+                PlayerState(
+                  initialState,
+                  tState = TransientPlayerState(
+                    handler,
+                    LocalDateTime.now(),
+                    Velocity(0, 0)
+                  )
+                ),
+                persistor,
+                eventProducer
+              )
 
             case None => {
               Behaviors.receiveMessage {
                 case Heartbeat(handler) => {
+                  // TODO: Should we send the PlayerInitReady message here as well or only in the case Some(handler)
+                  // handler ! PlayerInitReady(
+                  //   initialState
+                  // )
                   behaviour(
                     PlayerState(
                       initialState,
@@ -236,6 +244,7 @@ object Player {
 
         case Stop() => {
           ctx.log.info(s"Stopping player ${ctx.self.path.name}")
+          // TODO: Stop persistor timer
           Behaviors.stopped
         }
 
@@ -243,10 +252,12 @@ object Player {
         // We also use the Heartbeat for synchronization with the PlayerHandler actor ref
         case Heartbeat(syncHandler) => {
           behaviour(
-            state.copy(tState = state.tState.copy(
-              lastHeartbeatTime = LocalDateTime.now(),
-              handler = syncHandler
-            )),
+            state.copy(tState =
+              state.tState.copy(
+                lastHeartbeatTime = LocalDateTime.now(),
+                handler = syncHandler
+              )
+            ),
             persistor,
             eventProducer
           )
