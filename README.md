@@ -4,6 +4,7 @@ To be completed.
 
 ## Dependencies
 * [sbt](https://www.scala-sbt.org/download.html)
+* [netstat](https://www.tecmint.com/install-netstat-in-linux/)
 * [docker](https://docs.docker.com/engine/install/)
 
 ## How to run the server
@@ -14,8 +15,8 @@ To be completed.
 
 
 ### Using the run script
-After cloning the repository, the protobuf submodule needs to be updated using the command:
-`git submodule update --recursive --remote`
+After cloning the repository, the protobuf submodule needs to be initialized using the command:
+`git submodule update --init --recursive`
 
 That brings all the .proto files from another repository, but before using them they need to be compiled using
 `sbt compile`
