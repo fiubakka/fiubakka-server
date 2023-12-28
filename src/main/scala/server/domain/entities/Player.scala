@@ -153,10 +153,7 @@ object Player {
             case None => {
               Behaviors.receiveMessage {
                 case Heartbeat(handler) => {
-                  // TODO: Should we send the PlayerInitReady message here as well or only in the case Some(handler)
-                  // handler ! PlayerInitReady(
-                  //   initialState
-                  // )
+                  handler ! PlayerInitReady(initialState)
                   behaviour(
                     PlayerState(
                       initialState,
