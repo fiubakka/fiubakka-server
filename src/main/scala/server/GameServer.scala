@@ -4,6 +4,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import server.protocol.client.PlayerAccepter
 import server.protocol.event.kafka.KafkaConsumer
 import server.protocol.event.kafka.KafkaProducer
+import server.misc.Bot
 
 object GameServer {
   sealed trait Command
@@ -20,8 +21,8 @@ object GameServer {
             println("Game server is running...")
             ctx.spawn(PlayerAccepter(), "PlayerAccepter")
 
-            // println("Spawning bots...")
-            // (1 to 2).foreach(i => ctx.spawn(Bot(), s"Bot$i"))
+            println("Spawning bots...")
+            (1 to 2).foreach(i => ctx.spawn(Bot(), s"Bot$i"))
             Behaviors.same
 
           }
