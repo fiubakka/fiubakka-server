@@ -241,7 +241,7 @@ object Player {
 
         case Stop() => {
           ctx.log.info(s"Stopping player ${ctx.self.path.name}")
-          // TODO: Stop persistor timer
+          persistor ! PlayerPersistor.Persist(state.dState)
           Behaviors.stopped
         }
 
