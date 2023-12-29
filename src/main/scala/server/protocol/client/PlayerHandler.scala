@@ -221,6 +221,11 @@ object PlayerHandler {
         PBDummy()
       }
       .filter(_ => false) // Drop all
+      .watchTermination() { (_, done) =>
+        done.onComplete(_ => {
+          ctx.self ! ConnectionClosed()
+        })
+      } // Watch here instead of at the end, otherwise conSource keeps the stream alive and avoids the termination
       .merge(conSource)
       .via {
         OutMessageFlow(
@@ -228,11 +233,6 @@ object PlayerHandler {
             PBServerMetadata(length, `type`.asInstanceOf[PBServerMessageType]),
           ProtocolMessageMap.serverMessageMap
         )
-      }
-      .watchTermination() { (_, done) =>
-        done.onComplete(_ => {
-          ctx.self ! ConnectionClosed()
-        })
       }
   }
 
