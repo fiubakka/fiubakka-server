@@ -7,6 +7,8 @@ import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
 
+import scala.language.reflectiveCalls
+
 object InMessageFlow {
   def apply[A <: GeneratedEnum, B <: GeneratedMessageCompanion[
     _ <: GeneratedMessage { def length: Int; def `type`: A }

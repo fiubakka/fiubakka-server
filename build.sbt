@@ -6,7 +6,8 @@ ThisBuild / organization     := "com.github.MarcosRolando"
 ThisBuild / organizationName := "MarcosRolando"
 ThisBuild / scalacOptions    ++= Seq(
   "-Ywarn-unused",
-  "-deprecation"
+  "-deprecation",
+  "-feature"
 )
 
 resolvers += "Akka library repository".at("https://repo.akka.io/maven")
