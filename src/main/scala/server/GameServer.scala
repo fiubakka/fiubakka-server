@@ -1,10 +1,10 @@
 package server
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
+import server.misc.Bot
 import server.protocol.client.PlayerAccepter
 import server.protocol.event.kafka.KafkaConsumer
 import server.protocol.event.kafka.KafkaProducer
-import server.misc.Bot
 
 object GameServer {
   sealed trait Command

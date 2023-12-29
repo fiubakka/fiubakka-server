@@ -5,11 +5,13 @@ import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.scaladsl.Behaviors
+import akka.cluster.sharding.typed.scaladsl.EntityRef
 import akka.serialization.jackson.CborSerializable
 import akka.stream.Materializer
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.SourceQueueWithComplete
 import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
 import protobuf.client.chat.message.{PBPlayerMessage => PBPlayerMessageClient}
@@ -39,6 +41,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 object PlayerHandler {
+  final case class State(
+      player: EntityRef[Player.Command],
+      conQueue: SourceQueueWithComplete[GeneratedMessage],
+      playerResponseMapper: ActorRef[Player.ReplyCommand]
+  )
+
   sealed trait Command extends CborSerializable
   final case class ConnectionClosed() extends Command
 
@@ -80,89 +88,118 @@ object PlayerHandler {
 
             player ! Player.Heartbeat(
               playerResponseMapper
-            ) // Forces the Player to start
+            ) // Forces the Player to start the first time and syncs the handler
 
-            Behaviors.receiveMessage {
-              case ConnectionClosed() => {
-                ctx.log.info("Closing connection!")
-                player ! Player.Stop()
-                Behaviors.stopped
-              }
+            initBehaviour(State(player, conQueue, playerResponseMapper))
+          }
 
-              case Move(velocity, position) => {
-                player ! Player.Move(velocity, position)
-                Behaviors.same
-              }
+          case _ => Behaviors.same
+        }
+      }
+    }
+  }
 
-              case AddMessage(msg) => {
-                player ! Player.AddMessage(msg)
-                Behaviors.same
-              }
+  private def initBehaviour(state: State): Behavior[Command] = {
+    Behaviors.receive { (ctx, msg) =>
+      msg match {
+        case Init(playerName) => {
+          ctx.log.info(s"Another init message received from $playerName")
+          state.player ! Player
+            .Init() // If the Player is ready it will respond InitReady
+          Behaviors.same
+        }
 
-              case PlayerReplyCommand(cmd) => {
-                cmd match {
-                  case Player.NotifyEntityStateUpdate(
-                        entityId,
-                        newEntityState
-                      ) => {
-                    val message = PBGameEntityState
-                      .of(
-                        entityId,
-                        PBGameEntityPosition
-                          .of(
-                            newEntityState.position.x,
-                            newEntityState.position.y
-                          ),
-                        PBGameEntityVelocity
-                          .of(
-                            newEntityState.velocity.x,
-                            newEntityState.velocity.y
-                          )
-                      )
-                    conQueue.offer(message)
-                    Behaviors.same
-                  }
-
-                  case Player.NotifyMessageReceived(entityId, msg) => {
-                    val message = PBPlayerMessageServer.of(entityId, msg)
-                    conQueue.offer(message)
-                    Behaviors.same
-                  }
-
-                  case Player.ReplyStop() => {
-                    ctx.log.info("Player stopped!")
-                    Behaviors.stopped
-                  }
-
-                  case Player.PlayerInitReady(initialState) => {
-                    val message = PBPlayerInitReady.of(
-                      PBPlayerInitialState.of(
-                        PBPlayerPosition.of(
-                          initialState.position.x,
-                          initialState.position.y
-                        )
-                      )
-                    )
-                    conQueue.offer(message)
-                    Behaviors.same
-                  }
-                }
-              }
-
-              case SendHeartbeat() => {
-                player ! Player.Heartbeat(playerResponseMapper)
-                Behaviors.same
-              }
-
-              case _ => {
-                Behaviors.same
-              }
+        case PlayerReplyCommand(cmd) => {
+          cmd match {
+            case Player.InitReady(initialState) => {
+              val message = PBPlayerInitReady.of(
+                PBPlayerInitialState.of(
+                  PBPlayerPosition.of(
+                    initialState.position.x,
+                    initialState.position.y
+                  )
+                )
+              )
+              state.conQueue.offer(message)
+              runningBehaviour(state)
             }
-          }
 
-          case _ => {
-            Behaviors.same
+            case _ => Behaviors.same
           }
+        }
+
+        case _ => {
+          Behaviors.same
+        }
+      }
+    }
+  }
+
+  private def runningBehaviour(state: State): Behavior[Command] = {
+    Behaviors.receive { (ctx, msg) =>
+      msg match {
+        case ConnectionClosed() => {
+          ctx.log.info("Closing connection!")
+          state.player ! Player.Stop()
+          Behaviors.stopped
+        }
+
+        case Move(velocity, position) => {
+          state.player ! Player.Move(velocity, position)
+          Behaviors.same
+        }
+
+        case AddMessage(msg) => {
+          state.player ! Player.AddMessage(msg)
+          Behaviors.same
+        }
+
+        case PlayerReplyCommand(cmd) => {
+          cmd match {
+            case Player.NotifyEntityStateUpdate(
+                  entityId,
+                  newEntityState
+                ) => {
+              val message = PBGameEntityState
+                .of(
+                  entityId,
+                  PBGameEntityPosition
+                    .of(
+                      newEntityState.position.x,
+                      newEntityState.position.y
+                    ),
+                  PBGameEntityVelocity
+                    .of(
+                      newEntityState.velocity.x,
+                      newEntityState.velocity.y
+                    )
+                )
+              state.conQueue.offer(message)
+              Behaviors.same
+            }
+
+            case Player.NotifyMessageReceived(entityId, msg) => {
+              val message = PBPlayerMessageServer.of(entityId, msg)
+              state.conQueue.offer(message)
+              Behaviors.same
+            }
+
+            case Player.ReplyStop() => {
+              ctx.log.info("Player stopped!")
+              Behaviors.stopped
+            }
+
+            case _ => Behaviors.same // Ignores InitReady
+          }
+        }
+
+        case SendHeartbeat() => {
+          state.player ! Player.Heartbeat(state.playerResponseMapper)
+          Behaviors.same
+        }
+
+        case _ => {
+          Behaviors.same
         }
       }
     }

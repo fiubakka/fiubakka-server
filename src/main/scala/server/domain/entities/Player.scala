@@ -34,7 +34,9 @@ object Player {
   final case class Heartbeat(handler: ActorRef[ReplyCommand]) extends Command
   final case class CheckHeartbeat() extends Command
   final case class Stop() extends Command
-  final case class InitState(
+  // Sent by the handler in case the original InitReady response is lost
+  final case class Init() extends Command
+  final case class InitialState(
       initialState: DurablePlayerState
   ) extends Command
   final case class Move(
@@ -65,7 +67,7 @@ object Player {
       msg: String
   ) extends ReplyCommand
   final case class ReplyStop() extends ReplyCommand
-  final case class PlayerInitReady(initialState: DurablePlayerState)
+  final case class InitReady(initialState: DurablePlayerState)
       extends ReplyCommand
 
   Map[String, GameEntity]()
@@ -106,7 +108,7 @@ object Player {
           PlayerPersistor.GetState.apply
         ) {
           case Success(PlayerPersistor.GetStateResponse(initialState)) => {
-            InitState(initialState)
+            InitialState(initialState)
           }
           case Failure(ex) => {
             ctx.log.error(s"Failed to get player state: $ex")
@@ -126,7 +128,7 @@ object Player {
   ): Behavior[Command] = {
     Behaviors.receiveMessage {
 
-      case InitState(initialState) => {
+      case InitialState(initialState) => {
         Behaviors.withTimers { timers =>
           timers.startTimerWithFixedDelay(
             "checkHeartbeat",
@@ -136,7 +138,7 @@ object Player {
 
           handler match {
             case Some(handler) =>
-              handler ! PlayerInitReady(initialState)
+              handler ! InitReady(initialState)
               behaviour(
                 PlayerState(
                   initialState,
@@ -153,7 +155,7 @@ object Player {
             case None => {
               Behaviors.receiveMessage {
                 case Heartbeat(handler) => {
-                  handler ! PlayerInitReady(initialState)
+                  handler ! InitReady(initialState)
                   behaviour(
                     PlayerState(
                       initialState,
@@ -274,6 +276,11 @@ object Player {
             case false =>
               Behaviors.same
           }
+        }
+
+        case Init() => {
+          state.tState.handler ! InitReady(state.dState)
+          Behaviors.same
         }
 
         case _ => {
