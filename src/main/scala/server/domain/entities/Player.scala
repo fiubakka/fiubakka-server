@@ -79,7 +79,7 @@ object Player {
   ): Behavior[Command] = {
     Behaviors.setup { ctx =>
       Behaviors.withTimers { timers =>
-        implicit val askTimeout = Timeout(5.seconds)
+        implicit val askTimeout = Timeout(30.seconds)
 
         timers.startTimerWithFixedDelay(
           "persist",
