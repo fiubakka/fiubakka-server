@@ -10,6 +10,7 @@ import akka.serialization.jackson.CborSerializable
 import akka.stream.Materializer
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.SourceQueueWithComplete
 import akka.stream.scaladsl.Tcp
@@ -18,7 +19,6 @@ import protobuf.client.chat.message.{PBPlayerMessage => PBPlayerMessageClient}
 import protobuf.client.init.player_init.PBPlayerInit
 import protobuf.client.metadata.PBClientMetadata
 import protobuf.client.movement.player_movement.PBPlayerMovement
-import protobuf.dummy.PBDummy
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
 import protobuf.server.init.player_init_ready.PBPlayerInitReady
 import protobuf.server.init.player_init_ready.PBPlayerInitialState
@@ -215,24 +215,27 @@ object PlayerHandler {
       )
       .throttle(60, 1.second) // 60hz tick rate
       .map(commandFromClientMessage)
-      .map { msg =>
-        ctx.self ! msg
-        // Trick the Scala compiler, we don't need any value here but null breaks Akka Stream
-        PBDummy()
-      }
-      .filter(_ => false) // Drop all
+      .via(
+        Flow.fromSinkAndSourceCoupled(
+          Sink.foreach { msg =>
+            ctx.self ! msg
+          },
+          conSource.via(
+            OutMessageFlow(
+              (length: Int, `type`: GeneratedEnum) =>
+                PBServerMetadata(
+                  length,
+                  `type`.asInstanceOf[PBServerMessageType]
+                ),
+              ProtocolMessageMap.serverMessageMap
+            )
+          )
+        )
+      )
       .watchTermination() { (_, done) =>
         done.onComplete(_ => {
           ctx.self ! ConnectionClosed()
         })
-      } // Watch here instead of at the end, otherwise conSource keeps the stream alive and avoids the termination
-      .merge(conSource)
-      .via {
-        OutMessageFlow(
-          (length: Int, `type`: GeneratedEnum) =>
-            PBServerMetadata(length, `type`.asInstanceOf[PBServerMessageType]),
-          ProtocolMessageMap.serverMessageMap
-        )
       }
   }
 
