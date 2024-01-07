@@ -2,13 +2,16 @@ import sbt._
 
 object Dependencies {
   val AkkaVersion = "2.9.0"
+  val AeronVersion = "1.42.1"
   val AkkaManagementVersion = "1.5.0"
   val SlickVersion = "3.4.1"
-
   val AlpakkaVersion = "5.0.0"
   val JacksonVersion = "2.11.4"
 
-  lazy val munit = "org.scalameta" %% "munit" % "0.7.29"
+  // Use AeronUDP instead of TCP for network transport of Akka messages
+  lazy val aeronDriver = "io.aeron" % "aeron-driver" % AeronVersion
+  lazy val aeronClient = "io.aeron" % "aeron-client" % AeronVersion
+
   lazy val akkaTyped = "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion
   lazy val akkaStream = "com.typesafe.akka" %% "akka-stream" % AkkaVersion
   lazy val akkaStreamAlpakkaKafka = "com.typesafe.akka" %% "akka-stream-kafka" % AlpakkaVersion
@@ -31,6 +34,4 @@ object Dependencies {
   lazy val logback = "ch.qos.logback" % "logback-classic" % "1.2.12"
   // This is needed for conditional statements in logback configuration file
   lazy val janino = "org.codehaus.janino" % "janino" % "3.1.8"
-  lazy val akkaStreamTestKit = "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion
-  lazy val akkaPersistenceTestKit = "com.typesafe.akka" %% "akka-persistence-testkit" % AkkaVersion
 }

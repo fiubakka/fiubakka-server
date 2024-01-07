@@ -46,6 +46,8 @@ lazy val root = (project in file("."))
     ),
     name := "fiubakka-server",
     libraryDependencies ++= Seq(
+      aeronDriver,
+      aeronClient,
       akkaTyped,
       akkaStream,
       akkaStreamAlpakkaKafka,
@@ -72,9 +74,6 @@ lazy val root = (project in file("."))
       log4jApi,
       logback,
       janino,
-      munit % Test,
-      akkaStreamTestKit % Test,
-      akkaPersistenceTestKit % Test,
     )
   )
   .enablePlugins(
