@@ -34,7 +34,7 @@ object Player {
   // We also use the Heartbeat for synchronization with the PlayerHandler actor ref
   final case class Heartbeat(
       handler: ActorRef[ReplyCommand],
-      registerPayload: Option[Equipment] = None
+      equipment: Option[Equipment] = None
   ) extends Command
   final case class CheckHeartbeat() extends Command
   final case class Stop() extends Command
@@ -130,7 +130,7 @@ object Player {
       persistor: EntityRef[PlayerPersistor.Command],
       eventProducer: ActorRef[GameEventProducer.Command],
       handler: Option[ActorRef[ReplyCommand]] = None,
-      registerPayload: Option[Equipment] = None
+      equipment: Option[Equipment] = None
   ): Behavior[Command] = {
     Behaviors.receiveMessage {
 
@@ -144,11 +144,11 @@ object Player {
 
           var newState = initialState
 
-          registerPayload match {
-            case Some(registerPayload) =>
-              println("SAVING PAYLOAD: ", registerPayload)
+          equipment match {
+            case Some(equipment) =>
+              println("SAVING EQUIPMENT: ", equipment)
               newState = initialState.copy(
-                equipment = registerPayload
+                equipment = equipment
               )
               persistor ! PlayerPersistor.Persist(newState)
 
@@ -202,10 +202,10 @@ object Player {
       }
 
       // Optimization to avoid waiting for the second Heartbeat to start
-      case Heartbeat(handler, registerPayload) => {
+      case Heartbeat(handler, equipment) => {
         // Este mensaje llega primero, despues va al case None o case Some de arriba
-        println("REGISTER PAYLOAD HEARBEAT setupBehaviour: ", registerPayload)
-        setupBehaviour(persistor, eventProducer, Some(handler), registerPayload)
+        println("equipment HEARBEAT setupBehaviour: ", equipment)
+        setupBehaviour(persistor, eventProducer, Some(handler), equipment)
       }
 
       case _ => {
@@ -273,7 +273,7 @@ object Player {
         // If the PlayerHandler failed and the client inits a new connection, we need to update the PlayerHandler
         // We also use the Heartbeat for synchronization with the PlayerHandler actor ref
         case Heartbeat(syncHandler, _) => {
-          // Deberiamos aca meter el registerPayload en el dState que se le pasa al behaviour?
+          // Deberiamos aca meter el equipment en el dState que se le pasa al behaviour?
           behaviour(
             state.copy(tState =
               state.tState.copy(

@@ -1,7 +1,7 @@
 package server.domain.structs.inventory
 
 final case class Equipment(
-    hats: Int,
+    hat: Int,
     hair: Int,
     eyes: Int,
     glasses: Int,
