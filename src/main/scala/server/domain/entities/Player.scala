@@ -112,7 +112,6 @@ object Player {
           PlayerPersistor.GetState.apply
         ) {
           case Success(PlayerPersistor.GetStateResponse(initialState)) => {
-            println("INITIAL STATE: ", initialState)
             InitialState(initialState)
           }
           case Failure(ex) => {
@@ -146,18 +145,16 @@ object Player {
 
           equipment match {
             case Some(equipment) =>
-              println("SAVING EQUIPMENT: ", equipment)
               newState = initialState.copy(
                 equipment = equipment
               )
               persistor ! PlayerPersistor.Persist(newState)
 
-            case None => // Hace falta hacer algo distinto aca?
+            case None =>
           }
 
           handler match {
             case Some(handler) =>
-              println("INITIALSTATE CASE SOME NEWSTATE: ", newState)
               handler ! InitReady(newState)
               behaviour(
                 PlayerState(
@@ -175,7 +172,6 @@ object Player {
             case None => {
               Behaviors.receiveMessage {
                 case Heartbeat(handler, _) => {
-                  println("INITIALSTATE CASE NONE NEW STATE: ", newState)
                   handler ! InitReady(newState)
                   behaviour(
                     PlayerState(
@@ -203,8 +199,6 @@ object Player {
 
       // Optimization to avoid waiting for the second Heartbeat to start
       case Heartbeat(handler, equipment) => {
-        // Este mensaje llega primero, despues va al case None o case Some de arriba
-        println("equipment HEARBEAT setupBehaviour: ", equipment)
         setupBehaviour(persistor, eventProducer, Some(handler), equipment)
       }
 
