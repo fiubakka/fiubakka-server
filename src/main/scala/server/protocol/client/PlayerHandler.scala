@@ -20,6 +20,7 @@ import protobuf.client.init.player_init.PBPlayerInit
 import protobuf.client.metadata.PBClientMetadata
 import protobuf.client.movement.player_movement.PBPlayerMovement
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
+import protobuf.server.init.player_init_ready.PBPlayerEquipment
 import protobuf.server.init.player_init_ready.PBPlayerInitReady
 import protobuf.server.init.player_init_ready.PBPlayerInitialState
 import protobuf.server.init.player_init_ready.PBPlayerPosition
@@ -120,6 +121,15 @@ object PlayerHandler {
                   PBPlayerPosition.of(
                     initialState.position.x,
                     initialState.position.y
+                  ),
+                  PBPlayerEquipment.of(
+                    initialState.equipment.hat,
+                    initialState.equipment.hair,
+                    initialState.equipment.eyes,
+                    initialState.equipment.glasses,
+                    initialState.equipment.facial_hair,
+                    initialState.equipment.body,
+                    initialState.equipment.outfit
                   )
                 )
               )
