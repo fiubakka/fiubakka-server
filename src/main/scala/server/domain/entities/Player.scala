@@ -12,6 +12,7 @@ import server.domain.structs.GameEntity
 import server.domain.structs.GameEntityState
 import server.domain.structs.PlayerState
 import server.domain.structs.TransientPlayerState
+import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 import server.infra.PlayerPersistor
@@ -31,7 +32,10 @@ object Player {
   // Command
 
   // We also use the Heartbeat for synchronization with the PlayerHandler actor ref
-  final case class Heartbeat(handler: ActorRef[ReplyCommand]) extends Command
+  final case class Heartbeat(
+      handler: ActorRef[ReplyCommand],
+      registerPayload: Option[Equipment] = None
+  ) extends Command
   final case class CheckHeartbeat() extends Command
   final case class Stop() extends Command
   // Sent by the handler in case the original InitReady response is lost
@@ -108,6 +112,7 @@ object Player {
           PlayerPersistor.GetState.apply
         ) {
           case Success(PlayerPersistor.GetStateResponse(initialState)) => {
+            println("INITIAL STATE: ", initialState)
             InitialState(initialState)
           }
           case Failure(ex) => {
@@ -124,7 +129,8 @@ object Player {
   def setupBehaviour(
       persistor: EntityRef[PlayerPersistor.Command],
       eventProducer: ActorRef[GameEventProducer.Command],
-      handler: Option[ActorRef[ReplyCommand]] = None
+      handler: Option[ActorRef[ReplyCommand]] = None,
+      registerPayload: Option[Equipment] = None
   ): Behavior[Command] = {
     Behaviors.receiveMessage {
 
@@ -136,12 +142,26 @@ object Player {
             5.seconds
           )
 
+          var newState = initialState
+
+          registerPayload match {
+            case Some(registerPayload) =>
+              println("SAVING PAYLOAD: ", registerPayload)
+              newState = initialState.copy(
+                equipment = registerPayload
+              )
+              persistor ! PlayerPersistor.Persist(newState)
+
+            case None => // Hace falta hacer algo distinto aca?
+          }
+
           handler match {
             case Some(handler) =>
-              handler ! InitReady(initialState)
+              println("INITIALSTATE CASE SOME NEWSTATE: ", newState)
+              handler ! InitReady(newState)
               behaviour(
                 PlayerState(
-                  initialState,
+                  newState,
                   tState = TransientPlayerState(
                     handler,
                     LocalDateTime.now(),
@@ -154,11 +174,12 @@ object Player {
 
             case None => {
               Behaviors.receiveMessage {
-                case Heartbeat(handler) => {
-                  handler ! InitReady(initialState)
+                case Heartbeat(handler, _) => {
+                  println("INITIALSTATE CASE NONE NEW STATE: ", newState)
+                  handler ! InitReady(newState)
                   behaviour(
                     PlayerState(
-                      initialState,
+                      newState,
                       tState = TransientPlayerState(
                         handler,
                         LocalDateTime.now(),
@@ -181,8 +202,10 @@ object Player {
       }
 
       // Optimization to avoid waiting for the second Heartbeat to start
-      case Heartbeat(handler) => {
-        setupBehaviour(persistor, eventProducer, Some(handler))
+      case Heartbeat(handler, registerPayload) => {
+        // Este mensaje llega primero, despues va al case None o case Some de arriba
+        println("REGISTER PAYLOAD HEARBEAT setupBehaviour: ", registerPayload)
+        setupBehaviour(persistor, eventProducer, Some(handler), registerPayload)
       }
 
       case _ => {
@@ -249,7 +272,8 @@ object Player {
 
         // If the PlayerHandler failed and the client inits a new connection, we need to update the PlayerHandler
         // We also use the Heartbeat for synchronization with the PlayerHandler actor ref
-        case Heartbeat(syncHandler) => {
+        case Heartbeat(syncHandler, _) => {
+          // Deberiamos aca meter el registerPayload en el dState que se le pasa al behaviour?
           behaviour(
             state.copy(tState =
               state.tState.copy(

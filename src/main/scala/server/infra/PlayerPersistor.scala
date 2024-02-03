@@ -8,6 +8,7 @@ import akka.persistence.typed.state.scaladsl.DurableStateBehavior
 import akka.persistence.typed.state.scaladsl.Effect
 import akka.serialization.jackson.CborSerializable
 import server.domain.structs.DurablePlayerState
+import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
 
 object PlayerPersistor {
@@ -23,7 +24,8 @@ object PlayerPersistor {
   def apply(persistenceId: PersistenceId): Behavior[Command] = {
     DurableStateBehavior[Command, DurablePlayerState](
       persistenceId,
-      emptyState = DurablePlayerState(Position(150, 230)),
+      emptyState =
+        DurablePlayerState(Position(150, 230), Equipment(0, 0, 0, 0, 0, 0, 0)),
       commandHandler = commandHandler
     )
   }
