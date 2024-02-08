@@ -6,6 +6,7 @@ message PBGameEntityState {
   required string entityId = 1;
   required PBGameEntityPosition position = 2;
   required PBGameEntityVelocity velocity = 3;
+  required PBGameEntityEquipment equipment = 4;
 }
 
 message PBGameEntityPosition {
@@ -16,4 +17,14 @@ message PBGameEntityPosition {
 message PBGameEntityVelocity {
   required float velX = 1;
   required float velY = 2;
+}
+
+message PBGameEntityEquipment {
+  required int32 hat = 1;
+  required int32 hair = 2;
+  required int32 eyes = 3;
+  required int32 glasses = 4;
+  required int32 facial_hair = 5;
+  required int32 body = 6;
+  required int32 outfit = 7;
 }

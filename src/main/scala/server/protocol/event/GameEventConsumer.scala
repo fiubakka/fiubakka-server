@@ -13,6 +13,7 @@ import protobuf.event.state.game_entity_state.PBGameEntityState
 import scalapb.GeneratedMessage
 import server.domain.entities.Player
 import server.domain.structs.GameEntityState
+import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 import server.protocol.event.kafka.KafkaConsumer
@@ -67,7 +68,7 @@ object GameEventConsumer {
 
   private val commandFromEventMessage
       : PartialFunction[GeneratedMessage, Player.Command] = {
-    case PBGameEntityState(entityId, position, velocity, _) =>
+    case PBGameEntityState(entityId, position, velocity, equipment, _) =>
       Player.UpdateEntityState(
         entityId,
         GameEntityState(
@@ -78,6 +79,15 @@ object GameEventConsumer {
           Velocity(
             velocity.velX,
             velocity.velY
+          ),
+          Equipment(
+            equipment.hat,
+            equipment.hair,
+            equipment.eyes,
+            equipment.glasses,
+            equipment.facialHair,
+            equipment.body,
+            equipment.outfit
           )
         )
       )

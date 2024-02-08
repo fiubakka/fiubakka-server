@@ -13,6 +13,7 @@ import org.apache.kafka.common.serialization.StringSerializer
 import protobuf.event.chat.message.PBPlayerMessage
 import protobuf.event.metadata.PBEventMessageType
 import protobuf.event.metadata.PBEventMetadata
+import protobuf.event.state.game_entity_state.PBGameEntityEquipment
 import protobuf.event.state.game_entity_state.PBGameEntityPosition
 import protobuf.event.state.game_entity_state.PBGameEntityState
 import protobuf.event.state.game_entity_state.PBGameEntityVelocity
@@ -65,6 +66,15 @@ object GameEventProducer {
               PBGameEntityVelocity(
                 playerState.tState.velocity.x,
                 playerState.tState.velocity.y
+              ),
+              PBGameEntityEquipment(
+                playerState.dState.equipment.hat,
+                playerState.dState.equipment.hair,
+                playerState.dState.equipment.eyes,
+                playerState.dState.equipment.glasses,
+                playerState.dState.equipment.facial_hair,
+                playerState.dState.equipment.body,
+                playerState.dState.equipment.outfit
               )
             )
           )

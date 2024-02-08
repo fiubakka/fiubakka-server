@@ -26,6 +26,7 @@ import protobuf.server.init.player_init_ready.PBPlayerInitialState
 import protobuf.server.init.player_init_ready.PBPlayerPosition
 import protobuf.server.metadata.PBServerMessageType
 import protobuf.server.metadata.PBServerMetadata
+import protobuf.server.state.game_entity_state.PBGameEntityEquipment
 import protobuf.server.state.game_entity_state.PBGameEntityPosition
 import protobuf.server.state.game_entity_state.PBGameEntityState
 import protobuf.server.state.game_entity_state.PBGameEntityVelocity
@@ -185,7 +186,16 @@ object PlayerHandler {
                     .of(
                       newEntityState.velocity.x,
                       newEntityState.velocity.y
-                    )
+                    ),
+                  PBGameEntityEquipment.of(
+                    newEntityState.equipment.hat,
+                    newEntityState.equipment.hair,
+                    newEntityState.equipment.eyes,
+                    newEntityState.equipment.glasses,
+                    newEntityState.equipment.facial_hair,
+                    newEntityState.equipment.body,
+                    newEntityState.equipment.outfit
+                  )
                 )
               state.conQueue.offer(message)
               Behaviors.same
