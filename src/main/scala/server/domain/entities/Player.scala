@@ -144,12 +144,14 @@ object Player {
           var newState = initialState
 
           equipment match {
+            // Register case. We need to persist the equipment set in character creation
             case Some(equipment) =>
               newState = initialState.copy(
                 equipment = equipment
               )
               persistor ! PlayerPersistor.Persist(newState)
 
+            // Login case.
             case None =>
           }
 
@@ -292,6 +294,7 @@ object Player {
               state.tState.handler ! ReplyStop() // Player handler it's most likely dead but just in case
               Behaviors.stopped
             case false =>
+              eventProducer ! GameEventProducer.PlayerStateUpdate(state)
               Behaviors.same
           }
         }
