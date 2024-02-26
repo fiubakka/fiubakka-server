@@ -90,9 +90,8 @@ object PlayerHandler {
               initInfo.playerName
             )
 
-            player ! Player.Heartbeat(
-              playerResponseMapper,
-              None
+            player ! Player.Init(
+              playerResponseMapper
             ) // Forces the Player to start the first time and syncs the handler
 
             initBehaviour(State(player, conQueue, playerResponseMapper))
@@ -111,14 +110,15 @@ object PlayerHandler {
           ctx.log.info(
             s"Another init message received from ${initInfo.playerName}"
           )
-          state.player ! Player
-            .Init() // If the Player is ready it will respond InitReady
+          state.player ! Player.Init(
+            state.playerResponseMapper
+          ) // Renotify the Player to start, we should eventually receive Player.Ready message
           Behaviors.same
         }
 
         case PlayerReplyCommand(cmd) => {
           cmd match {
-            case Player.InitReady(initialState) => {
+            case Player.Ready(initialState) => {
               val message = PBPlayerInitReady.of(
                 PBPlayerInitialState.of(
                   PBPlayerPosition.of(
@@ -214,12 +214,12 @@ object PlayerHandler {
               Behaviors.stopped
             }
 
-            case _ => Behaviors.same // Ignores InitReady
+            case _ => Behaviors.same
           }
         }
 
         case SendHeartbeat() => {
-          state.player ! Player.Heartbeat(state.playerResponseMapper)
+          state.player ! Player.Heartbeat()
           Behaviors.same
         }
 

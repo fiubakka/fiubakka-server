@@ -35,7 +35,7 @@ object Bot {
         val playerResponseMapper: ActorRef[Player.ReplyCommand] =
           ctx.messageAdapter(rsp => PlayerReplyCommand(rsp))
 
-        playerBot ! Player.Heartbeat(playerResponseMapper)
+        playerBot ! Player.Init(playerResponseMapper)
         timers.startTimerWithFixedDelay(Heartbeat(), 2.seconds)
         timers.startTimerWithFixedDelay(RandomMove(), 16.millis)
 
@@ -70,7 +70,7 @@ object Bot {
         behaviour(state.copy(position = newPosition), adapter)
 
       case Heartbeat() => {
-        state.playerBot ! Player.Heartbeat(adapter)
+        state.playerBot ! Player.Heartbeat()
         Behaviors.same
       }
 

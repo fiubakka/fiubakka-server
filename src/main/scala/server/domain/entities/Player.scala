@@ -12,7 +12,6 @@ import server.domain.structs.GameEntity
 import server.domain.structs.GameEntityState
 import server.domain.structs.PlayerState
 import server.domain.structs.TransientPlayerState
-import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 import server.infra.PlayerPersistor
@@ -31,18 +30,17 @@ object Player {
 
   // Command
 
-  // We also use the Heartbeat for synchronization with the PlayerHandler actor ref
-  final case class Heartbeat(
-      handler: ActorRef[ReplyCommand],
-      equipment: Option[Equipment] = None
-  ) extends Command
+  final case class Init(handler: ActorRef[ReplyCommand]) extends Command
+
+  final case class Heartbeat() extends Command
   final case class CheckHeartbeat() extends Command
+
   final case class Stop() extends Command
-  // Sent by the handler in case the original InitReady response is lost
-  final case class Init() extends Command
+
   final case class InitialState(
       initialState: DurablePlayerState
   ) extends Command
+
   final case class Move(
       velocity: Velocity,
       position: Position
@@ -71,8 +69,7 @@ object Player {
       msg: String
   ) extends ReplyCommand
   final case class ReplyStop() extends ReplyCommand
-  final case class InitReady(initialState: DurablePlayerState)
-      extends ReplyCommand
+  final case class Ready(initialState: DurablePlayerState) extends ReplyCommand
 
   Map[String, GameEntity]()
 
@@ -120,88 +117,65 @@ object Player {
           }
         }
 
-        setupBehaviour(persistor, eventProducer)
+        initBehaviour(persistor, eventProducer)
       }
     }
   }
 
-  def setupBehaviour(
+  def initBehaviour(
       persistor: EntityRef[PlayerPersistor.Command],
       eventProducer: ActorRef[GameEventProducer.Command],
-      handler: Option[ActorRef[ReplyCommand]] = None,
-      equipment: Option[Equipment] = None
+      handler: Option[ActorRef[ReplyCommand]] = None
   ): Behavior[Command] = {
     Behaviors.receiveMessage {
 
       case InitialState(initialState) => {
-        Behaviors.withTimers { timers =>
-          timers.startTimerWithFixedDelay(
-            "checkHeartbeat",
-            CheckHeartbeat(),
-            5.seconds
-          )
+        handler match {
+          case Some(handler) =>
+            handler ! Ready(initialState)
+            runningBehaviour(
+              PlayerState(
+                initialState,
+                tState = TransientPlayerState(
+                  handler,
+                  LocalDateTime.now(),
+                  Velocity(0, 0)
+                )
+              ),
+              persistor,
+              eventProducer
+            )
 
-          var newState = initialState
+          case None => {
+            Behaviors.receiveMessage {
+              case Init(handler) => {
+                handler ! Ready(initialState)
+                runningBehaviour(
+                  PlayerState(
+                    initialState,
+                    tState = TransientPlayerState(
+                      handler,
+                      LocalDateTime.now(),
+                      Velocity(0, 0)
+                    )
+                  ),
+                  persistor,
+                  eventProducer
+                )
+              }
 
-          equipment match {
-            // Register case. We need to persist the equipment set in character creation
-            case Some(equipment) =>
-              newState = initialState.copy(
-                equipment = equipment
-              )
-              persistor ! PlayerPersistor.Persist(newState)
-
-            // Login case.
-            case None =>
-          }
-
-          handler match {
-            case Some(handler) =>
-              handler ! InitReady(newState)
-              behaviour(
-                PlayerState(
-                  newState,
-                  tState = TransientPlayerState(
-                    handler,
-                    LocalDateTime.now(),
-                    Velocity(0, 0)
-                  )
-                ),
-                persistor,
-                eventProducer
-              )
-
-            case None => {
-              Behaviors.receiveMessage {
-                case Heartbeat(handler, _) => {
-                  handler ! InitReady(newState)
-                  behaviour(
-                    PlayerState(
-                      newState,
-                      tState = TransientPlayerState(
-                        handler,
-                        LocalDateTime.now(),
-                        Velocity(0, 0)
-                      )
-                    ),
-                    persistor,
-                    eventProducer
-                  )
-                }
-
-                // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
-                case _ => {
-                  Behaviors.same
-                }
+              // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
+              case _ => {
+                Behaviors.same
               }
             }
           }
         }
       }
 
-      // Optimization to avoid waiting for the second Heartbeat to start
-      case Heartbeat(handler, equipment) => {
-        setupBehaviour(persistor, eventProducer, Some(handler), equipment)
+      // Optimization to avoid waiting for the second Init message to start
+      case Init(handler) => {
+        initBehaviour(persistor, eventProducer, Some(handler))
       }
 
       case _ => {
@@ -211,103 +185,118 @@ object Player {
     }
   }
 
-  def behaviour(
+  def runningBehaviour(
       state: PlayerState,
       persistor: EntityRef[PlayerPersistor.Command],
       eventProducer: ActorRef[GameEventProducer.Command]
   ): Behavior[Command] = {
-    Behaviors.receive((ctx, msg) => {
-      msg match {
+    Behaviors.receive { (ctx, msg) =>
+      Behaviors.withTimers { timers =>
+        timers.startTimerWithFixedDelay(
+          "checkHeartbeat",
+          CheckHeartbeat(),
+          5.seconds
+        )
 
-        case Move(newVelocity, newPosition) => {
-          val newState = state.copy(
-            dState = state.dState.copy(
-              position = newPosition
-            ),
-            tState = state.tState.copy(
-              velocity = newVelocity
+        msg match {
+
+          case Move(newVelocity, newPosition) => {
+            val newState = state.copy(
+              dState = state.dState.copy(
+                position = newPosition
+              ),
+              tState = state.tState.copy(
+                velocity = newVelocity
+              )
             )
-          )
-          eventProducer ! GameEventProducer.PlayerStateUpdate(newState)
-          behaviour(newState, persistor, eventProducer)
-        }
+            eventProducer ! GameEventProducer.PlayerStateUpdate(newState)
+            runningBehaviour(newState, persistor, eventProducer)
+          }
 
-        case PersistState() => {
-          ctx.log.debug(s"Persisting current state: ${state.dState}")
-          persistor ! PlayerPersistor.Persist(state.dState)
-          Behaviors.same
-        }
+          case PersistState() => {
+            ctx.log.debug(s"Persisting current state: ${state.dState}")
+            persistor ! PlayerPersistor.Persist(state.dState)
+            Behaviors.same
+          }
 
-        case UpdateEntityState(entityId, newEntityState) => {
-          state.tState.handler ! NotifyEntityStateUpdate(
-            entityId,
-            newEntityState
-          )
+          case UpdateEntityState(entityId, newEntityState) => {
+            state.tState.handler ! NotifyEntityStateUpdate(
+              entityId,
+              newEntityState
+            )
 
-          Behaviors.same
-        }
+            Behaviors.same
+          }
 
-        case AddMessage(msg) => {
-          eventProducer ! GameEventProducer.AddMessage(msg)
-          Behaviors.same
-        }
+          case AddMessage(msg) => {
+            eventProducer ! GameEventProducer.AddMessage(msg)
+            Behaviors.same
+          }
 
-        case ReceiveMessage(entityId, msg) => {
-          state.tState.handler ! NotifyMessageReceived(
-            entityId,
-            msg
-          )
-          Behaviors.same
-        }
+          case ReceiveMessage(entityId, msg) => {
+            state.tState.handler ! NotifyMessageReceived(
+              entityId,
+              msg
+            )
+            Behaviors.same
+          }
 
-        case Stop() => {
-          ctx.log.info(s"Stopping player ${ctx.self.path.name}")
-          persistor ! PlayerPersistor.Persist(state.dState)
-          Behaviors.stopped
-        }
+          case Stop() => {
+            ctx.log.info(s"Stopping player ${ctx.self.path.name}")
+            persistor ! PlayerPersistor.Persist(state.dState)
+            Behaviors.stopped
+          }
 
-        // If the PlayerHandler failed and the client inits a new connection, we need to update the PlayerHandler
-        // We also use the Heartbeat for synchronization with the PlayerHandler actor ref
-        case Heartbeat(syncHandler, _) => {
-          // Deberiamos aca meter el equipment en el dState que se le pasa al behaviour?
-          behaviour(
-            state.copy(tState =
-              state.tState.copy(
-                lastHeartbeatTime = LocalDateTime.now(),
-                handler = syncHandler
-              )
-            ),
-            persistor,
-            eventProducer
-          )
-        }
+          // If the PlayerHandler failed and the client inits a new connection, we need to update the PlayerHandler
+          case Init(newHandler) => {
+            state.tState.handler ! Ready(state.dState)
+            runningBehaviour(
+              state.copy(tState =
+                state.tState.copy(
+                  lastHeartbeatTime =
+                    LocalDateTime.now(), // Just in case optimization
+                  handler = newHandler
+                )
+              ),
+              persistor,
+              eventProducer
+            )
+          }
 
-        case CheckHeartbeat() => {
-          val lastHeartbeatTime = state.tState.lastHeartbeatTime
-          val heartStopped =
-            LocalDateTime.now().isAfter(lastHeartbeatTime.plusSeconds(10))
-          heartStopped match {
-            case true =>
-              ctx.log.warn(
-                s"Player ${ctx.self.path.name} has not sent a heartbeat in the last 10 seconds, disconnecting"
-              )
-              state.tState.handler ! ReplyStop() // Player handler it's most likely dead but just in case
-              Behaviors.stopped
-            case false =>
-              eventProducer ! GameEventProducer.PlayerStateUpdate(state)
-              Behaviors.same
+          case Heartbeat() => {
+            runningBehaviour(
+              state.copy(tState =
+                state.tState.copy(
+                  lastHeartbeatTime = LocalDateTime.now()
+                )
+              ),
+              persistor,
+              eventProducer
+            )
+          }
+
+          case CheckHeartbeat() => {
+            val lastHeartbeatTime = state.tState.lastHeartbeatTime
+            val heartStopped =
+              LocalDateTime.now().isAfter(lastHeartbeatTime.plusSeconds(10))
+            heartStopped match {
+              case true =>
+                ctx.log.warn(
+                  s"Player ${ctx.self.path.name} has not sent a heartbeat in the last 10 seconds, disconnecting"
+                )
+                state.tState.handler ! ReplyStop() // Player handler it's most likely dead but just in case
+                Behaviors.stopped
+              case false =>
+                eventProducer ! GameEventProducer.PlayerStateUpdate(state)
+                Behaviors.same
+            }
+          }
+
+          case _ => {
+            Behaviors.same // TODO throw error or something, it should not receive these messages again
           }
         }
-
-        case Init() => {
-          state.tState.handler ! InitReady(state.dState)
-          Behaviors.same
-        }
-
-        case _ => {
-          Behaviors.same // TODO throw error or something, it should not receive these messages again
-        }
       }
-    })
+    }
   }
 }
