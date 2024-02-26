@@ -72,7 +72,7 @@ object GameEventProducer {
                 playerState.dState.equipment.hair,
                 playerState.dState.equipment.eyes,
                 playerState.dState.equipment.glasses,
-                playerState.dState.equipment.facial_hair,
+                playerState.dState.equipment.facialHair,
                 playerState.dState.equipment.body,
                 playerState.dState.equipment.outfit
               )

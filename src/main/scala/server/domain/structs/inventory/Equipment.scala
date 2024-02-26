@@ -5,7 +5,7 @@ final case class Equipment(
     hair: Int,
     eyes: Int,
     glasses: Int,
-    facial_hair: Int,
+    facialHair: Int,
     body: Int,
     outfit: Int
 )

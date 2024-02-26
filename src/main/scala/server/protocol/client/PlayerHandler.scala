@@ -33,6 +33,7 @@ import protobuf.server.state.game_entity_state.PBGameEntityVelocity
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import server.domain.entities.Player
+import server.domain.structs.init.InitInfo
 import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
@@ -54,8 +55,7 @@ object PlayerHandler {
   final case class ConnectionClosed() extends Command
 
   final case class SendHeartbeat() extends Command
-  final case class Init(playerName: String, equipment: Option[Equipment])
-      extends Command
+  final case class Init(initInfo: InitInfo) extends Command
   final case class Move(velocity: Velocity, position: Position) extends Command
   final case class AddMessage(msg: String) extends Command
 
@@ -82,17 +82,17 @@ object PlayerHandler {
         )
 
         Behaviors.receiveMessage {
-          case Init(playerName, equipment) => {
-            ctx.log.info(s"Init message received from $playerName")
+          case Init(initInfo) => {
+            ctx.log.info(s"Init message received from ${initInfo.playerName}")
 
             val player = Sharding().entityRefFor(
               Player.TypeKey,
-              playerName
+              initInfo.playerName
             )
 
             player ! Player.Heartbeat(
               playerResponseMapper,
-              equipment
+              None
             ) // Forces the Player to start the first time and syncs the handler
 
             initBehaviour(State(player, conQueue, playerResponseMapper))
@@ -107,8 +107,10 @@ object PlayerHandler {
   private def initBehaviour(state: State): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
-        case Init(playerName, _) => {
-          ctx.log.info(s"Another init message received from $playerName")
+        case Init(initInfo) => {
+          ctx.log.info(
+            s"Another init message received from ${initInfo.playerName}"
+          )
           state.player ! Player
             .Init() // If the Player is ready it will respond InitReady
           Behaviors.same
@@ -128,7 +130,7 @@ object PlayerHandler {
                     initialState.equipment.hair,
                     initialState.equipment.eyes,
                     initialState.equipment.glasses,
-                    initialState.equipment.facial_hair,
+                    initialState.equipment.facialHair,
                     initialState.equipment.body,
                     initialState.equipment.outfit
                   )
@@ -192,7 +194,7 @@ object PlayerHandler {
                     newEntityState.equipment.hair,
                     newEntityState.equipment.eyes,
                     newEntityState.equipment.glasses,
-                    newEntityState.equipment.facial_hair,
+                    newEntityState.equipment.facialHair,
                     newEntityState.equipment.body,
                     newEntityState.equipment.outfit
                   )
@@ -266,8 +268,8 @@ object PlayerHandler {
       : PartialFunction[GeneratedMessage, Command] = {
     case PBPlayerInit(playerName, Some(equipment), _) =>
       Init(
-        playerName,
-        Some(
+        InitInfo.fromRegisterInfo(
+          playerName,
           Equipment(
             equipment.hat,
             equipment.hair,
@@ -279,7 +281,8 @@ object PlayerHandler {
           )
         )
       )
-    case PBPlayerInit(playerName, None, _) => Init(playerName, None)
+    case PBPlayerInit(playerName, None, _) =>
+      Init(InitInfo.fromLoginInfo(playerName))
     case PBPlayerMovement(velocity, position, _) =>
       Move(Velocity(velocity.x, velocity.y), Position(position.x, position.y))
     case PBPlayerMessageClient(msg, _) => AddMessage(msg)

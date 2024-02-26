@@ -2,8 +2,10 @@
   "files.watcherExclude": {
     "**/target": true
   },
-  "editor.tabSize": 2,
   "[python]": {
     "editor.tabSize": 4
+  },
+  "[scala]": {
+    "editor.tabSize": 2
   }
 }
