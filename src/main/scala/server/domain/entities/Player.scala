@@ -12,6 +12,7 @@ import server.domain.structs.GameEntity
 import server.domain.structs.GameEntityState
 import server.domain.structs.PlayerState
 import server.domain.structs.TransientPlayerState
+import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 import server.infra.PlayerPersistor
@@ -24,13 +25,18 @@ import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
 
+final case class InitData(
+    handler: ActorRef[Player.ReplyCommand],
+    equipment: Option[Equipment]
+)
+
 object Player {
   sealed trait Command extends CborSerializable
   sealed trait ReplyCommand extends CborSerializable
 
   // Command
 
-  final case class Init(handler: ActorRef[ReplyCommand]) extends Command
+  final case class Init(initialData: InitData) extends Command
 
   final case class Heartbeat() extends Command
   final case class CheckHeartbeat() extends Command
@@ -125,44 +131,29 @@ object Player {
   def initBehaviour(
       persistor: EntityRef[PlayerPersistor.Command],
       eventProducer: ActorRef[GameEventProducer.Command],
-      handler: Option[ActorRef[ReplyCommand]] = None
+      initialData: Option[InitData] = None
   ): Behavior[Command] = {
     Behaviors.receiveMessage {
 
       case InitialState(initialState) => {
-        handler match {
-          case Some(handler) =>
-            handler ! Ready(initialState)
-            runningBehaviour(
-              PlayerState(
-                initialState,
-                tState = TransientPlayerState(
-                  handler,
-                  LocalDateTime.now(),
-                  Velocity(0, 0)
-                )
-              ),
+        initialData match {
+          case Some(initialData) =>
+            finishInitialization(
               persistor,
-              eventProducer
+              eventProducer,
+              initialData,
+              initialState
             )
 
           case None => {
             Behaviors.receiveMessage {
-              case Init(handler) => {
-                handler ! Ready(initialState)
-                runningBehaviour(
-                  PlayerState(
-                    initialState,
-                    tState = TransientPlayerState(
-                      handler,
-                      LocalDateTime.now(),
-                      Velocity(0, 0)
-                    )
-                  ),
+              case Init(initialData) =>
+                finishInitialization(
                   persistor,
-                  eventProducer
+                  eventProducer,
+                  initialData,
+                  initialState
                 )
-              }
 
               // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
               case _ => {
@@ -174,8 +165,8 @@ object Player {
       }
 
       // Optimization to avoid waiting for the second Init message to start
-      case Init(handler) => {
-        initBehaviour(persistor, eventProducer, Some(handler))
+      case Init(initData) => {
+        initBehaviour(persistor, eventProducer, Some(initData))
       }
 
       case _ => {
@@ -248,7 +239,7 @@ object Player {
           }
 
           // If the PlayerHandler failed and the client inits a new connection, we need to update the PlayerHandler
-          case Init(newHandler) => {
+          case Init(InitData(newHandler, _)) => {
             state.tState.handler ! Ready(state.dState)
             runningBehaviour(
               state.copy(tState =
@@ -298,5 +289,33 @@ object Player {
         }
       }
     }
+  }
+
+  private def finishInitialization(
+      persistor: EntityRef[PlayerPersistor.Command],
+      eventProducer: ActorRef[GameEventProducer.Command],
+      initialData: InitData,
+      initialState: DurablePlayerState
+  ): Behavior[Command] = {
+    val InitData(handler, equipment) = initialData
+    var newState = initialState
+
+    if (equipment.isDefined) {
+      newState = initialState.copy(equipment = equipment.get)
+    }
+
+    handler ! Ready(initialState)
+    runningBehaviour(
+      PlayerState(
+        newState,
+        tState = TransientPlayerState(
+          handler,
+          LocalDateTime.now(),
+          Velocity(0, 0)
+        )
+      ),
+      persistor,
+      eventProducer
+    )
   }
 }

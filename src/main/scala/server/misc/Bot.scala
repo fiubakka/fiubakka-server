@@ -4,6 +4,7 @@ import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityRef
+import server.domain.entities.InitData
 import server.domain.entities.Player
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
@@ -35,7 +36,12 @@ object Bot {
         val playerResponseMapper: ActorRef[Player.ReplyCommand] =
           ctx.messageAdapter(rsp => PlayerReplyCommand(rsp))
 
-        playerBot ! Player.Init(playerResponseMapper)
+        playerBot ! Player.Init(
+          InitData(
+            playerResponseMapper,
+            None
+          )
+        )
         timers.startTimerWithFixedDelay(Heartbeat(), 2.seconds)
         timers.startTimerWithFixedDelay(RandomMove(), 16.millis)
 

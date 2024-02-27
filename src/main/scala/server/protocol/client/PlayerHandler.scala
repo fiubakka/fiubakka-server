@@ -32,6 +32,7 @@ import protobuf.server.state.game_entity_state.PBGameEntityState
 import protobuf.server.state.game_entity_state.PBGameEntityVelocity
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
+import server.domain.entities.InitData
 import server.domain.entities.Player
 import server.domain.structs.init.InitInfo
 import server.domain.structs.inventory.Equipment
@@ -91,7 +92,10 @@ object PlayerHandler {
             )
 
             player ! Player.Init(
-              playerResponseMapper
+              InitData(
+                playerResponseMapper,
+                initInfo.getInitialEquipment()
+              )
             ) // Forces the Player to start the first time and syncs the handler
 
             initBehaviour(State(player, conQueue, playerResponseMapper))
@@ -111,7 +115,10 @@ object PlayerHandler {
             s"Another init message received from ${initInfo.playerName}"
           )
           state.player ! Player.Init(
-            state.playerResponseMapper
+            InitData(
+              state.playerResponseMapper,
+              initInfo.getInitialEquipment()
+            )
           ) // Renotify the Player to start, we should eventually receive Player.Ready message
           Behaviors.same
         }
