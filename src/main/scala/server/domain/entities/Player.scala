@@ -304,7 +304,7 @@ object Player {
       newState = initialState.copy(equipment = equipment.get)
     }
 
-    handler ! Ready(initialState)
+    handler ! Ready(newState)
     runningBehaviour(
       PlayerState(
         newState,
