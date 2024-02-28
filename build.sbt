@@ -71,6 +71,7 @@ lazy val root = (project in file("."))
       postgresJdbc,
       slick,
       slickHikaricp,
+      bcrypt,
       log4jApi,
       logback,
       janino,

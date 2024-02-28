@@ -12,6 +12,7 @@ services:
       POSTGRES_PASSWORD: akka
     volumes:
       - .docker/durable_state.sql:/docker-entrypoint-initdb.d/durable_state.sql
+      - .docker/players.sql:/docker-entrypoint-initdb.d/players.sql
       - postgres_data:/var/lib/postgresql/data
 
   # See https://hub.docker.com/r/bitnami/kafka

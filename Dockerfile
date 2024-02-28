@@ -53,11 +53,13 @@ RUN mkdir /run/postgresql && \
 
 COPY ./.docker/akka.sql /var/lib/postgresql/data/akka.sql
 COPY ./.docker/durable_state.sql /var/lib/postgresql/data/durable_state.sql
+COPY ./.docker/players.sql /var/lib/postgresql/data/players.sql
 
 RUN su - postgres -c " \
         pg_ctl -D /var/lib/postgresql/data start && \
         psql -f /var/lib/postgresql/data/akka.sql && \
         PGPASSWORD=akka psql -U akka -d akka -f /var/lib/postgresql/data/durable_state.sql \
+        PGPASSWORD=akka psql -U akka -d akka -f /var/lib/postgresql/data/players.sql \
     "
 
 # Install Kafka
