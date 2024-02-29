@@ -17,15 +17,20 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 
 object KafkaConsumer {
-  private var consumer
-      : Option[Source[ConsumerRecord[String, Array[Byte]], NotUsed]] = None
+  private var consumers
+      : Option[Array[Source[ConsumerRecord[String, Array[Byte]], NotUsed]]] =
+    None
 
-  def apply(): Source[ConsumerRecord[String, Array[Byte]], NotUsed] = {
-    consumer.getOrElse(
-      throw new IllegalStateException(
-        "Kafka Consumer not initialized. Call configure method first."
-      )
-    )
+  def apply(
+      partition: Int
+  ): Source[ConsumerRecord[String, Array[Byte]], NotUsed] = {
+    consumers.getOrElse(Array.empty) match {
+      case array if array.nonEmpty => consumers.get(partition)
+      case _ =>
+        throw new IllegalStateException(
+          "Kafka Consumer not initialized. Call configure method first."
+        )
+    }
   }
 
   def configure(ctx: ActorContext[GameServer.Command]) = {
@@ -42,14 +47,14 @@ object KafkaConsumer {
       "kafka-consumer"
     )
 
-    consumer = Some(
+    consumers = Some((0 until 2).map { partition =>
       Consumer
         .plainExternalSource[String, Array[Byte]](
           kafkaConsumer,
-          Subscriptions.assignment(new TopicPartition("game-zone", 0))
+          Subscriptions.assignment(new TopicPartition("game-zone", partition))
         )
         .toMat(BroadcastHub.sink(bufferSize = 2048))(Keep.right)
         .run()
-    )
+    }.toArray)
   }
 }

@@ -50,7 +50,7 @@ object GameEventProducer {
           )
         )
         .map(_.toArray)
-        .map(value => new ProducerRecord("game-zone", playerId, value))
+        .map(value => new ProducerRecord("game-zone", 0, playerId, value))
         .runWith(Producer.plainSink(producerSettings))
 
       Behaviors.receiveMessage {

@@ -38,6 +38,8 @@ services:
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
       - KAFKA_CFG_LOG_RETENTION_CHECK_INTERVAL_MS=30000
       - KAFKA_CFG_LOG_RETENTION_MINUTES=2
+      # Partitions
+      - KAFKA_CFG_NUM_PARTITIONS=2
     volumes:
       - "kafka_data:/bitnami"
 
