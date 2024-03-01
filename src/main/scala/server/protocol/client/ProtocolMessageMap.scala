@@ -1,11 +1,13 @@
 package server.protocol.client
 
 import protobuf.client.chat.message.{PBPlayerMessage => PBClientPlayerMessage}
-import protobuf.client.init.player_init.PBPlayerInit
+import protobuf.client.init.player_login.PBPlayerLogin
+import protobuf.client.init.player_register.PBPlayerRegister
 import protobuf.client.metadata.PBClientMessageType
 import protobuf.client.movement.player_movement.PBPlayerMovement
 import protobuf.server.chat.message.{PBPlayerMessage => PBServerPlayerMessage}
-import protobuf.server.init.player_init_ready.PBPlayerInitReady
+import protobuf.server.init.player_init.PBPlayerInitError
+import protobuf.server.init.player_init.PBPlayerInitSuccess
 import protobuf.server.metadata.PBServerMessageType
 import protobuf.server.state.game_entity_state.PBGameEntityState
 import scalapb.GeneratedMessage
@@ -16,15 +18,17 @@ object ProtocolMessageMap {
     _ <: GeneratedMessage
   ]] =
     Map(
-      PBClientMessageType.PBPlayerInit -> PBPlayerInit,
+      PBClientMessageType.PBPlayerLogin -> PBPlayerLogin,
+      PBClientMessageType.PBPlayerRegister -> PBPlayerRegister,
       PBClientMessageType.PBPlayerMovement -> PBPlayerMovement,
       PBClientMessageType.PBPlayerMessage -> PBClientPlayerMessage
     )
 
   val serverMessageMap: Map[String, PBServerMessageType] =
     Map(
+      PBPlayerInitError.getClass.toString -> PBServerMessageType.PBPlayerInitError,
+      PBPlayerInitSuccess.getClass.toString -> PBServerMessageType.PBPlayerInitSuccess,
       PBGameEntityState.getClass.toString -> PBServerMessageType.PBGameEntityState,
-      PBServerPlayerMessage.getClass.toString -> PBServerMessageType.PBPlayerMessage,
-      PBPlayerInitReady.getClass.toString -> PBServerMessageType.PBPlayerInitReady
+      PBServerPlayerMessage.getClass.toString -> PBServerMessageType.PBPlayerMessage
     )
 }

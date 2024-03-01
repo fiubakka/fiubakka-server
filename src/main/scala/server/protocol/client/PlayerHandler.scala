@@ -16,14 +16,15 @@ import akka.stream.scaladsl.SourceQueueWithComplete
 import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
 import protobuf.client.chat.message.{PBPlayerMessage => PBPlayerMessageClient}
-import protobuf.client.init.player_init.PBPlayerInit
+import protobuf.client.init.player_login.PBPlayerLogin
+import protobuf.client.init.player_register.PBPlayerRegister
 import protobuf.client.metadata.PBClientMetadata
 import protobuf.client.movement.player_movement.PBPlayerMovement
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
-import protobuf.server.init.player_init_ready.PBPlayerEquipment
-import protobuf.server.init.player_init_ready.PBPlayerInitReady
-import protobuf.server.init.player_init_ready.PBPlayerInitialState
-import protobuf.server.init.player_init_ready.PBPlayerPosition
+import protobuf.server.init.player_init.PBPlayerEquipment
+import protobuf.server.init.player_init.PBPlayerInitSuccess
+import protobuf.server.init.player_init.PBPlayerInitialState
+import protobuf.server.init.player_init.PBPlayerPosition
 import protobuf.server.metadata.PBServerMessageType
 import protobuf.server.metadata.PBServerMetadata
 import protobuf.server.state.game_entity_state.PBGameEntityEquipment
@@ -126,7 +127,7 @@ object PlayerHandler {
         case PlayerReplyCommand(cmd) => {
           cmd match {
             case Player.Ready(initialState) => {
-              val message = PBPlayerInitReady.of(
+              val message = PBPlayerInitSuccess.of(
                 PBPlayerInitialState.of(
                   PBPlayerPosition.of(
                     initialState.position.x,
@@ -273,7 +274,9 @@ object PlayerHandler {
 
   private val commandFromClientMessage
       : PartialFunction[GeneratedMessage, Command] = {
-    case PBPlayerInit(playerName, Some(equipment), _) =>
+    case PBPlayerLogin(playerName, _, _) =>
+      Init(InitInfo.fromLoginInfo(playerName))
+    case PBPlayerRegister(playerName, _, equipment, _) =>
       Init(
         InitInfo.fromRegisterInfo(
           playerName,
@@ -288,8 +291,6 @@ object PlayerHandler {
           )
         )
       )
-    case PBPlayerInit(playerName, None, _) =>
-      Init(InitInfo.fromLoginInfo(playerName))
     case PBPlayerMovement(velocity, position, _) =>
       Move(Velocity(velocity.x, velocity.y), Position(position.x, position.y))
     case PBPlayerMessageClient(msg, _) => AddMessage(msg)
