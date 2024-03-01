@@ -232,8 +232,16 @@ object Player {
               s"GameEventProducer-${ctx.self.path.name}-$newMapId"
             )
 
+            val newState = state.copy(
+              dState = state.dState.copy(
+                mapId = newMapId
+              )
+            )
+
+            persistor ! PlayerPersistor.Persist(newState.dState)
+
             runningBehaviour(
-              state,
+              newState,
               persistor,
               newEventProducer,
               newEventConsumer

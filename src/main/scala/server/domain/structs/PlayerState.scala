@@ -11,7 +11,8 @@ import java.time.LocalDateTime
 
 final case class DurablePlayerState(
     position: Position,
-    equipment: Equipment
+    equipment: Equipment,
+    mapId: Int
 ) extends CborSerializable
 
 final case class TransientPlayerState(
