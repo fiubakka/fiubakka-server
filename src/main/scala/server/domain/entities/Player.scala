@@ -299,8 +299,12 @@ object Player {
     val InitData(handler, equipment) = initialData
     var newState = initialState
 
-    if (equipment.isDefined) {
-      newState = initialState.copy(equipment = equipment.get)
+    if (equipment.isDefined) { // If it's a new player
+      // In practice, the persistor entityId is the playername, so set it here
+      newState = initialState.copy(
+        playerName = persistor.entityId,
+        equipment = equipment.get
+      )
     }
 
     handler ! Ready(newState)

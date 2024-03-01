@@ -10,6 +10,7 @@ import server.domain.structs.movement.Velocity
 import java.time.LocalDateTime
 
 final case class DurablePlayerState(
+    playerName: String, // Comes in handy when we need to access the player's name
     position: Position,
     equipment: Equipment
 ) extends CborSerializable
