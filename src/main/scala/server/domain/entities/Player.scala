@@ -63,6 +63,9 @@ object Player {
       newEntityState: GameEntityState
   ) extends Command
   final case class PersistState() extends Command
+  final case class ChangeMap(
+      newMapId: Int
+  ) extends Command
 
   // ReplyCommand
 
@@ -100,13 +103,20 @@ object Player {
           entityId
         )
 
-        ctx.spawn(
-          GameEventConsumer(entityId, ctx.self),
+        val eventConsumer = ctx.spawn(
+          GameEventConsumer(
+            entityId,
+            ctx.self,
+            0
+          ), // TODO: partition should be saved in dstate
           s"GameEventConsumer-$entityId"
         )
 
         val eventProducer = ctx.spawn(
-          GameEventProducer(entityId),
+          GameEventProducer(
+            entityId,
+            0
+          ), // TODO: partition should be saved in dstate
           s"GameEventProducer-$entityId"
         )
 
@@ -123,7 +133,7 @@ object Player {
           }
         }
 
-        initBehaviour(persistor, eventProducer)
+        initBehaviour(persistor, eventProducer, eventConsumer)
       }
     }
   }
@@ -131,6 +141,7 @@ object Player {
   def initBehaviour(
       persistor: EntityRef[PlayerPersistor.Command],
       eventProducer: ActorRef[GameEventProducer.Command],
+      eventConsumer: ActorRef[GameEventConsumer.Command],
       initialData: Option[InitData] = None
   ): Behavior[Command] = {
     Behaviors.receiveMessage {
@@ -141,6 +152,7 @@ object Player {
             finishInitialization(
               persistor,
               eventProducer,
+              eventConsumer,
               initialData,
               initialState
             )
@@ -151,6 +163,7 @@ object Player {
                 finishInitialization(
                   persistor,
                   eventProducer,
+                  eventConsumer,
                   initialData,
                   initialState
                 )
@@ -166,7 +179,7 @@ object Player {
 
       // Optimization to avoid waiting for the second Init message to start
       case Init(initData) => {
-        initBehaviour(persistor, eventProducer, Some(initData))
+        initBehaviour(persistor, eventProducer, eventConsumer, Some(initData))
       }
 
       case _ => {
@@ -179,7 +192,8 @@ object Player {
   def runningBehaviour(
       state: PlayerState,
       persistor: EntityRef[PlayerPersistor.Command],
-      eventProducer: ActorRef[GameEventProducer.Command]
+      eventProducer: ActorRef[GameEventProducer.Command],
+      eventConsumer: ActorRef[GameEventConsumer.Command]
   ): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
       Behaviors.withTimers { timers =>
@@ -201,7 +215,29 @@ object Player {
               )
             )
             eventProducer ! GameEventProducer.PlayerStateUpdate(newState)
-            runningBehaviour(newState, persistor, eventProducer)
+            runningBehaviour(newState, persistor, eventProducer, eventConsumer)
+          }
+
+          case ChangeMap(newMapId) => {
+            ctx.stop(eventConsumer)
+            ctx.stop(eventProducer)
+
+            val newEventConsumer = ctx.spawn(
+              GameEventConsumer(ctx.self.path.name, ctx.self, newMapId),
+              s"GameEventConsumer-${ctx.self.path.name}-$newMapId"
+            )
+
+            val newEventProducer = ctx.spawn(
+              GameEventProducer(ctx.self.path.name, newMapId),
+              s"GameEventProducer-${ctx.self.path.name}-$newMapId"
+            )
+
+            runningBehaviour(
+              state,
+              persistor,
+              newEventProducer,
+              newEventConsumer
+            )
           }
 
           case PersistState() => {
@@ -250,7 +286,8 @@ object Player {
                 )
               ),
               persistor,
-              eventProducer
+              eventProducer,
+              eventConsumer
             )
           }
 
@@ -262,7 +299,8 @@ object Player {
                 )
               ),
               persistor,
-              eventProducer
+              eventProducer,
+              eventConsumer
             )
           }
 
@@ -294,6 +332,7 @@ object Player {
   private def finishInitialization(
       persistor: EntityRef[PlayerPersistor.Command],
       eventProducer: ActorRef[GameEventProducer.Command],
+      eventConsumer: ActorRef[GameEventConsumer.Command],
       initialData: InitData,
       initialState: DurablePlayerState
   ): Behavior[Command] = {
@@ -315,7 +354,8 @@ object Player {
         )
       ),
       persistor,
-      eventProducer
+      eventProducer,
+      eventConsumer
     )
   }
 }

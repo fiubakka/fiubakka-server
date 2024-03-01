@@ -28,7 +28,7 @@ object GameEventProducer {
   final case class PlayerStateUpdate(playerState: PlayerState) extends Command
   final case class AddMessage(msg: String) extends Command
 
-  def apply(playerId: String): Behavior[Command] = {
+  def apply(playerId: String, partition: Int): Behavior[Command] = {
     Behaviors.setup(ctx => {
       implicit val mat = Materializer(ctx)
 
@@ -50,7 +50,9 @@ object GameEventProducer {
           )
         )
         .map(_.toArray)
-        .map(value => new ProducerRecord("game-zone", 0, playerId, value))
+        .map(value =>
+          new ProducerRecord("game-zone", partition, playerId, value)
+        )
         .runWith(Producer.plainSink(producerSettings))
 
       Behaviors.receiveMessage {

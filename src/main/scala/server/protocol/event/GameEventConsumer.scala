@@ -26,12 +26,13 @@ object GameEventConsumer {
 
   def apply(
       playerId: String,
-      player: ActorRef[Player.Command]
+      player: ActorRef[Player.Command],
+      partition: Int
   ): Behavior[Command] = {
     Behaviors.setup(ctx => {
       implicit val mat = Materializer(ctx)
 
-      KafkaConsumer(0)
+      KafkaConsumer(partition)
         .buffer(64000, OverflowStrategy.dropHead)
         .filter(record => {
           (record.key == null || record.key != playerId)
