@@ -3,16 +3,15 @@ package server.protocol.event.kafka
 import _root_.server.GameServer
 import akka.NotUsed
 import akka.actor.typed.scaladsl.ActorContext
-import akka.actor.typed.scaladsl.adapter._
+import akka.cluster.typed.Cluster
 import akka.kafka.ConsumerSettings
-import akka.kafka.KafkaConsumerActor
 import akka.kafka.Subscriptions
 import akka.kafka.scaladsl.Consumer
+import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.BroadcastHub
 import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Source
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
 
@@ -33,28 +32,39 @@ object KafkaConsumer {
     }
   }
 
+  // We are not using a single underlying KafkaConsumer for different Consumer.plainExternalSource
+  // because the performance is terrible. Instead, we manually filter the messages
+  // based on their partition for each broadcasted source.
   def configure(ctx: ActorContext[GameServer.Command]) = {
     implicit val system = ctx.system
+    val nodeId =
+      Cluster(
+        ctx.system
+      ).selfMember.uniqueAddress.longUid // Node Id in the Akka Cluster
 
-    val kafkaConsumer = ctx.actorOf(
-      KafkaConsumerActor.props(
+    val kafkaConsumerSource = Consumer
+      .plainSource(
         ConsumerSettings(
           ctx.system.settings.config.getConfig("akka.kafka-consumer"),
           new StringDeserializer,
           new ByteArrayDeserializer
         )
-      ),
-      "kafka-consumer"
-    )
+          .withGroupId(
+            s"kafka-consumer-$nodeId"
+          ), // Each node should read every message from the topic
+        Subscriptions.topics("game-zone")
+      )
+      .toMat(BroadcastHub.sink(bufferSize = 2048))(Keep.right)
+      .run()
 
-    consumers = Some((0 until 2).map { partition =>
-      Consumer
-        .plainExternalSource[String, Array[Byte]](
-          kafkaConsumer,
-          Subscriptions.assignment(new TopicPartition("game-zone", partition))
-        )
-        .toMat(BroadcastHub.sink(bufferSize = 2048))(Keep.right)
-        .run()
-    }.toArray)
+    consumers = Some(
+      (0 until 5).map { partition => // TODO use partition constant instead
+        kafkaConsumerSource
+          .filter(_.partition == partition)
+          .buffer(2048, OverflowStrategy.dropBuffer)
+          .toMat(BroadcastHub.sink(bufferSize = 2048))(Keep.right)
+          .run()
+      }.toArray
+    )
   }
 }

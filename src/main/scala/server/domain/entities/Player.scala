@@ -107,7 +107,7 @@ object Player {
           GameEventConsumer(
             entityId,
             ctx.self,
-            0
+            if (entityId.headOption.contains('a')) 0 else 1
           ), // TODO: partition should be saved in dstate
           s"GameEventConsumer-$entityId"
         )
@@ -115,7 +115,7 @@ object Player {
         val eventProducer = ctx.spawn(
           GameEventProducer(
             entityId,
-            0
+            if (entityId.headOption.contains('a')) 0 else 1
           ), // TODO: partition should be saved in dstate
           s"GameEventProducer-$entityId"
         )

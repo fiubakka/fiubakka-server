@@ -33,7 +33,7 @@ object GameEventConsumer {
       implicit val mat = Materializer(ctx)
 
       KafkaConsumer(partition)
-        .buffer(64000, OverflowStrategy.dropHead)
+        .buffer(1024, OverflowStrategy.dropHead)
         .filter(record => {
           (record.key == null || record.key != playerId)
         }) // Ignore messages from myself
