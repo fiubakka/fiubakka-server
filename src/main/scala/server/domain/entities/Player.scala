@@ -2,6 +2,7 @@ package server.domain.entities
 
 import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityRef
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
@@ -110,23 +111,6 @@ object Player {
           entityId
         )
 
-        val eventConsumer = ctx.spawn(
-          GameEventConsumer(
-            entityId,
-            ctx.self,
-            if (entityId.headOption.contains('a')) 0 else 1
-          ), // TODO: partition should be saved in dstate
-          s"GameEventConsumer-$entityId"
-        )
-
-        val eventProducer = ctx.spawn(
-          GameEventProducer(
-            entityId,
-            if (entityId.headOption.contains('a')) 0 else 1
-          ), // TODO: partition should be saved in dstate
-          s"GameEventProducer-$entityId"
-        )
-
         ctx.ask(
           persistor,
           PlayerPersistor.GetState.apply
@@ -140,20 +124,36 @@ object Player {
           }
         }
 
-        initBehaviour(persistor, eventProducer, eventConsumer)
+        initBehaviour(persistor, ctx, entityId)
       }
     }
   }
 
   def initBehaviour(
       persistor: EntityRef[PlayerPersistor.Command],
-      eventProducer: ActorRef[GameEventProducer.Command],
-      eventConsumer: ActorRef[GameEventConsumer.Command],
+      ctx: ActorContext[Command],
+      entityId: String,
       initialData: Option[InitData] = None
   ): Behavior[Command] = {
     Behaviors.receiveMessage {
 
       case InitialState(initialState) => {
+        val eventConsumer = ctx.spawn(
+          GameEventConsumer(
+            entityId,
+            ctx.self,
+            initialState.mapId
+          ),
+          s"GameEventConsumer-$entityId"
+        )
+
+        val eventProducer = ctx.spawn(
+          GameEventProducer(
+            entityId,
+            initialState.mapId
+          ),
+          s"GameEventProducer-$entityId"
+        )
         initialData match {
           case Some(initialData) =>
             finishInitialization(
@@ -186,7 +186,7 @@ object Player {
 
       // Optimization to avoid waiting for the second Init message to start
       case Init(initData) => {
-        initBehaviour(persistor, eventProducer, eventConsumer, Some(initData))
+        initBehaviour(persistor, ctx, entityId, Some(initData))
       }
 
       case _ => {
@@ -243,6 +243,36 @@ object Player {
             msg
           )
           Behaviors.same
+        }
+
+        case ChangeMap(newMapId) => {
+          ctx.stop(eventConsumer)
+          ctx.stop(eventProducer)
+
+          val newEventConsumer = ctx.spawn(
+            GameEventConsumer(ctx.self.path.name, ctx.self, newMapId),
+            s"GameEventConsumer-${ctx.self.path.name}-$newMapId"
+          )
+
+          val newEventProducer = ctx.spawn(
+            GameEventProducer(ctx.self.path.name, newMapId),
+            s"GameEventProducer-${ctx.self.path.name}-$newMapId"
+          )
+
+          val newState = state.copy(
+            dState = state.dState.copy(
+              mapId = newMapId
+            )
+          )
+
+          persistor ! PlayerPersistor.Persist(newState.dState)
+
+          runningBehaviour(
+            newState,
+            persistor,
+            newEventProducer,
+            newEventConsumer
+          )
         }
 
         case Stop() => {
