@@ -7,18 +7,27 @@ sealed trait InitInfo {
   def getInitialEquipment(): Option[Equipment]
 }
 
-final case class RegisterInfo(playerName: String, equipment: Equipment)
-    extends InitInfo {
+final case class RegisterInfo(
+    playerName: String,
+    password: String,
+    equipment: Equipment
+) extends InitInfo {
   override def getInitialEquipment(): Option[Equipment] = Some(equipment)
 }
 
-final case class LoginInfo(playerName: String) extends InitInfo {
+final case class LoginInfo(playerName: String, password: String)
+    extends InitInfo {
   override def getInitialEquipment(): Option[Equipment] = None
 }
 
 object InitInfo {
-  def fromRegisterInfo(playerName: String, equipment: Equipment): InitInfo =
-    RegisterInfo(playerName, equipment)
+  def fromRegisterInfo(
+      playerName: String,
+      password: String,
+      equipment: Equipment
+  ): InitInfo =
+    RegisterInfo(playerName, password, equipment)
 
-  def fromLoginInfo(playerName: String): InitInfo = LoginInfo(playerName)
+  def fromLoginInfo(playerName: String, password: String): InitInfo =
+    LoginInfo(playerName, password)
 }
