@@ -18,6 +18,7 @@ import akka.util.ByteString
 import protobuf.client.chat.message.{PBPlayerMessage => PBPlayerMessageClient}
 import protobuf.client.init.player_login.PBPlayerLogin
 import protobuf.client.init.player_register.PBPlayerRegister
+import protobuf.client.map.change_map.PBPlayerChangeMap
 import protobuf.client.metadata.PBClientMetadata
 import protobuf.client.movement.player_movement.PBPlayerMovement
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
@@ -26,6 +27,7 @@ import protobuf.server.init.player_init.PBPlayerInitErrorCode
 import protobuf.server.init.player_init.PBPlayerInitSuccess
 import protobuf.server.init.player_init.PBPlayerInitialState
 import protobuf.server.init.player_init.PBPlayerPosition
+import protobuf.server.map.change_map_ready.PBPlayerChangeMapReady
 import protobuf.server.metadata.PBServerMessageType
 import protobuf.server.metadata.PBServerMetadata
 import protobuf.server.state.game_entity_state.PBGameEntityEquipment
@@ -66,6 +68,7 @@ object PlayerHandler {
   final case class InitFailure(errorCode: PBPlayerInitErrorCode) extends Command
   final case class Move(velocity: Velocity, position: Position) extends Command
   final case class AddMessage(msg: String) extends Command
+  final case class ChangeMap(newMapId: Int) extends Command
 
   final case class PlayerReplyCommand(cmd: Player.ReplyCommand) extends Command
 
@@ -215,6 +218,11 @@ object PlayerHandler {
           Behaviors.same
         }
 
+        case ChangeMap(newMapId) => {
+          state.player ! Player.ChangeMap(newMapId)
+          Behaviors.same
+        }
+
         case PlayerReplyCommand(cmd) => {
           cmd match {
             case Player.NotifyEntityStateUpdate(
@@ -250,6 +258,12 @@ object PlayerHandler {
 
             case Player.NotifyMessageReceived(entityId, msg) => {
               val message = PBPlayerMessageServer.of(entityId, msg)
+              state.conQueue.offer(message)
+              Behaviors.same
+            }
+
+            case Player.ChangeMapReady(newMapId) => {
+              val message = PBPlayerChangeMapReady.of(newMapId)
               state.conQueue.offer(message)
               Behaviors.same
             }
@@ -331,6 +345,7 @@ object PlayerHandler {
       )
     case PBPlayerMovement(velocity, position, _) =>
       Move(Velocity(velocity.x, velocity.y), Position(position.x, position.y))
-    case PBPlayerMessageClient(msg, _) => AddMessage(msg)
+    case PBPlayerMessageClient(msg, _)  => AddMessage(msg)
+    case PBPlayerChangeMap(newMapId, _) => ChangeMap(newMapId)
   }
 }

@@ -80,6 +80,7 @@ object Player {
   ) extends ReplyCommand
   final case class ReplyStop() extends ReplyCommand
   final case class Ready(initialState: DurablePlayerState) extends ReplyCommand
+  final case class ChangeMapReady(newMapId: Int) extends ReplyCommand
 
   Map[String, GameEntity]()
 
@@ -249,6 +250,7 @@ object Player {
           ctx.stop(eventConsumer)
           ctx.stop(eventProducer)
 
+          // TODO: Add random to the new consumer/producer names to avoid conflicts
           val newEventConsumer = ctx.spawn(
             GameEventConsumer(ctx.self.path.name, ctx.self, newMapId),
             s"GameEventConsumer-${ctx.self.path.name}-$newMapId"
@@ -266,6 +268,7 @@ object Player {
           )
 
           persistor ! PlayerPersistor.Persist(newState.dState)
+          state.tState.handler ! ChangeMapReady(newMapId)
 
           runningBehaviour(
             newState,
