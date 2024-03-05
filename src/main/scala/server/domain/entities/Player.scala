@@ -24,6 +24,7 @@ import server.sharding.Sharding
 import java.time.LocalDateTime
 import scala.concurrent.duration._
 import scala.util.Failure
+import scala.util.Random
 import scala.util.Success
 
 final case class InitData(
@@ -250,15 +251,16 @@ object Player {
           ctx.stop(eventConsumer)
           ctx.stop(eventProducer)
 
-          // TODO: Add random to the new consumer/producer names to avoid conflicts
+          val random = Random.alphanumeric.take(8).mkString
+
           val newEventConsumer = ctx.spawn(
             GameEventConsumer(ctx.self.path.name, ctx.self, newMapId),
-            s"GameEventConsumer-${ctx.self.path.name}-$newMapId"
+            s"GameEventConsumer-${ctx.self.path.name}-$newMapId-$random"
           )
 
           val newEventProducer = ctx.spawn(
             GameEventProducer(ctx.self.path.name, newMapId),
-            s"GameEventProducer-${ctx.self.path.name}-$newMapId"
+            s"GameEventProducer-${ctx.self.path.name}-$newMapId-$random"
           )
 
           val newState = state.copy(
