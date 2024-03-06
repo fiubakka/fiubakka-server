@@ -248,36 +248,41 @@ object Player {
         }
 
         case ChangeMap(newMapId) => {
-          ctx.stop(eventConsumer)
-          ctx.stop(eventProducer)
+          if (newMapId == state.dState.mapId) {
+            state.tState.handler ! ChangeMapReady(newMapId)
+            Behaviors.same
+          } else {
+            ctx.stop(eventConsumer)
+            ctx.stop(eventProducer)
 
-          val random = Random.alphanumeric.take(8).mkString
+            val random = Random.alphanumeric.take(8).mkString
 
-          val newEventConsumer = ctx.spawn(
-            GameEventConsumer(ctx.self.path.name, ctx.self, newMapId),
-            s"GameEventConsumer-${ctx.self.path.name}-$newMapId-$random"
-          )
-
-          val newEventProducer = ctx.spawn(
-            GameEventProducer(ctx.self.path.name, newMapId),
-            s"GameEventProducer-${ctx.self.path.name}-$newMapId-$random"
-          )
-
-          val newState = state.copy(
-            dState = state.dState.copy(
-              mapId = newMapId
+            val newEventConsumer = ctx.spawn(
+              GameEventConsumer(ctx.self.path.name, ctx.self, newMapId),
+              s"GameEventConsumer-${ctx.self.path.name}-$newMapId-$random"
             )
-          )
 
-          persistor ! PlayerPersistor.Persist(newState.dState)
-          state.tState.handler ! ChangeMapReady(newMapId)
+            val newEventProducer = ctx.spawn(
+              GameEventProducer(ctx.self.path.name, newMapId),
+              s"GameEventProducer-${ctx.self.path.name}-$newMapId-$random"
+            )
 
-          runningBehaviour(
-            newState,
-            persistor,
-            newEventProducer,
-            newEventConsumer
-          )
+            val newState = state.copy(
+              dState = state.dState.copy(
+                mapId = newMapId
+              )
+            )
+
+            persistor ! PlayerPersistor.Persist(newState.dState)
+            state.tState.handler ! ChangeMapReady(newMapId)
+
+            runningBehaviour(
+              newState,
+              persistor,
+              newEventProducer,
+              newEventConsumer
+            )
+          }
         }
 
         case Stop() => {
