@@ -9,7 +9,6 @@ import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.serialization.jackson.CborSerializable
 import akka.util.Timeout
 import server.domain.structs.DurablePlayerState
-import server.domain.structs.GameEntity
 import server.domain.structs.GameEntityState
 import server.domain.structs.PlayerState
 import server.domain.structs.TransientPlayerState
@@ -83,8 +82,6 @@ object Player {
   final case class Ready(initialState: DurablePlayerState) extends ReplyCommand
   final case class ChangeMapReady(newMapId: Int) extends ReplyCommand
 
-  Map[String, GameEntity]()
-
   val TypeKey = EntityTypeKey[Command]("Player")
 
   def apply(
@@ -126,83 +123,68 @@ object Player {
           }
         }
 
-        initBehaviour(persistor, ctx, entityId)
+        initBehaviour(entityId, persistor)
       }
     }
   }
 
   def initBehaviour(
-      persistor: EntityRef[PlayerPersistor.Command],
-      ctx: ActorContext[Command],
       entityId: String,
+      persistor: EntityRef[PlayerPersistor.Command],
       initialData: Option[InitData] = None
   ): Behavior[Command] = {
-    Behaviors.receiveMessage {
+    Behaviors.receive { (ctx, msg) =>
+      msg match {
+        case InitialState(initialState) => {
+          val (eventConsumer, eventProducer) =
+            getEventHandlers(ctx, initialState.mapId)
 
-      case InitialState(initialState) => {
-        val eventConsumer = ctx.spawn(
-          GameEventConsumer(
-            entityId,
-            ctx.self,
-            initialState.mapId
-          ),
-          s"GameEventConsumer-$entityId"
-        )
+          initialData match {
+            case Some(initialData) =>
+              finishInitialization(
+                persistor,
+                eventProducer,
+                eventConsumer,
+                initialData,
+                initialState
+              )
 
-        val eventProducer = ctx.spawn(
-          GameEventProducer(
-            entityId,
-            initialState.mapId
-          ),
-          s"GameEventProducer-$entityId"
-        )
-        initialData match {
-          case Some(initialData) =>
-            finishInitialization(
-              persistor,
-              eventProducer,
-              eventConsumer,
-              initialData,
-              initialState
-            )
+            case None => {
+              Behaviors.receiveMessage {
+                case Init(initialData) =>
+                  finishInitialization(
+                    persistor,
+                    eventProducer,
+                    eventConsumer,
+                    initialData,
+                    initialState
+                  )
 
-          case None => {
-            Behaviors.receiveMessage {
-              case Init(initialData) =>
-                finishInitialization(
-                  persistor,
-                  eventProducer,
-                  eventConsumer,
-                  initialData,
-                  initialState
-                )
-
-              // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
-              case _ => {
-                Behaviors.same
+                // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
+                case _ => {
+                  Behaviors.same
+                }
               }
             }
           }
         }
-      }
 
-      // Optimization to avoid waiting for the second Init message to start
-      case Init(initData) => {
-        initBehaviour(persistor, ctx, entityId, Some(initData))
-      }
+        // Optimization to avoid waiting for the second Init message to start
+        case Init(initData) => {
+          initBehaviour(entityId, persistor, Some(initData))
+        }
 
-      case _ => {
-        // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
-        Behaviors.same
+        case _ => {
+          // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
+          Behaviors.same
+        }
       }
     }
   }
 
   def runningBehaviour(
       state: PlayerState,
-      persistor: EntityRef[PlayerPersistor.Command],
-      eventProducer: ActorRef[GameEventProducer.Command],
-      eventConsumer: ActorRef[GameEventConsumer.Command]
+      persistor: EntityRef[PlayerPersistor.Command]
   ): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
@@ -215,8 +197,10 @@ object Player {
               velocity = newVelocity
             )
           )
-          eventProducer ! GameEventProducer.PlayerStateUpdate(newState)
-          runningBehaviour(newState, persistor, eventProducer, eventConsumer)
+          state.tState.eventProducer ! GameEventProducer.PlayerStateUpdate(
+            newState
+          )
+          runningBehaviour(newState, persistor)
         }
 
         case PersistState() => {
@@ -235,7 +219,7 @@ object Player {
         }
 
         case AddMessage(msg) => {
-          eventProducer ! GameEventProducer.AddMessage(msg)
+          state.tState.eventProducer ! GameEventProducer.AddMessage(msg)
           Behaviors.same
         }
 
@@ -252,24 +236,19 @@ object Player {
             state.tState.handler ! ChangeMapReady(newMapId)
             Behaviors.same
           } else {
-            ctx.stop(eventConsumer)
-            ctx.stop(eventProducer)
+            ctx.stop(state.tState.eventConsumer)
+            ctx.stop(state.tState.eventProducer)
 
-            val random = Random.alphanumeric.take(8).mkString
-
-            val newEventConsumer = ctx.spawn(
-              GameEventConsumer(ctx.self.path.name, ctx.self, newMapId),
-              s"GameEventConsumer-${ctx.self.path.name}-$newMapId-$random"
-            )
-
-            val newEventProducer = ctx.spawn(
-              GameEventProducer(ctx.self.path.name, newMapId),
-              s"GameEventProducer-${ctx.self.path.name}-$newMapId-$random"
-            )
+            val (newEventConsumer, newEventProducer) =
+              getEventHandlers(ctx, newMapId)
 
             val newState = state.copy(
               dState = state.dState.copy(
                 mapId = newMapId
+              ),
+              tState = state.tState.copy(
+                eventProducer = newEventProducer,
+                eventConsumer = newEventConsumer
               )
             )
 
@@ -278,9 +257,7 @@ object Player {
 
             runningBehaviour(
               newState,
-              persistor,
-              newEventProducer,
-              newEventConsumer
+              persistor
             )
           }
         }
@@ -302,9 +279,7 @@ object Player {
                 handler = newHandler
               )
             ),
-            persistor,
-            eventProducer,
-            eventConsumer
+            persistor
           )
         }
 
@@ -315,9 +290,7 @@ object Player {
                 lastHeartbeatTime = LocalDateTime.now()
               )
             ),
-            persistor,
-            eventProducer,
-            eventConsumer
+            persistor
           )
         }
 
@@ -333,7 +306,9 @@ object Player {
               state.tState.handler ! ReplyStop() // Player handler it's most likely dead but just in case
               Behaviors.stopped
             case false =>
-              eventProducer ! GameEventProducer.PlayerStateUpdate(state)
+              state.tState.eventProducer ! GameEventProducer.PlayerStateUpdate(
+                state
+              )
               Behaviors.same
           }
         }
@@ -370,13 +345,35 @@ object Player {
         newState,
         tState = TransientPlayerState(
           handler,
+          eventProducer,
+          eventConsumer,
           LocalDateTime.now(),
           Velocity(0, 0)
         )
       ),
-      persistor,
-      eventProducer,
-      eventConsumer
+      persistor
     )
+  }
+
+  private def getEventHandlers(ctx: ActorContext[Command], mapId: Int): (
+      ActorRef[GameEventConsumer.Command],
+      ActorRef[GameEventProducer.Command]
+  ) = {
+    val eventHandlersSuffix = Random.alphanumeric.take(8).mkString
+    val eventConsumer = ctx.spawn(
+      GameEventConsumer(
+        ctx.self,
+        mapId
+      ),
+      s"GameEventConsumer-$mapId-$eventHandlersSuffix"
+    )
+    val eventProducer = ctx.spawn(
+      GameEventProducer(
+        ctx.self.path.name,
+        mapId
+      ),
+      s"GameEventProducer-$mapId-$eventHandlersSuffix"
+    )
+    (eventConsumer, eventProducer)
   }
 }

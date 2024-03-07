@@ -25,12 +25,13 @@ object GameEventConsumer {
   final case class Start() extends Command
 
   def apply(
-      playerId: String,
       player: ActorRef[Player.Command],
       partition: Int
   ): Behavior[Command] = {
     Behaviors.setup(ctx => {
       implicit val mat = Materializer(ctx)
+      val playerId =
+        player.path.name // The Player Entity Id is its Actor's name
 
       KafkaConsumer(partition)
         .buffer(1024, OverflowStrategy.dropHead)
