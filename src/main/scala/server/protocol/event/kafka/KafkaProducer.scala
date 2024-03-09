@@ -12,7 +12,7 @@ object KafkaProducer {
   def apply(): Producer[String, Array[Byte]] = {
     producer.getOrElse(
       throw new IllegalStateException(
-        "Kafka Porucer not initialized. Call configure method first."
+        "Kafka Producer not initialized. Call configure method first."
       )
     )
   }
