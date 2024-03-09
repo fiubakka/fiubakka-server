@@ -70,7 +70,7 @@ RUN curl https://dlcdn.apache.org/kafka/3.6.1/kafka_2.13-3.6.1.tgz -o kafka_2.13
     && KAFKA_CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)" \
     && bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c config/kraft/server.properties \
     && bin/kafka-server-start.sh -daemon config/kraft/server.properties \
-    && bin/kafka-topics.sh --create --topic game-zone --bootstrap-server localhost:9092
+    && bin/kafka-topics.sh --create --topic game-zone --partitions 3 --bootstrap-server localhost:9092
 
 EXPOSE 5432/tcp
 

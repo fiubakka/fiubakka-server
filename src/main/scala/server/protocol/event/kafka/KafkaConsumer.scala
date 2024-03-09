@@ -42,6 +42,12 @@ object KafkaConsumer {
         ctx.system
       ).selfMember.uniqueAddress.longUid // Node Id in the Akka Cluster
 
+    val gameZoneTopic = ctx.system.settings.config.getString("game.kafka.topic")
+    val gameZonePartitions =
+      ctx.system.settings.config.getInt("game.kafka.partitions")
+    val groupPrefix =
+      ctx.system.settings.config.getString("game.kafka.consumer.group-prefix")
+
     val kafkaConsumerSource = Consumer
       .plainSource(
         ConsumerSettings(
@@ -50,15 +56,15 @@ object KafkaConsumer {
           new ByteArrayDeserializer
         )
           .withGroupId(
-            s"kafka-consumer-$nodeId"
+            s"$groupPrefix-$nodeId"
           ), // Each node should read every message from the topic
-        Subscriptions.topics("game-zone")
+        Subscriptions.topics(gameZoneTopic)
       )
       .toMat(BroadcastHub.sink(bufferSize = 2048))(Keep.right)
       .run()
 
     consumers = Some(
-      (0 until 5).map { partition => // TODO use partition constant instead
+      (0 until gameZonePartitions).map { partition =>
         kafkaConsumerSource
           .filter(_.partition == partition)
           .buffer(2048, OverflowStrategy.dropBuffer)

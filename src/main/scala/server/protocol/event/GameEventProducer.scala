@@ -31,6 +31,8 @@ object GameEventProducer {
   def apply(playerId: String, partition: Int): Behavior[Command] = {
     Behaviors.setup(ctx => {
       implicit val mat = Materializer(ctx)
+      val gameZoneTopic =
+        ctx.system.settings.config.getString("game.kafka.topic")
 
       val config = ctx.system.settings.config.getConfig("akka.kafka-producer")
       val producerSettings =
@@ -51,7 +53,7 @@ object GameEventProducer {
         )
         .map(_.toArray)
         .map(value =>
-          new ProducerRecord("game-zone", partition, playerId, value)
+          new ProducerRecord(gameZoneTopic, partition, playerId, value)
         )
         .runWith(Producer.plainSink(producerSettings))
 
