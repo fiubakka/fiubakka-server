@@ -232,6 +232,9 @@ object Player {
         }
 
         case ChangeMap(newMapId) => {
+          ctx.log.info(
+            s"Changing ${ctx.self.path.name} from map ${state.dState.mapId} to $newMapId"
+          )
           if (newMapId == state.dState.mapId) {
             state.tState.handler ! ChangeMapReady(newMapId)
             Behaviors.same
