@@ -181,7 +181,8 @@ object PlayerHandler {
                     initialState.equipment.facialHair,
                     initialState.equipment.body,
                     initialState.equipment.outfit
-                  )
+                  ),
+                  initialState.mapId
                 )
               )
               conQueue.offer(message)
