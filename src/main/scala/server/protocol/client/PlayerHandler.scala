@@ -18,6 +18,7 @@ import akka.util.ByteString
 import protobuf.client.chat.message.{PBPlayerMessage => PBPlayerMessageClient}
 import protobuf.client.init.player_login.PBPlayerLogin
 import protobuf.client.init.player_register.PBPlayerRegister
+import protobuf.client.inventory.update_equipment.PBPlayerUpdateEquipment
 import protobuf.client.map.change_map.PBPlayerChangeMap
 import protobuf.client.metadata.PBClientMetadata
 import protobuf.client.movement.player_movement.PBPlayerMovement
@@ -69,6 +70,7 @@ object PlayerHandler {
   final case class Move(velocity: Velocity, position: Position) extends Command
   final case class AddMessage(msg: String) extends Command
   final case class ChangeMap(newMapId: Int) extends Command
+  final case class UpdateEquipment(equipment: Equipment) extends Command
 
   final case class PlayerReplyCommand(cmd: Player.ReplyCommand) extends Command
 
@@ -224,6 +226,11 @@ object PlayerHandler {
           Behaviors.same
         }
 
+        case UpdateEquipment(equipment) => {
+          state.player ! Player.UpdateEquipment(equipment)
+          Behaviors.same
+        }
+
         case PlayerReplyCommand(cmd) => {
           cmd match {
             case Player.NotifyEntityStateUpdate(
@@ -348,5 +355,26 @@ object PlayerHandler {
       Move(Velocity(velocity.x, velocity.y), Position(position.x, position.y))
     case PBPlayerMessageClient(msg, _)  => AddMessage(msg)
     case PBPlayerChangeMap(newMapId, _) => ChangeMap(newMapId)
+    case PBPlayerUpdateEquipment(
+          hat,
+          hair,
+          eyes,
+          facialHair,
+          glasses,
+          outfit,
+          body,
+          _
+        ) =>
+      UpdateEquipment(
+        Equipment(
+          hat,
+          hair,
+          eyes,
+          glasses,
+          facialHair,
+          body,
+          outfit
+        )
+      )
   }
 }

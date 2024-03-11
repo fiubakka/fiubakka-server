@@ -3,6 +3,7 @@ package server.protocol.client
 import protobuf.client.chat.message.{PBPlayerMessage => PBClientPlayerMessage}
 import protobuf.client.init.player_login.PBPlayerLogin
 import protobuf.client.init.player_register.PBPlayerRegister
+import protobuf.client.inventory.update_equipment.PBPlayerUpdateEquipment
 import protobuf.client.map.change_map.PBPlayerChangeMap
 import protobuf.client.metadata.PBClientMessageType
 import protobuf.client.movement.player_movement.PBPlayerMovement
@@ -24,7 +25,8 @@ object ProtocolMessageMap {
       PBClientMessageType.PBPlayerRegister -> PBPlayerRegister,
       PBClientMessageType.PBPlayerMovement -> PBPlayerMovement,
       PBClientMessageType.PBPlayerMessage -> PBClientPlayerMessage,
-      PBClientMessageType.PBPlayerChangeMap -> PBPlayerChangeMap
+      PBClientMessageType.PBPlayerChangeMap -> PBPlayerChangeMap,
+      PBClientMessageType.PBPlayerUpdateEquipment -> PBPlayerUpdateEquipment
     )
 
   val serverMessageMap: Map[String, PBServerMessageType] =

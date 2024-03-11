@@ -67,6 +67,9 @@ object Player {
   final case class ChangeMap(
       newMapId: Int
   ) extends Command
+  final case class UpdateEquipment(
+      equipment: Equipment
+  ) extends Command
 
   // ReplyCommand
 
@@ -263,6 +266,19 @@ object Player {
               persistor
             )
           }
+        }
+
+        case UpdateEquipment(equipment) => {
+          val newState = state.copy(
+            dState = state.dState.copy(
+              equipment = equipment
+            )
+          )
+          persistor ! PlayerPersistor.Persist(newState.dState)
+          state.tState.eventProducer ! GameEventProducer.PlayerStateUpdate(
+            newState
+          )
+          runningBehaviour(newState, persistor)
         }
 
         case Stop() => {
