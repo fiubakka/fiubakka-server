@@ -359,8 +359,8 @@ object PlayerHandler {
           hat,
           hair,
           eyes,
-          facialHair,
           glasses,
+          facialHair,
           outfit,
           body,
           _
@@ -372,8 +372,8 @@ object PlayerHandler {
           eyes,
           glasses,
           facialHair,
-          body,
-          outfit
+          outfit,
+          body
         )
       )
   }
