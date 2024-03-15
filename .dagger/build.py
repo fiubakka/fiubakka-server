@@ -6,8 +6,6 @@ import os
 async def build():
     subprocess.run(["git", "submodule", "update", "--init"])
 
-    raise Exception("This is a test")
-
     for env_var in ["DOCKER_USER", "DOCKER_PASS", "DOCKER_REPO"]:
         if env_var not in os.environ:
             raise OSError(f"{env_var} environment variable must be set")
