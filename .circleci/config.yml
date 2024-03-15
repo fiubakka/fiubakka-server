@@ -1,0 +1,37 @@
+version: 2.1
+
+workflows:
+  build-and-deploy:
+    jobs:
+      - dockerhub-deploy:
+          filters:
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
+
+jobs:
+  dockerhub-deploy:
+    docker:
+      - image: circleci/python:3.12.1  # Adjust image version if necessary
+    steps:
+      - checkout
+      - run:
+          name: Set up SSH keys
+          command: |
+            mkdir -p ~/.ssh/
+            echo "${SSH_PRIVATE_KEY_PROTOBUF_REPO}" > ~/.ssh/id_ed25519
+            chmod 600 ~/.ssh/id_ed25519
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - run:
+          name: Install Dagger CLI
+          command: |
+            cd /usr/local && { curl -L https://dl.dagger.io/dagger/install.sh | sh; cd -; }
+      - run:
+          name: Install Dagger Python SDK
+          command: pip install -r requirements.txt
+      - run:
+          name: Release and deploy with Dagger
+          command: dagger run python .dagger/build.py
+          environment:
+            DOCKER_USER: ${DOCKER_USER}
+            DOCKER_PASS: ${DOCKER_PASS}
+            DOCKER_REPO: ${DOCKER_REPO}
