@@ -13,6 +13,8 @@ jobs:
   dockerhub-deploy:
     docker:
       - image: cimg/python:3.12.2
+    environment:
+      CIRCLE_PIPELINE_NUMBER: << pipeline.number >>
     steps:
       - checkout
       - setup_remote_docker
