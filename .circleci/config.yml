@@ -13,8 +13,10 @@ jobs:
   dockerhub-deploy:
     docker:
       - image: cimg/python:3.12.2
+    resource_class: arm.medium
     steps:
       - checkout
+      - setup_remote_docker
       - run:
           name: Set up SSH keys
           command: |
