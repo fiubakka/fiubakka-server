@@ -35,5 +35,6 @@ jobs:
           name: Release and deploy with Dagger
           command: dagger run python .dagger/build.py
           environment:
+            DOCKER_USER: foo
             DOCKER_PASS: foo
             DOCKER_REPO: foo
