@@ -17,7 +17,7 @@ RUN sbt clean assembly
 
 
 # Production
-FROM eclipse-temurin:11.0.21_9-jre-alpine as prod
+FROM eclipse-temurin:11.0.21_9-jre-jammy as prod
 
 WORKDIR /usr/app
 

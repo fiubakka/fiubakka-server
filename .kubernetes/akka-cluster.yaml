@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: fiubakka-server
-        image: docker.io/mrmarcosrolando/fiubakka-server:latest
+        image: docker.io/mrmarcosrolando/fiubakka-server:prod-latest
         volumeMounts: # Needed for AeronUDP
           - mountPath: /dev/shm
             name: dshm
@@ -49,21 +49,9 @@ spec:
         - name: ENV
           value: production
         - name: DB_HOST
-          value: ziggy.db.elephantsql.com
-        - name: DB_DATABASE
-          value: ygyibqok
-        - name: DB_USER
-          value: ygyibqok
-        - name: DB_PASSWORD
-          value: NC13QYlM1oJZtD6wvNMBe8wqM9UpPoIr
+          value: fiubakka-postgres-postgresql.fiubakka-server-1.svc.cluster.local:5432
         - name: KAFKA_BOOTSTRAP_SERVERS
-          value: moved-kit-6364-us1-kafka.upstash.io:9092
-        - name: KAFKA_SECURITY_PROTOCOL
-          value: SASL_SSL
-        - name: KAFKA_SASL_MECHANISM
-          value: SCRAM-SHA-512
-        - name: KAFKA_SASL_JAAS_CONFIG
-          value: "org.apache.kafka.common.security.scram.ScramLoginModule required username='bW92ZWQta2l0LTYzNjQkNtNmeW7b3IQ_gO0AHSf32TBIVBMOzPreyZi85RsZriY' password='ODQ2MzNlOWQtZTYwNS00YzE5LWE1NDYtNzFmNzUzZTdjYWM0';"
+          value: fiubakka-kafka.fiubakka-server-1.svc.cluster.local:9092
         - name: GAME_KAFKA_TOPIC
           value: game-zone
         - name: KUBERNETES_POD_NAME
