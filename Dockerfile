@@ -1,5 +1,5 @@
-# Build
-FROM hseeberger/scala-sbt:eclipse-temurin-11.0.14.1_1.6.2_2.13.8 as build
+# Builder
+FROM hseeberger/scala-sbt:eclipse-temurin-11.0.14.1_1.6.2_2.13.8 as builder
 
 WORKDIR /usr/app
 
@@ -39,7 +39,7 @@ FROM eclipse-temurin:11.0.21_9-jre-alpine as dev
 
 WORKDIR /usr/app
 
-COPY --from=build /usr/app/target/scala-2.13/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
+COPY --from=builder /usr/app/target/scala-2.13/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
 
 # Install PostgreSQL
 
