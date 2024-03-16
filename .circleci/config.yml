@@ -3,18 +3,16 @@ version: 2.1
 workflows:
   build-and-deploy:
     jobs:
-      - dockerhub-deploy:
+      - prod-dockerhub-deploy:
           filters:
             branches:
               only:
                 - test-circleci
 
 jobs:
-  dockerhub-deploy:
+  prod-dockerhub-deploy:
     docker:
       - image: cimg/python:3.12.2
-    environment:
-      CIRCLE_PIPELINE_NUMBER: << pipeline.number >>
     steps:
       - checkout
       - setup_remote_docker
