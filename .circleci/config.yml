@@ -40,7 +40,4 @@ jobs:
       - run:
           name: Release and deploy with Dagger
           command: $HOME/.local/bin/dagger run python .dagger/build.py
-      - run:
-          name: Stop Dagger Engine
-          command: docker stop -t 300 $(docker ps --filter name="dagger-engine-*" -q)
-          when: always
+      - run: docker stop -t 300 $(docker ps --filter name='dagger-engine-*' -q)
