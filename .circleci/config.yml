@@ -11,8 +11,8 @@ workflows:
 
 jobs:
   dockerhub-deploy:
-    docker:
-      - image: cimg/python:3.12.2
+    machine:
+      image: ubuntu-2204:current
     environment:
       CIRCLE_PIPELINE_NUMBER: << pipeline.number >>
     steps:
