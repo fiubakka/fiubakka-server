@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  python: circleci/python@2.1.1
+
 workflows:
   build-and-deploy:
     jobs:
@@ -11,8 +14,9 @@ workflows:
 
 jobs:
   dockerhub-deploy:
-    machine:
-      image: ubuntu-2204:current
+    executor:
+      name: python/default
+      tag: '3.12.2'
     environment:
       CIRCLE_PIPELINE_NUMBER: << pipeline.number >>
     steps:
