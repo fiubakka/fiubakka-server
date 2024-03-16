@@ -7,7 +7,7 @@ workflows:
           filters:
             branches:
               only:
-                - main
+                - test-circleci
 
 jobs:
   dockerhub-deploy:
