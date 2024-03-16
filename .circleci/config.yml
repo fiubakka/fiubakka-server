@@ -7,7 +7,7 @@ workflows:
           filters:
             branches:
               only:
-                - test-circleci
+                - main
 
 jobs:
   dockerhub-deploy:
@@ -26,18 +26,11 @@ jobs:
             chmod 600 ~/.ssh/id_ed25519
             ssh-keyscan github.com >> ~/.ssh/known_hosts
       - run:
-          name: Add $HOME/.local/bin to PATH
-          command: echo 'export PATH="$HOME/.local/bin:$PATH"' >> $BASH_ENV
-      - run:
           name: Install Dagger CLI
           command: curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh
       - run:
           name: Install Dagger Python SDK
           command: pip install -r requirements.txt
       - run:
-          name: Where am i
-          command: pwd
-      - run:
           name: Release and deploy with Dagger
-          command: exec $HOME/.local/bin/dagger run python .dagger/build.py
-      - run: docker stop -t 300 $(docker ps --filter name='dagger-engine-*' -q)
+          command: $HOME/.local/bin/dagger run python .dagger/build.py
