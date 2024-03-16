@@ -33,4 +33,4 @@ jobs:
           command: pip install -r requirements.txt
       - run:
           name: Release and deploy with Dagger
-          command: $HOME/.local/bin/dagger run python .dagger/build.py
+          command: $HOME/.local/bin/dagger --progress plain run python .dagger/build.py
