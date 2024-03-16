@@ -1,5 +1,5 @@
-# Builder
-FROM hseeberger/scala-sbt:eclipse-temurin-11.0.14.1_1.6.2_2.13.8 as builder
+# Build
+FROM hseeberger/scala-sbt:eclipse-temurin-11.0.14.1_1.6.2_2.13.8 as build
 
 WORKDIR /usr/app
 
@@ -16,7 +16,7 @@ COPY ./src src/
 RUN sbt clean assembly
 
 
-# Production
+# Production (compatible with both x86 and ARM architectures)
 FROM eclipse-temurin:11.0.21_9-jre-jammy as prod
 
 WORKDIR /usr/app
@@ -35,7 +35,11 @@ CMD ["java", "-jar", "app.jar"]
 # for reference on Kafka installation
 
 # Development
-FROM prod as dev
+FROM eclipse-temurin:11.0.21_9-jre-alpine as dev
+
+WORKDIR /usr/app
+
+COPY --from=build /usr/app/target/scala-2.13/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
 
 # Install PostgreSQL
 
@@ -72,7 +76,12 @@ RUN curl https://dlcdn.apache.org/kafka/3.6.1/kafka_2.13-3.6.1.tgz -o kafka_2.13
     && bin/kafka-server-start.sh -daemon config/kraft/server.properties \
     && bin/kafka-topics.sh --create --topic game-zone --partitions 3 --bootstrap-server localhost:9092
 
+# PostgreSQL
 EXPOSE 5432/tcp
+# Kafka
+EXPOSE 9092/tcp
+# Application
+EXPOSE 8080/tcp
 
 ENV KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 

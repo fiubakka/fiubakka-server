@@ -13,6 +13,7 @@ jobs:
   prod-dockerhub-deploy:
     docker:
       - image: cimg/python:3.12.2
+    resource_class: arm.medium
     steps:
       - checkout
       - setup_remote_docker
@@ -28,3 +29,5 @@ jobs:
       - run:
           name: Release and deploy with Dagger
           command: $HOME/.local/bin/dagger --progress plain run python .dagger/build.py
+          environment:
+            ENV: prod

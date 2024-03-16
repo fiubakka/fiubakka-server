@@ -28,6 +28,7 @@ jobs:
         name: Release and deploy with Dagger
         run: dagger run python .dagger/build.py
         env:
+          ENV: dev
           DOCKER_USER: ${{ vars.DOCKER_USER }}
           DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
           DOCKER_REPO: ${{ vars.DOCKER_REPO }}
