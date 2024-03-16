@@ -17,7 +17,6 @@ jobs:
       CIRCLE_PIPELINE_NUMBER: << pipeline.number >>
     steps:
       - checkout
-      - setup_remote_docker
       - run:
           name: Set up SSH keys
           command: |
