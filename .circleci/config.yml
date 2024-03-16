@@ -11,8 +11,8 @@ workflows:
 
 jobs:
   dockerhub-deploy:
-    machine:
-      image: ubuntu-2204:current
+    docker:
+      - image: circleci/python:3.12.2
     environment:
       CIRCLE_PIPELINE_NUMBER: << pipeline.number >>
     steps:
@@ -33,6 +33,9 @@ jobs:
       - run:
           name: Install Dagger Python SDK
           command: pip install -r requirements.txt
+      - run:
+          name: Where am i
+          command: pwd
       - run:
           name: Release and deploy with Dagger
           command: $HOME/.local/bin/dagger run python .dagger/build.py
