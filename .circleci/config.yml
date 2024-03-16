@@ -12,7 +12,7 @@ workflows:
 jobs:
   dockerhub-deploy:
     docker:
-      - image: circleci/python:3.12.1
+      - image: cimg/python:3.12.2
     environment:
       CIRCLE_PIPELINE_NUMBER: << pipeline.number >>
     steps:
