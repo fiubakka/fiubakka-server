@@ -17,7 +17,6 @@ jobs:
       CIRCLE_PIPELINE_NUMBER: << pipeline.number >>
     steps:
       - checkout
-      - setup_remote_docker
       - run:
           name: Set up SSH keys
           command: |
@@ -39,4 +38,8 @@ jobs:
           command: pwd
       - run:
           name: Release and deploy with Dagger
-          command: python .dagger/build.py
+          command: $HOME/.local/bin/dagger run python .dagger/build.py
+      - run:
+          name: Stop Dagger Engine
+          command: docker stop -t 300 $(docker ps --filter name="dagger-engine-*" -q)
+          when: always
