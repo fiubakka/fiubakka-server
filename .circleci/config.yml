@@ -26,7 +26,7 @@ jobs:
             ssh-keyscan github.com >> ~/.ssh/known_hosts
       - run:
           name: Install Dagger CLI
-          command: curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=/usr/local/bin sh
+          command: sudo curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=/usr/local/bin sh
       - run:
           name: Install Dagger Python SDK
           command: pip install -r requirements.txt
