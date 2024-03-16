@@ -13,7 +13,7 @@ async def build():
 
     async with dagger.Connection() as client, anyio.create_task_group() as tg:
         password = client.set_secret("docker_password", os.environ["DOCKER_PASS"])
-        build_image = client.host().directory('.').docker_build(target=os.environ("ENV")).with_registry_auth(
+        build_image = client.host().directory('.').docker_build(target=os.environ["ENV"]).with_registry_auth(
             "docker.io",
             os.environ["DOCKER_USER"],
             password
