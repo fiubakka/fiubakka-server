@@ -38,4 +38,4 @@ jobs:
           command: pwd
       - run:
           name: Release and deploy with Dagger
-          command: bash -c "$HOME/.local/bin/dagger run python .dagger/build.py"
+          command: "$HOME/.local/bin/dagger run python .dagger/build.py"
