@@ -8,8 +8,6 @@ workflows:
             tags:
               only:
                 - /^v\d{4}\.\d{2}\.\d{2}$/
-            branches:
-              only: main
 
 jobs:
   prod-dockerhub-deploy:
