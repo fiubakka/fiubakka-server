@@ -29,6 +29,7 @@ object OutMessageFlow {
         ).toByteArray
         // 4 bytes for the Metadata length bytes
         val frameSize = 4 + metadataBytes.length + msgBytes.length
+
         ByteBuffer
           .allocate(4 + frameSize)
           .order(java.nio.ByteOrder.BIG_ENDIAN)

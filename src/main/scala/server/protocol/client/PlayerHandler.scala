@@ -131,7 +131,9 @@ object PlayerHandler {
                 .map { _ =>
                   ctx.self ! InitSuccess(initInfo)
                 }
-                .recover { case _ =>
+                .recover { case err =>
+                  println("LA PUTA MADRE FALLE")
+                  println(err)
                   ctx.self ! InitFailure(PBPlayerInitErrorCode.UNKNOWN)
                 }
           }

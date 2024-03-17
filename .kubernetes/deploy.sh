@@ -30,7 +30,7 @@ if ! helm list -n "$NAMESPACE" | grep -q "$POSTGRES_RELEASE_NAME"; then
 fi
 
 echo "Waiting for Postgres deployment to be ready..."
-kubectl wait --for=condition=ready pod/fiubakka-postgres-postgresql-0 --timeout=60s
+kubectl wait --for=condition=ready pod/fiubakka-postgres-postgresql-0 -n "$NAMESPACE" --timeout=120s
 
 kubectl apply -f .kubernetes/db-setup.yaml -n "$NAMESPACE"
 
