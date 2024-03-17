@@ -5,9 +5,9 @@ workflows:
     jobs:
       - prod-dockerhub-deploy:
           filters:
-            branches:
+            tags:
               only:
-                - main
+                - /^v\d+\.\d+\.\d+$/ 
 
 jobs:
   prod-dockerhub-deploy:
