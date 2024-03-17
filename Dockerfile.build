@@ -1,0 +1,15 @@
+FROM hseeberger/scala-sbt:eclipse-temurin-11.0.14.1_1.6.2_2.13.8
+
+WORKDIR /usr/app
+
+COPY ./lightbend.sbt .
+COPY ./build.sbt .
+COPY ./project project/
+
+# Install dependencies
+RUN sbt update
+
+COPY ./src src/
+
+# Generate JAR bundle
+RUN sbt clean assembly

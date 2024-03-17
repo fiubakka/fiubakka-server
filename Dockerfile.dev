@@ -1,45 +1,14 @@
-# Builder
-FROM hseeberger/scala-sbt:eclipse-temurin-11.0.14.1_1.6.2_2.13.8 as builder
-
-WORKDIR /usr/app
-
-COPY ./lightbend.sbt .
-COPY ./build.sbt .
-COPY ./project project/
-
-# Install dependencies
-RUN sbt update
-
-COPY ./src src/
-
-# Generate JAR bundle
-RUN sbt clean assembly
-
-
-# Production (compatible with both x86 and ARM architectures)
-FROM eclipse-temurin:11.0.21_9-jre-jammy as prod
-
-WORKDIR /usr/app
-
-COPY --from=builder /usr/app/target/scala-2.13/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
-
-EXPOSE 8080/tcp
-
-CMD ["java", "-jar", "app.jar"]
-
-
 # See https://luppeng.wordpress.com/2020/02/28/install-and-start-postgresql-on-alpine-linux/
 # for reference on PostgreSQL installation on Alpine Linux
 
 # See https://kafka.apache.org/quickstart
 # for reference on Kafka installation
 
-# Development
-FROM eclipse-temurin:11.0.21_9-jre-alpine as dev
+FROM eclipse-temurin:11.0.21_9-jre-alpine
 
 WORKDIR /usr/app
 
-COPY --from=builder /usr/app/target/scala-2.13/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
+COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/scala-2.13/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
 
 # Install PostgreSQL
 
