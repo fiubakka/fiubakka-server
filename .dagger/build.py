@@ -18,7 +18,7 @@ async def build():
             os.environ["DOCKER_USER"],
             password
         )
-        await publish_image(build_image, "build-latest")
+        await tg.start_soon(publish_image, build_image, "build-latest")
         app_image = client.host().directory('.').docker_build(dockerfile=f"Dockerfile.{os.environ["ENV"]}").with_registry_auth(
             "docker.io",
             os.environ["DOCKER_USER"],
