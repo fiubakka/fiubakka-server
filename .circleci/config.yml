@@ -7,7 +7,7 @@ workflows:
           filters:
             tags:
               only:
-                - /^v\d+\.\d+\.\d+$/ 
+                - /^v\d{4}\.\d{2}\.\d{2}$/
 
 jobs:
   prod-dockerhub-deploy:
