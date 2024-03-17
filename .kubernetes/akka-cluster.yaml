@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: fiubakka-server
-        image: docker.io/mrmarcosrolando/fiubakka-server:latest
+        image: docker.io/mrmarcosrolando/fiubakka-server:prod-latest
         volumeMounts: # Needed for AeronUDP
           - mountPath: /dev/shm
             name: dshm
