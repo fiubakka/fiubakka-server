@@ -31,6 +31,7 @@ import protobuf.server.init.player_init.PBPlayerPosition
 import protobuf.server.map.change_map_ready.PBPlayerChangeMapReady
 import protobuf.server.metadata.PBServerMessageType
 import protobuf.server.metadata.PBServerMetadata
+import protobuf.server.state.game_entity_disconnect.PBGameEntityDisconnect
 import protobuf.server.state.game_entity_state.PBGameEntityEquipment
 import protobuf.server.state.game_entity_state.PBGameEntityPosition
 import protobuf.server.state.game_entity_state.PBGameEntityState
@@ -132,7 +133,6 @@ object PlayerHandler {
                   ctx.self ! InitSuccess(initInfo)
                 }
                 .recover { case err =>
-                  println("LA PUTA MADRE FALLE")
                   println(err)
                   ctx.self ! InitFailure(PBPlayerInitErrorCode.UNKNOWN)
                 }
@@ -268,6 +268,12 @@ object PlayerHandler {
 
             case Player.NotifyMessageReceived(entityId, msg) => {
               val message = PBPlayerMessageServer.of(entityId, msg)
+              state.conQueue.offer(message)
+              Behaviors.same
+            }
+
+            case Player.NotifyEntityDisconnect(entityId) => {
+              val message = PBGameEntityDisconnect.of(entityId)
               state.conQueue.offer(message)
               Behaviors.same
             }

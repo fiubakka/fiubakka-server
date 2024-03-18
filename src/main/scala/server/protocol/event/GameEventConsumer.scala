@@ -9,6 +9,7 @@ import akka.stream.OverflowStrategy
 import akka.util.ByteString
 import protobuf.event.chat.message.PBPlayerMessage
 import protobuf.event.metadata.PBEventMetadata
+import protobuf.event.state.game_entity_disconnect.PBGameEntityDisconnect
 import protobuf.event.state.game_entity_state.PBGameEntityState
 import scalapb.GeneratedMessage
 import server.domain.entities.Player
@@ -95,5 +96,8 @@ object GameEventConsumer {
       )
     case PBPlayerMessage(entityId, msg, _) =>
       Player.ReceiveMessage(entityId, msg)
+    case PBGameEntityDisconnect(entityId, _) => {
+      Player.EntityDisconnect(entityId)
+    }
   }
 }

@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+package protobuf.event.state;
+
+message PBGameEntityDisconnect {
+  required string entityId = 1;
+}
