@@ -70,6 +70,9 @@ object Player {
   final case class UpdateEquipment(
       equipment: Equipment
   ) extends Command
+  final case class EntityDisconnect(
+      entityId: String
+  ) extends Command
 
   // ReplyCommand
 
@@ -80,6 +83,9 @@ object Player {
   final case class NotifyMessageReceived(
       entityId: String,
       msg: String
+  ) extends ReplyCommand
+  final case class NotifyEntityDisconnect(
+      entityId: String
   ) extends ReplyCommand
   final case class ReplyStop() extends ReplyCommand
   final case class Ready(initialState: DurablePlayerState) extends ReplyCommand
@@ -234,6 +240,11 @@ object Player {
           Behaviors.same
         }
 
+        case EntityDisconnect(entityId) => {
+          state.tState.handler ! NotifyEntityDisconnect(entityId)
+          Behaviors.same
+        }
+
         case ChangeMap(newMapId) => {
           ctx.log.info(
             s"Changing ${ctx.self.path.name} from map ${state.dState.mapId} to $newMapId"
@@ -283,7 +294,9 @@ object Player {
 
         case Stop() => {
           ctx.log.info(s"Stopping player ${ctx.self.path.name}")
+          state.tState.eventProducer ! GameEventProducer.PlayerDisconnect()
           persistor ! PlayerPersistor.Persist(state.dState)
+          Thread.sleep(2000) // TODO: This should be done with ask
           Behaviors.stopped
         }
 

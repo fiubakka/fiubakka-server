@@ -12,6 +12,7 @@ import protobuf.server.init.player_init.PBPlayerInitError
 import protobuf.server.init.player_init.PBPlayerInitSuccess
 import protobuf.server.map.change_map_ready.PBPlayerChangeMapReady
 import protobuf.server.metadata.PBServerMessageType
+import protobuf.server.state.game_entity_disconnect.PBGameEntityDisconnect
 import protobuf.server.state.game_entity_state.PBGameEntityState
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
@@ -35,6 +36,7 @@ object ProtocolMessageMap {
       PBPlayerInitSuccess.getClass.toString -> PBServerMessageType.PBPlayerInitSuccess,
       PBGameEntityState.getClass.toString -> PBServerMessageType.PBGameEntityState,
       PBServerPlayerMessage.getClass.toString -> PBServerMessageType.PBPlayerMessage,
-      PBPlayerChangeMapReady.getClass.toString -> PBServerMessageType.PBPlayerChangeMapReady
+      PBPlayerChangeMapReady.getClass.toString -> PBServerMessageType.PBPlayerChangeMapReady,
+      PBGameEntityDisconnect.getClass.toString -> PBServerMessageType.PBGameEntityDisconnect
     )
 }
