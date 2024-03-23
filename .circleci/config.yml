@@ -28,6 +28,7 @@ jobs:
       - add_ssh_keys:
           fingerprints:
             - "SHA256:InMJEfM+WEGeRHaFZk2Xym9rPfkz9baIRODMhw1nJ6I"
+            - "SHA256:bWTC5v/OZGJN2WvWl06MnB8vPgrGqIKaYssOD9TCkuM"
       - run:
           name: Release and deploy with Dagger
           command: $HOME/.local/bin/dagger --progress plain run python .dagger/build.py
