@@ -133,7 +133,7 @@ object PlayerHandler {
                   ctx.self ! InitSuccess(initInfo)
                 }
                 .recover { case err =>
-                  println(err)
+                  println(err) // TODO see how to log this error better
                   ctx.self ! InitFailure(PBPlayerInitErrorCode.UNKNOWN)
                 }
           }
