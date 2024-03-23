@@ -41,5 +41,5 @@ sbt \
   -Dakka.cluster.seed-nodes.0=akka://fiubakka-server@127.0.0.1:$DEFAULT_AKKA_PORT \
   -Dakka.remote.artery.canonical.port=$akka_port \
   -Dakka.remote.artery.bind.port=$akka_port \
-  -Dplayer-accepter.port=$player_accepter_port \
+  -Dgame.player-accepter.port=$player_accepter_port \
   run

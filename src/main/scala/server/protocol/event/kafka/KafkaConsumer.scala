@@ -72,5 +72,13 @@ object KafkaConsumer {
           .run()
       }.toArray
     )
+
+    // There seems to be a bug with BroadcastHub where specifying startAfterNrOfConsumers = 0
+    // does not start the broadcast. It still needs 1 consumer to be connected to start.
+    // Do note that while we are not specifying the startAfterNrOfConsumers explicitly, the default is 0.
+    // To solve this, we force a dummy consumer.
+    (0 until gameZonePartitions).foreach { partition =>
+      apply(partition).run()
+    }
   }
 }
