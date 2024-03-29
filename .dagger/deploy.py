@@ -16,7 +16,7 @@ def cloudflared(container: dagger.Container) -> dagger.Container:
         .with_exec(shell("echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared bookworm main' | tee /etc/apt/sources.list.d/cloudflared.list")) \
         .with_exec(shell("apt-get update && apt-get install -y cloudflared")) \
         .with_exec(shell("curl -LO https://github.com/mmiranda/cfdtunnel/releases/download/v0.1.4/cfdtunnel_0.1.4_Linux_arm64.tar.gz")) \
-        .with_exec(shell("tar -xvzf cfdtunnel_0.1.4_Linux_x86_64.tar.gz")) \
+        .with_exec(shell("tar -xvzf cfdtunnel_0.1.4_Linux_arm64.tar.gz")) \
         .with_exec(shell("mkdir /root/.cfdtunnel")) \
         .with_exec(shell("mkdir /root/.kube")) \
         .with_exec(shell("echo '\
