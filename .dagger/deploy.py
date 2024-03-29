@@ -43,8 +43,7 @@ def cloudflared(container: dagger.Container) -> dagger.Container:
             \n- name: k3s-local-cluster \
                 \n  user: \
                 \n    client-certificate-data: {os.environ["K8S_CLIENT_CA"]} \
-                \n    client-key-data: {os.environ["K8S_CLIENT_KEY"]}' > /root/.kube/config")) \
-        .with_exec(shell("./cfdtunnel --profile k8s -- env HTTPS_PROXY=socks5://127.0.0.1:6443 kubectl get po -n fiubakka-server-1")) \
+                \n    client-key-data: {os.environ["K8S_CLIENT_KEY"]}' > /root/.kube/config"))
 
 def shell(cmd: str) -> list[str]:
     return ["sh", "-c", cmd]
@@ -55,6 +54,8 @@ async def main():
         await client.container().from_("docker.io/debian:12.5-slim") \
             .with_(kubectl) \
             .with_(cloudflared) \
+            .with_entrypoint(["./cfdtunnel", "--profile", "k8s", "--"]) \
+            .with_default_args(["env", "HTTPS_PROXY=socks5://127.0.0.1:6443", "kubectl", "get", "po", "-n", "fiubakka-server-1"]) \
             .stdout()
 
 anyio.run(main)
