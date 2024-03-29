@@ -10,7 +10,7 @@ workflows:
                 - /^main$/
 
 jobs:
-  prod-dockerhub-deploy:
+  prod-deploy:
     docker:
       - image: cimg/python:3.12.2
     resource_class: arm.medium
@@ -32,7 +32,10 @@ jobs:
           fingerprints:
             - "SHA256:dUYf30mAyhOVOmtPkWPjOPwDNyOSriEdGGuq4SyR2gQ"
       - run:
-          name: Release and deploy with Dagger
+          name: Release and deploy production image with Dagger
           command: $HOME/.local/bin/dagger --progress plain run python .dagger/build.py
           environment:
             ENV: prod
+      - run:
+          name: Deploy to production
+          command: $HOME/.local/bin/dagger --progress plain run python .dagger/deploy.py

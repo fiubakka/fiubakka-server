@@ -4,14 +4,17 @@ import os
 
 def kubectl(container: dagger.Container) -> dagger.Container:
     return container.with_exec(shell("apt-get update && apt-get install -y curl")) \
-            .with_exec(["curl", "-LO", "https://dl.k8s.io/release/v1.29.2/bin/linux/amd64/kubectl"]) \
+            .with_exec(["curl", "-LO", "https://dl.k8s.io/release/v1.29.2/bin/linux/arm64/kubectl"]) \
             .with_exec(["install", "-o", "root", "-g", "root", "-m", "0755", "kubectl", "/usr/local/bin/kubectl"])
 
 def cloudflared(container: dagger.Container) -> dagger.Container:
+    # We are using the cfdtunnel wrapper on top of cloudflared to avoid having to run
+    # cloudflared as a systemd service, which is not trivial to do in Docker containers.
+    # See https://github.com/mmiranda/cfdtunnel
     return container.with_exec(["mkdir", "-p", "--mode=0755", "/usr/share/keyrings"]) \
         .with_exec(shell("curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null")) \
         .with_exec(shell("echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared bookworm main' | tee /etc/apt/sources.list.d/cloudflared.list")) \
-        .with_exec(shell("apt-get update && apt-get install -y cloudflared procps")) \
+        .with_exec(shell("apt-get update && apt-get install -y cloudflared")) \
         .with_exec(shell("curl -LO https://github.com/mmiranda/cfdtunnel/releases/download/v0.1.4/cfdtunnel_0.1.4_Linux_x86_64.tar.gz")) \
         .with_exec(shell("tar -xvzf cfdtunnel_0.1.4_Linux_x86_64.tar.gz")) \
         .with_exec(shell("mkdir /root/.cfdtunnel")) \
