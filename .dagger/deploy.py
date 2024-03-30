@@ -58,7 +58,7 @@ async def main():
             .with_(kubectl) \
             .with_(cloudflared) \
             .with_entrypoint(["./cfdtunnel", "--profile", "k8s", "--"]) \
-            .with_default_args(args=["env", "HTTPS_PROXY=socks5://127.0.0.1:6443", "kubectl", "set", "image", "deployment/fiubakka-server", f"fiubakka-server=docker.io/mrmarcosrolando/fiubakka-server:{commit_sha}", "-n", "fiubakka-server-1"]) \
+            .with_default_args(args=["env", "HTTPS_PROXY=socks5://127.0.0.1:6443", "kubectl", "set", "image", "deployment/fiubakka-server", f"fiubakka-server=docker.io/mrmarcosrolando/fiubakka-server:prod-{commit_sha}", "-n", "fiubakka-server-1"]) \
             .with_exec([]) \
             .stdout()
 

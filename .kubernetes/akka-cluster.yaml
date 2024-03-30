@@ -73,7 +73,7 @@ spec:
           limits:
             memory: 1024Mi
           requests:
-            cpu: 2
+            cpu: 1200m
             memory: 1024Mi
       volumes:
         - name: dshm # Needed for AeronUDP
