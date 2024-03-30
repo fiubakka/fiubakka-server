@@ -56,7 +56,7 @@ async def main():
             .with_(cloudflared) \
             .with_entrypoint(["./cfdtunnel", "--profile", "k8s", "--"]) \
             .with_default_args(args=["env", "HTTPS_PROXY=socks5://127.0.0.1:6443", "kubectl", "get", "po", "-n", "fiubakka-server-1"]) \
-            .with_exec() \
+            .with_exec([]) \
             .stdout()
 
 anyio.run(main)
