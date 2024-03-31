@@ -1,6 +1,5 @@
 package server.protocol.event.kafka
 
-import _root_.server.GameServer
 import akka.NotUsed
 import akka.actor.typed.scaladsl.ActorContext
 import akka.cluster.typed.Cluster
@@ -14,6 +13,7 @@ import akka.stream.scaladsl.Source
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
+import server.GameServer
 
 object KafkaConsumer {
   private var consumers

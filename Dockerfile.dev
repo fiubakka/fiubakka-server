@@ -50,7 +50,7 @@ EXPOSE 5432/tcp
 # Kafka
 EXPOSE 9092/tcp
 # Application
-EXPOSE 8080/tcp
+EXPOSE 2020/tcp
 
 ENV KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 
