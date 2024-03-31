@@ -46,7 +46,7 @@ jobs:
           name: Deploy to production
           command: $HOME/.local/bin/dagger --progress plain run python .dagger/deploy.py
 
-  prod-dm64-dockerhub-push: # TODO use anchors to avoid repetition of job
+  prod-amd64-dockerhub-push: # TODO use anchors to avoid repetition of job
     docker:
       - image: cimg/python:3.12.2
     steps:
