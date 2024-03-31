@@ -3,7 +3,13 @@ version: 2.1
 workflows:
   build-and-deploy:
     jobs:
-      - prod-deploy:
+      - prod-arm64-dockerhub-push-and-deploy:
+          filters:
+            branches:
+              only:
+                - /^main$/
+      
+      - prod-amd64-dockerhub-push:
           filters:
             branches:
               only:
