@@ -78,14 +78,7 @@ object KafkaConsumer {
     // Do note that while we are not specifying the startAfterNrOfConsumers explicitly, the default is 0.
     // To solve this, we force a dummy consumer.
     (0 until gameZonePartitions).foreach { partition =>
-      println("Starting Kafka Consumer for partition: " + partition)
-      println("HOLA!")
-      apply(partition)
-        .map { msg =>
-          println(msg)
-          msg
-        }
-        .run()
+      apply(partition).run()
     }
   }
 }

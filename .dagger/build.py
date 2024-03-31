@@ -14,7 +14,7 @@ async def main():
     async with dagger.Connection() as client, anyio.create_task_group() as tg:
         password = client.set_secret("docker_password", os.environ["DOCKER_PASS"])
         base_image = build_image(client, "Dockerfile.build", password)
-        await publish_image(base_image, f"build-{commit_sha}")
+        await publish_image(base_image, f"build-latest")
         app_image = build_image(client, f"Dockerfile.{os.environ["ENV"]}", password)
         for tag in [commit_sha, "latest"]:
             tg.start_soon(publish_image, app_image, f"{os.environ["ENV"]}-{tag}")

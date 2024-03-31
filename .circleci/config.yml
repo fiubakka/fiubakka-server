@@ -3,20 +3,14 @@ version: 2.1
 workflows:
   build-and-deploy:
     jobs:
-      - prod-arm64-dockerhub-push-and-deploy:
-          filters:
-            branches:
-              only:
-                - /^main$/
-      
-      - prod-amd64-dockerhub-push:
+      - prod-deploy:
           filters:
             branches:
               only:
                 - /^main$/
 
 jobs:
-  prod-arm64-dockerhub-push-and-deploy:
+  prod-deploy:
     docker:
       - image: cimg/python:3.12.2
     resource_class: arm.medium
@@ -45,29 +39,3 @@ jobs:
       - run:
           name: Deploy to production
           command: $HOME/.local/bin/dagger --progress plain run python .dagger/deploy.py
-
-  prod-amd64-dockerhub-push: # TODO use anchors to avoid repetition of job
-    docker:
-      - image: cimg/python:3.12.2
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Add Github to SSH known hosts
-          command: |
-            mkdir -p ~/.ssh/
-            ssh-keyscan github.com >> ~/.ssh/known_hosts
-      - run:
-          name: Install Dagger CLI
-          command: curl -L https://dl.dagger.io/dagger/install.sh | BIN_DIR=$HOME/.local/bin sh
-      - run:
-          name: Install Dagger Python SDK
-          command: pip install -r requirements.txt
-      - add_ssh_keys:
-          fingerprints:
-            - "SHA256:dUYf30mAyhOVOmtPkWPjOPwDNyOSriEdGGuq4SyR2gQ"
-      - run:
-          name: Release and deploy production image with Dagger
-          command: $HOME/.local/bin/dagger --progress plain run python .dagger/build.py
-          environment:
-            ENV: prod
