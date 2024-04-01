@@ -56,7 +56,10 @@ object GameEventConsumer {
       Behaviors.receiveMessage {
         case EventReceived(msg) => {
           ctx.log.debug(s"$playerId: Event received: $msg")
-          player ! commandFromEventMessage(msg)
+          player ! Player.GameEventConsumerCommand(
+            eventCommandFromEventMessage(msg),
+            ctx.self
+          )
           Behaviors.same
         }
         case Start() => {
@@ -69,8 +72,8 @@ object GameEventConsumer {
     })
   }
 
-  private val commandFromEventMessage
-      : PartialFunction[GeneratedMessage, Player.Command] = {
+  private val eventCommandFromEventMessage
+      : PartialFunction[GeneratedMessage, Player.EventCommand] = {
     case PBGameEntityState(entityId, position, velocity, equipment, _) =>
       Player.UpdateEntityState(
         entityId,

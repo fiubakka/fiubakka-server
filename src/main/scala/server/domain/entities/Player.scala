@@ -34,6 +34,7 @@ final case class InitData(
 object Player {
   sealed trait Command extends CborSerializable
   sealed trait ReplyCommand extends CborSerializable
+  sealed trait EventCommand extends CborSerializable
 
   // Command
 
@@ -60,29 +61,38 @@ object Player {
       velocity: Velocity,
       position: Position
   ) extends Command
+
+  final case class PersistState() extends Command
+
   final case class AddMessage(
       msg: String
-  ) extends Command
-  final case class ReceiveMessage(
-      entityId: String,
-      msg: String
-  ) extends Command
-  final case class UpdateEntityState(
-      entityId: String,
-      newEntityState: GameEntityState
-  ) extends Command
-  final case class PersistState() extends Command
-  final case class ChangeMap(
-      newMapId: Int
   ) extends Command
   final case class UpdateEquipment(
       equipment: Equipment
   ) extends Command
-  final case class EntityDisconnect(
-      entityId: String
+  final case class ChangeMap(
+      newMapId: Int
   ) extends Command
 
-  // ReplyCommand
+  // GameEventConsumer messages
+
+  final case class ReceiveMessage(
+      entityId: String,
+      msg: String
+  ) extends EventCommand
+  final case class UpdateEntityState(
+      entityId: String,
+      newEntityState: GameEntityState
+  ) extends EventCommand
+  final case class EntityDisconnect(
+      entityId: String
+  ) extends EventCommand
+  final case class GameEventConsumerCommand(
+      command: EventCommand,
+      consumerRef: ActorRef[GameEventConsumer.Command]
+  ) extends Command
+
+  // PlayerHandler reply messages
 
   final case class NotifyEntityStateUpdate(
       entityId: String,
@@ -243,30 +253,20 @@ object Player {
             Behaviors.same
           }
 
-          case UpdateEntityState(entityId, newEntityState) => {
-            state.tState.handler ! NotifyEntityStateUpdate(
-              entityId,
-              newEntityState
-            )
-
-            Behaviors.same
+          case GameEventConsumerCommand(command, consumerRef) => {
+            consumerRef match {
+              case state.tState.eventConsumer => {
+                handleConsumerMessage(command, state)
+              }
+              // If the consumer doesn't match, it means it corresponds to the previous Map consumer buffered messages. Ignore it.
+              case _ => {
+                Behaviors.same
+              }
+            }
           }
 
           case AddMessage(msg) => {
             state.tState.eventProducer ! GameEventProducer.AddMessage(msg)
-            Behaviors.same
-          }
-
-          case ReceiveMessage(entityId, msg) => {
-            state.tState.handler ! NotifyMessageReceived(
-              entityId,
-              msg
-            )
-            Behaviors.same
-          }
-
-          case EntityDisconnect(entityId) => {
-            state.tState.handler ! NotifyEntityDisconnect(entityId)
             Behaviors.same
           }
 
@@ -394,6 +394,35 @@ object Player {
         case _ => {
           Behaviors.same
         }
+      }
+    }
+  }
+
+  private def handleConsumerMessage(
+      msg: EventCommand,
+      state: PlayerState
+  ): Behavior[Command] = {
+    msg match {
+      case ReceiveMessage(entityId, msg) => {
+        state.tState.handler ! NotifyMessageReceived(
+          entityId,
+          msg
+        )
+        Behaviors.same
+      }
+
+      case UpdateEntityState(entityId, newEntityState) => {
+        state.tState.handler ! NotifyEntityStateUpdate(
+          entityId,
+          newEntityState
+        )
+
+        Behaviors.same
+      }
+
+      case EntityDisconnect(entityId) => {
+        state.tState.handler ! NotifyEntityDisconnect(entityId)
+        Behaviors.same
       }
     }
   }
