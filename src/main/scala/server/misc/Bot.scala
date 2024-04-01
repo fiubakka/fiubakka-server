@@ -76,7 +76,7 @@ object Bot {
         behaviour(state.copy(position = newPosition), adapter)
 
       case Heartbeat() => {
-        state.playerBot ! Player.Heartbeat()
+        state.playerBot ! Player.Heartbeat(adapter)
         Behaviors.same
       }
 

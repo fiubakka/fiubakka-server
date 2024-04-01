@@ -27,7 +27,8 @@ object PlayerPersistor {
       emptyState = DurablePlayerState(
         "",
         Position(150, 230),
-        Equipment(0, 0, 0, 0, 0, 0, 0)
+        Equipment(0, 0, 0, 0, 0, 0, 0),
+        0
       ),
       commandHandler = commandHandler
     )

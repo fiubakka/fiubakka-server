@@ -13,6 +13,7 @@ import org.apache.kafka.common.serialization.StringSerializer
 import protobuf.event.chat.message.PBPlayerMessage
 import protobuf.event.metadata.PBEventMessageType
 import protobuf.event.metadata.PBEventMetadata
+import protobuf.event.state.game_entity_disconnect.PBGameEntityDisconnect
 import protobuf.event.state.game_entity_state.PBGameEntityEquipment
 import protobuf.event.state.game_entity_state.PBGameEntityPosition
 import protobuf.event.state.game_entity_state.PBGameEntityState
@@ -27,10 +28,13 @@ object GameEventProducer {
   sealed trait Command
   final case class PlayerStateUpdate(playerState: PlayerState) extends Command
   final case class AddMessage(msg: String) extends Command
+  final case class PlayerDisconnect() extends Command
 
-  def apply(playerId: String): Behavior[Command] = {
+  def apply(playerId: String, partition: Int): Behavior[Command] = {
     Behaviors.setup(ctx => {
       implicit val mat = Materializer(ctx)
+      val gameZoneTopic =
+        ctx.system.settings.config.getString("game.kafka.topic")
 
       val config = ctx.system.settings.config.getConfig("akka.kafka-producer")
       val producerSettings =
@@ -38,7 +42,7 @@ object GameEventProducer {
           .withProducer(KafkaProducer())
 
       val (conQueue, conSource) = Source
-        .queue[GeneratedMessage](256, OverflowStrategy.backpressure)
+        .queue[GeneratedMessage](256, OverflowStrategy.dropHead)
         .preMaterialize()
 
       conSource
@@ -50,7 +54,9 @@ object GameEventProducer {
           )
         )
         .map(_.toArray)
-        .map(value => new ProducerRecord("game-zone", playerId, value))
+        .map(value =>
+          new ProducerRecord(gameZoneTopic, partition, playerId, value)
+        )
         .runWith(Producer.plainSink(producerSettings))
 
       Behaviors.receiveMessage {
@@ -83,6 +89,10 @@ object GameEventProducer {
         case AddMessage(msg) => {
           ctx.log.info(s"$playerId: Adding message: $msg")
           conQueue.offer(PBPlayerMessage(playerId, msg))
+          Behaviors.same
+        }
+        case PlayerDisconnect() => {
+          conQueue.offer(PBGameEntityDisconnect(playerId))
           Behaviors.same
         }
       }

@@ -6,7 +6,7 @@ metadata:
   name: fiubakka-server
   namespace: fiubakka-server-1
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: fiubakka-server
@@ -17,7 +17,8 @@ spec:
     spec:
       containers:
       - name: fiubakka-server
-        image: mrmarcosrolando/fiubakka-server:1.0
+        image: docker.io/mrmarcosrolando/fiubakka-server:prod-latest
+        imagePullPolicy: Always
         volumeMounts: # Needed for AeronUDP
           - mountPath: /dev/shm
             name: dshm
@@ -52,6 +53,8 @@ spec:
           value: fiubakka-postgres-postgresql.fiubakka-server-1.svc.cluster.local:5432
         - name: KAFKA_BOOTSTRAP_SERVERS
           value: fiubakka-kafka.fiubakka-server-1.svc.cluster.local:9092
+        - name: GAME_KAFKA_TOPIC
+          value: game-zone
         - name: KUBERNETES_POD_NAME
           valueFrom:
             fieldRef:
@@ -70,7 +73,7 @@ spec:
           limits:
             memory: 1024Mi
           requests:
-            cpu: 2
+            cpu: 1200m
             memory: 1024Mi
       volumes:
         - name: dshm # Needed for AeronUDP

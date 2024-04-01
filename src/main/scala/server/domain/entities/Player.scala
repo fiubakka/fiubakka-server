@@ -2,13 +2,13 @@ package server.domain.entities
 
 import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityRef
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.serialization.jackson.CborSerializable
 import akka.util.Timeout
 import server.domain.structs.DurablePlayerState
-import server.domain.structs.GameEntity
 import server.domain.structs.GameEntityState
 import server.domain.structs.PlayerState
 import server.domain.structs.TransientPlayerState
@@ -23,6 +23,7 @@ import server.sharding.Sharding
 import java.time.LocalDateTime
 import scala.concurrent.duration._
 import scala.util.Failure
+import scala.util.Random
 import scala.util.Success
 
 final case class InitData(
@@ -38,10 +39,18 @@ object Player {
 
   final case class Init(initialData: InitData) extends Command
 
-  final case class Heartbeat() extends Command
+  // We also send to PlayerHandler ref in case the Player switches cluster nodes or dies
+  // and starts again. In this case we would be stuck waiting for an Init message from the
+  // PlayerHandler that would never arrive! By relying on this fallback message, we fix this issue.
+  //
+  // We still keep the Init message to avoid including other init data (ie. the equipment) being included
+  // in the Heartbeat message and having a more complex message structure.
+  final case class Heartbeat(handler: ActorRef[Player.ReplyCommand])
+      extends Command
   final case class CheckHeartbeat() extends Command
 
   final case class Stop() extends Command
+  final case class StopReady() extends Command
 
   final case class InitialState(
       initialState: DurablePlayerState
@@ -63,6 +72,15 @@ object Player {
       newEntityState: GameEntityState
   ) extends Command
   final case class PersistState() extends Command
+  final case class ChangeMap(
+      newMapId: Int
+  ) extends Command
+  final case class UpdateEquipment(
+      equipment: Equipment
+  ) extends Command
+  final case class EntityDisconnect(
+      entityId: String
+  ) extends Command
 
   // ReplyCommand
 
@@ -74,10 +92,12 @@ object Player {
       entityId: String,
       msg: String
   ) extends ReplyCommand
+  final case class NotifyEntityDisconnect(
+      entityId: String
+  ) extends ReplyCommand
   final case class ReplyStop() extends ReplyCommand
   final case class Ready(initialState: DurablePlayerState) extends ReplyCommand
-
-  Map[String, GameEntity]()
+  final case class ChangeMapReady(newMapId: Int) extends ReplyCommand
 
   val TypeKey = EntityTypeKey[Command]("Player")
 
@@ -107,16 +127,6 @@ object Player {
           entityId
         )
 
-        ctx.spawn(
-          GameEventConsumer(entityId, ctx.self),
-          s"GameEventConsumer-$entityId"
-        )
-
-        val eventProducer = ctx.spawn(
-          GameEventProducer(entityId),
-          s"GameEventProducer-$entityId"
-        )
-
         ctx.ask(
           persistor,
           PlayerPersistor.GetState.apply
@@ -130,160 +140,258 @@ object Player {
           }
         }
 
-        initBehaviour(persistor, eventProducer)
+        initBehaviour(entityId, persistor)
       }
     }
   }
 
   def initBehaviour(
+      entityId: String,
       persistor: EntityRef[PlayerPersistor.Command],
-      eventProducer: ActorRef[GameEventProducer.Command],
       initialData: Option[InitData] = None
   ): Behavior[Command] = {
-    Behaviors.receiveMessage {
+    Behaviors.receive { (ctx, msg) =>
+      msg match {
+        case InitialState(initialState) => {
+          initialData match {
+            case Some(initialData) =>
+              finishInitialization(
+                ctx,
+                persistor,
+                initialData,
+                initialState
+              )
 
-      case InitialState(initialState) => {
-        initialData match {
-          case Some(initialData) =>
-            finishInitialization(
-              persistor,
-              eventProducer,
-              initialData,
-              initialState
-            )
+            case None => {
+              Behaviors.receiveMessage {
+                case Init(initialData) =>
+                  finishInitialization(
+                    ctx,
+                    persistor,
+                    initialData,
+                    initialState
+                  )
 
-          case None => {
-            Behaviors.receiveMessage {
-              case Init(initialData) =>
-                finishInitialization(
-                  persistor,
-                  eventProducer,
-                  initialData,
-                  initialState
-                )
+                // See below usage of Heartbeat to understand this case
+                case Heartbeat(handler) =>
+                  finishInitialization(
+                    ctx,
+                    persistor,
+                    InitData(handler, None),
+                    initialState
+                  ) // No equipment because the Player should already be registered
 
-              // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
-              case _ => {
-                Behaviors.same
+                // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
+                case _ => {
+                  Behaviors.same
+                }
               }
             }
           }
         }
-      }
 
-      // Optimization to avoid waiting for the second Init message to start
-      case Init(initData) => {
-        initBehaviour(persistor, eventProducer, Some(initData))
-      }
+        // Optimization to avoid waiting for the second Init message to start
+        case Init(initData) => {
+          initBehaviour(entityId, persistor, Some(initData))
+        }
 
-      case _ => {
-        // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
-        Behaviors.same
+        // We know that this message will only be recieved if the PlayerHandler is in
+        // the running state, so its safe to assume we won't receive an Init message in this case
+        // and instead set this sender as the PlayerHandler and complete intialization.
+        // This would be what should happen if the Player dies or is moved to another node.
+        case Heartbeat(handler) => {
+          initBehaviour(
+            entityId,
+            persistor,
+            Some(InitData(handler, None))
+          ) // No equipment because the Player should already be registered
+        }
+
+        case _ => {
+          // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
+          Behaviors.same
+        }
       }
     }
   }
 
   def runningBehaviour(
       state: PlayerState,
-      persistor: EntityRef[PlayerPersistor.Command],
-      eventProducer: ActorRef[GameEventProducer.Command]
+      persistor: EntityRef[PlayerPersistor.Command]
   ): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
-      msg match {
-        case Move(newVelocity, newPosition) => {
-          val newState = state.copy(
-            dState = state.dState.copy(
-              position = newPosition
-            ),
-            tState = state.tState.copy(
-              velocity = newVelocity
+      Behaviors.withTimers { timers =>
+        msg match {
+          case Move(newVelocity, newPosition) => {
+            val newState = state.copy(
+              dState = state.dState.copy(
+                position = newPosition
+              ),
+              tState = state.tState.copy(
+                velocity = newVelocity
+              )
             )
-          )
-          eventProducer ! GameEventProducer.PlayerStateUpdate(newState)
-          runningBehaviour(newState, persistor, eventProducer)
+            state.tState.eventProducer ! GameEventProducer.PlayerStateUpdate(
+              newState
+            )
+            runningBehaviour(newState, persistor)
+          }
+
+          case PersistState() => {
+            ctx.log.debug(s"Persisting current state: ${state.dState}")
+            persistor ! PlayerPersistor.Persist(state.dState)
+            Behaviors.same
+          }
+
+          case UpdateEntityState(entityId, newEntityState) => {
+            state.tState.handler ! NotifyEntityStateUpdate(
+              entityId,
+              newEntityState
+            )
+
+            Behaviors.same
+          }
+
+          case AddMessage(msg) => {
+            state.tState.eventProducer ! GameEventProducer.AddMessage(msg)
+            Behaviors.same
+          }
+
+          case ReceiveMessage(entityId, msg) => {
+            state.tState.handler ! NotifyMessageReceived(
+              entityId,
+              msg
+            )
+            Behaviors.same
+          }
+
+          case EntityDisconnect(entityId) => {
+            state.tState.handler ! NotifyEntityDisconnect(entityId)
+            Behaviors.same
+          }
+
+          case ChangeMap(newMapId) => {
+            ctx.log.info(
+              s"Changing ${ctx.self.path.name} from map ${state.dState.mapId} to $newMapId"
+            )
+            if (newMapId == state.dState.mapId) {
+              state.tState.handler ! ChangeMapReady(newMapId)
+              Behaviors.same
+            } else {
+              ctx.stop(state.tState.eventConsumer)
+              ctx.stop(state.tState.eventProducer)
+
+              val (newEventConsumer, newEventProducer) =
+                getEventHandlers(ctx, newMapId)
+
+              val newState = state.copy(
+                dState = state.dState.copy(
+                  mapId = newMapId
+                ),
+                tState = state.tState.copy(
+                  eventProducer = newEventProducer,
+                  eventConsumer = newEventConsumer
+                )
+              )
+
+              persistor ! PlayerPersistor.Persist(newState.dState)
+              state.tState.handler ! ChangeMapReady(newMapId)
+
+              runningBehaviour(
+                newState,
+                persistor
+              )
+            }
+          }
+
+          case UpdateEquipment(equipment) => {
+            val newState = state.copy(
+              dState = state.dState.copy(
+                equipment = equipment
+              )
+            )
+            persistor ! PlayerPersistor.Persist(newState.dState)
+            state.tState.eventProducer ! GameEventProducer.PlayerStateUpdate(
+              newState
+            )
+            runningBehaviour(newState, persistor)
+          }
+
+          case Stop() => {
+            ctx.log.info(s"Stopping player ${ctx.self.path.name}")
+            timers.cancelAll()
+            state.tState.eventProducer ! GameEventProducer.PlayerDisconnect()
+            persistor ! PlayerPersistor.Persist(state.dState)
+            timers.startSingleTimer(StopReady(), 2.seconds)
+            stoppingBehaviour()
+          }
+
+          // If the PlayerHandler failed and the client inits a new connection, we need to update the PlayerHandler
+          case Init(InitData(newHandler, _)) => {
+            state.tState.handler ! Ready(state.dState)
+            runningBehaviour(
+              state.copy(tState =
+                state.tState.copy(
+                  lastHeartbeatTime =
+                    LocalDateTime.now(), // Just in case optimization
+                  handler = newHandler
+                )
+              ),
+              persistor
+            )
+          }
+
+          // We don't care about the PlayerHandler here, it should not change.
+          case Heartbeat(_) => {
+            runningBehaviour(
+              state.copy(tState =
+                state.tState.copy(
+                  lastHeartbeatTime = LocalDateTime.now()
+                )
+              ),
+              persistor
+            )
+          }
+
+          case CheckHeartbeat() => {
+            val lastHeartbeatTime = state.tState.lastHeartbeatTime
+            val heartStopped =
+              LocalDateTime.now().isAfter(lastHeartbeatTime.plusSeconds(10))
+            heartStopped match {
+              case true =>
+                ctx.log.warn(
+                  s"Player ${ctx.self.path.name} has not sent a heartbeat in the last 10 seconds, disconnecting"
+                )
+                state.tState.eventProducer ! GameEventProducer
+                  .PlayerDisconnect()
+                state.tState.handler ! ReplyStop() // Player handler it's most likely dead but just in case
+                Behaviors.stopped
+              case false =>
+                state.tState.eventProducer ! GameEventProducer
+                  .PlayerStateUpdate(
+                    state
+                  )
+                Behaviors.same
+            }
+          }
+
+          case _ => {
+            ctx.log.error(s"Received unexpected message while running: $msg")
+            Behaviors.same
+          }
         }
+      }
+    }
+  }
 
-        case PersistState() => {
-          ctx.log.debug(s"Persisting current state: ${state.dState}")
-          persistor ! PlayerPersistor.Persist(state.dState)
-          Behaviors.same
-        }
-
-        case UpdateEntityState(entityId, newEntityState) => {
-          state.tState.handler ! NotifyEntityStateUpdate(
-            entityId,
-            newEntityState
-          )
-
-          Behaviors.same
-        }
-
-        case AddMessage(msg) => {
-          eventProducer ! GameEventProducer.AddMessage(msg)
-          Behaviors.same
-        }
-
-        case ReceiveMessage(entityId, msg) => {
-          state.tState.handler ! NotifyMessageReceived(
-            entityId,
-            msg
-          )
-          Behaviors.same
-        }
-
-        case Stop() => {
-          ctx.log.info(s"Stopping player ${ctx.self.path.name}")
-          persistor ! PlayerPersistor.Persist(state.dState)
+  def stoppingBehaviour(): Behavior[Command] = {
+    Behaviors.receive { (_, msg) =>
+      msg match {
+        case StopReady() => {
           Behaviors.stopped
         }
 
-        // If the PlayerHandler failed and the client inits a new connection, we need to update the PlayerHandler
-        case Init(InitData(newHandler, _)) => {
-          state.tState.handler ! Ready(state.dState)
-          runningBehaviour(
-            state.copy(tState =
-              state.tState.copy(
-                lastHeartbeatTime =
-                  LocalDateTime.now(), // Just in case optimization
-                handler = newHandler
-              )
-            ),
-            persistor,
-            eventProducer
-          )
-        }
-
-        case Heartbeat() => {
-          runningBehaviour(
-            state.copy(tState =
-              state.tState.copy(
-                lastHeartbeatTime = LocalDateTime.now()
-              )
-            ),
-            persistor,
-            eventProducer
-          )
-        }
-
-        case CheckHeartbeat() => {
-          val lastHeartbeatTime = state.tState.lastHeartbeatTime
-          val heartStopped =
-            LocalDateTime.now().isAfter(lastHeartbeatTime.plusSeconds(10))
-          heartStopped match {
-            case true =>
-              ctx.log.warn(
-                s"Player ${ctx.self.path.name} has not sent a heartbeat in the last 10 seconds, disconnecting"
-              )
-              state.tState.handler ! ReplyStop() // Player handler it's most likely dead but just in case
-              Behaviors.stopped
-            case false =>
-              eventProducer ! GameEventProducer.PlayerStateUpdate(state)
-              Behaviors.same
-          }
-        }
-
         case _ => {
-          ctx.log.error(s"Received unexpected message while running: $msg")
           Behaviors.same
         }
       }
@@ -291,8 +399,8 @@ object Player {
   }
 
   private def finishInitialization(
+      ctx: ActorContext[Command],
       persistor: EntityRef[PlayerPersistor.Command],
-      eventProducer: ActorRef[GameEventProducer.Command],
       initialData: InitData,
       initialState: DurablePlayerState
   ): Behavior[Command] = {
@@ -307,18 +415,44 @@ object Player {
       )
     }
 
+    val (eventConsumer, eventProducer) =
+      getEventHandlers(ctx, initialState.mapId)
+
     handler ! Ready(newState)
     runningBehaviour(
       PlayerState(
         newState,
         tState = TransientPlayerState(
           handler,
+          eventProducer,
+          eventConsumer,
           LocalDateTime.now(),
           Velocity(0, 0)
         )
       ),
-      persistor,
-      eventProducer
+      persistor
     )
+  }
+
+  private def getEventHandlers(ctx: ActorContext[Command], mapId: Int): (
+      ActorRef[GameEventConsumer.Command],
+      ActorRef[GameEventProducer.Command]
+  ) = {
+    val eventHandlersSuffix = Random.alphanumeric.take(8).mkString
+    val eventConsumer = ctx.spawn(
+      GameEventConsumer(
+        ctx.self,
+        mapId
+      ),
+      s"GameEventConsumer-$mapId-$eventHandlersSuffix"
+    )
+    val eventProducer = ctx.spawn(
+      GameEventProducer(
+        ctx.self.path.name,
+        mapId
+      ),
+      s"GameEventProducer-$mapId-$eventHandlersSuffix"
+    )
+    (eventConsumer, eventProducer)
   }
 }

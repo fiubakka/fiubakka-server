@@ -9,6 +9,7 @@ import akka.stream.OverflowStrategy
 import akka.util.ByteString
 import protobuf.event.chat.message.PBPlayerMessage
 import protobuf.event.metadata.PBEventMetadata
+import protobuf.event.state.game_entity_disconnect.PBGameEntityDisconnect
 import protobuf.event.state.game_entity_state.PBGameEntityState
 import scalapb.GeneratedMessage
 import server.domain.entities.Player
@@ -25,14 +26,16 @@ object GameEventConsumer {
   final case class Start() extends Command
 
   def apply(
-      playerId: String,
-      player: ActorRef[Player.Command]
+      player: ActorRef[Player.Command],
+      partition: Int
   ): Behavior[Command] = {
     Behaviors.setup(ctx => {
       implicit val mat = Materializer(ctx)
+      val playerId =
+        player.path.name // The Player Entity Id is its Actor's name
 
-      KafkaConsumer()
-        .buffer(64000, OverflowStrategy.dropHead)
+      KafkaConsumer(partition)
+        .buffer(1024, OverflowStrategy.dropHead)
         .filter(record => {
           (record.key == null || record.key != playerId)
         }) // Ignore messages from myself
@@ -93,5 +96,8 @@ object GameEventConsumer {
       )
     case PBPlayerMessage(entityId, msg, _) =>
       Player.ReceiveMessage(entityId, msg)
+    case PBGameEntityDisconnect(entityId, _) => {
+      Player.EntityDisconnect(entityId)
+    }
   }
 }

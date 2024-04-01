@@ -1,41 +1,14 @@
-# Builder
-FROM hseeberger/scala-sbt:eclipse-temurin-11.0.14.1_1.6.2_2.13.8 as builder
-
-WORKDIR /usr/app
-
-COPY ./lightbend.sbt .
-COPY ./build.sbt .
-COPY ./project project/
-
-# Install dependencies
-RUN sbt update
-
-COPY ./src src/
-
-# Generate JAR bundle
-RUN sbt clean assembly
-
-
-# Production
-FROM eclipse-temurin:11.0.21_9-jre-alpine as prod
-
-WORKDIR /usr/app
-
-COPY --from=builder /usr/app/target/scala-2.13/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
-
-EXPOSE 8080/tcp
-
-CMD ["java", "-jar", "app.jar"]
-
-
 # See https://luppeng.wordpress.com/2020/02/28/install-and-start-postgresql-on-alpine-linux/
 # for reference on PostgreSQL installation on Alpine Linux
 
 # See https://kafka.apache.org/quickstart
 # for reference on Kafka installation
 
-# Development
-FROM prod as dev
+FROM eclipse-temurin:11.0.21_9-jre-alpine
+
+WORKDIR /usr/app
+
+COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/scala-2.13/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
 
 # Install PostgreSQL
 
@@ -70,9 +43,14 @@ RUN curl https://dlcdn.apache.org/kafka/3.6.1/kafka_2.13-3.6.1.tgz -o kafka_2.13
     && KAFKA_CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)" \
     && bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c config/kraft/server.properties \
     && bin/kafka-server-start.sh -daemon config/kraft/server.properties \
-    && bin/kafka-topics.sh --create --topic game-zone --bootstrap-server localhost:9092
+    && bin/kafka-topics.sh --create --topic game-zone --partitions 3 --bootstrap-server localhost:9092
 
+# PostgreSQL
 EXPOSE 5432/tcp
+# Kafka
+EXPOSE 9092/tcp
+# Application
+EXPOSE 2020/tcp
 
 ENV KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 
