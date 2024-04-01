@@ -1,15 +1,23 @@
 package server.domain.truco.cards
 
-class Deck {
-  import scala.util.Random
+import scala.util.Random
 
-  val cards: List[Card] = {
+class Deck {
+  var cards: List[Card] = {
     val numbers = CardNumber.values.toList
     val suits = CardSuit.values.toList
     val random = new Random()
-    for {
-      number <- random.shuffle(numbers)
-      suit <- random.shuffle(suits)
-    } yield new Card(number, suit)
+    random.shuffle(
+      for {
+        number <- numbers
+        suit <- suits
+      } yield new Card(number, suit)
+    )
+  }
+
+  def take(n: Int): List[Card] = {
+    val (taken, remaining) = cards.splitAt(n)
+    cards = remaining
+    taken
   }
 }
