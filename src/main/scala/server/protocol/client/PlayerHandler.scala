@@ -77,26 +77,18 @@ object PlayerHandler {
 
   def apply(connection: Tcp.IncomingConnection): Behavior[Command] = {
     Behaviors.setup { ctx =>
-      Behaviors.withTimers { timers =>
-        implicit val mat = Materializer(ctx)
+      implicit val mat = Materializer(ctx)
 
-        val (conQueue, conSource) = Source
-          .queue[GeneratedMessage](64000, OverflowStrategy.dropHead)
-          .preMaterialize()
+      val (conQueue, conSource) = Source
+        .queue[GeneratedMessage](64000, OverflowStrategy.dropHead)
+        .preMaterialize()
 
-        connection.handleWith(clientStreamHandler(ctx, conSource))
+      connection.handleWith(clientStreamHandler(ctx, conSource))
 
-        val playerResponseMapper: ActorRef[Player.ReplyCommand] =
-          ctx.messageAdapter(rsp => PlayerReplyCommand(rsp))
+      val playerResponseMapper: ActorRef[Player.ReplyCommand] =
+        ctx.messageAdapter(rsp => PlayerReplyCommand(rsp))
 
-        timers.startTimerWithFixedDelay(
-          "sendHeartbeat",
-          SendHeartbeat(),
-          2.seconds
-        )
-
-        initBehaviour(conQueue, playerResponseMapper)
-      }
+      initBehaviour(conQueue, playerResponseMapper)
     }
   }
 
@@ -104,101 +96,108 @@ object PlayerHandler {
       conQueue: SourceQueueWithComplete[GeneratedMessage],
       playerResponseMapper: ActorRef[Player.ReplyCommand]
   ): Behavior[Command] = {
-    Behaviors.receive { (ctx, msg) =>
-      msg match {
-        case Init(initInfo) => {
-          ctx.log.info(s"Init message received from ${initInfo.playerName}")
+    Behaviors.withTimers { timers =>
+      Behaviors.receive { (ctx, msg) =>
+        msg match {
+          case Init(initInfo) => {
+            ctx.log.info(s"Init message received from ${initInfo.playerName}")
 
-          initInfo match {
-            case LoginInfo(playerName, password) =>
-              PlayerRepository
-                .validate(playerName, password)
-                .map {
-                  case true =>
+            initInfo match {
+              case LoginInfo(playerName, password) =>
+                PlayerRepository
+                  .validate(playerName, password)
+                  .map {
+                    case true =>
+                      ctx.self ! InitSuccess(initInfo)
+                    case false =>
+                      ctx.self ! InitFailure(
+                        PBPlayerInitErrorCode.INVALID_PLAYER_CREDENTIALS
+                      )
+                  }
+                  .recover {
+                    case _ => // TODO can we log this error? We cant use the ctx.log
+                      ctx.self ! InitFailure(PBPlayerInitErrorCode.UNKNOWN)
+                  }
+
+              case RegisterInfo(playerName, password, _) =>
+                PlayerRepository
+                  .create(playerName, password)
+                  .map { _ =>
                     ctx.self ! InitSuccess(initInfo)
-                  case false =>
-                    ctx.self ! InitFailure(
-                      PBPlayerInitErrorCode.INVALID_PLAYER_CREDENTIALS
-                    )
-                }
-                .recover {
-                  case _ => // TODO can we log this error? We cant use the ctx.log
+                  }
+                  .recover { case err =>
+                    println(err) // TODO see how to log this error better
                     ctx.self ! InitFailure(PBPlayerInitErrorCode.UNKNOWN)
-                }
-
-            case RegisterInfo(playerName, password, _) =>
-              PlayerRepository
-                .create(playerName, password)
-                .map { _ =>
-                  ctx.self ! InitSuccess(initInfo)
-                }
-                .recover { case err =>
-                  println(err) // TODO see how to log this error better
-                  ctx.self ! InitFailure(PBPlayerInitErrorCode.UNKNOWN)
-                }
-          }
-
-          Behaviors.same
-        }
-
-        case InitSuccess(initInfo) => {
-          val player = Sharding().entityRefFor(
-            Player.TypeKey,
-            initInfo.playerName
-          )
-
-          player ! Player.Init(
-            InitData(
-              playerResponseMapper,
-              initInfo.getInitialEquipment()
-            )
-          ) // Forces the Player to start the first time and syncs the handler
-
-          Behaviors.same // Now we wait for Player.Ready message from the Player
-        }
-
-        case InitFailure(errorCode) => {
-          ctx.log.info(
-            s"Init failure message received when initializing connection to player. Error code $errorCode"
-          )
-          Behaviors.same
-        }
-
-        case PlayerReplyCommand(cmd) => {
-          cmd match {
-            case Player.Ready(initialState) => {
-              val player = Sharding().entityRefFor(
-                Player.TypeKey,
-                initialState.playerName
-              )
-              val message = PBPlayerInitSuccess.of(
-                PBPlayerInitialState.of(
-                  PBPlayerPosition.of(
-                    initialState.position.x,
-                    initialState.position.y
-                  ),
-                  PBPlayerEquipment.of(
-                    initialState.equipment.hat,
-                    initialState.equipment.hair,
-                    initialState.equipment.eyes,
-                    initialState.equipment.glasses,
-                    initialState.equipment.facialHair,
-                    initialState.equipment.body,
-                    initialState.equipment.outfit
-                  ),
-                  initialState.mapId
-                )
-              )
-              conQueue.offer(message)
-              runningBehaviour(State(player, conQueue, playerResponseMapper))
+                  }
             }
 
-            case _ => Behaviors.same
+            Behaviors.same
           }
-        }
 
-        case _ => {
-          Behaviors.same
+          case InitSuccess(initInfo) => {
+            val player = Sharding().entityRefFor(
+              Player.TypeKey,
+              initInfo.playerName
+            )
+
+            player ! Player.Init(
+              InitData(
+                playerResponseMapper,
+                initInfo.getInitialEquipment()
+              )
+            ) // Forces the Player to start the first time and syncs the handler
+
+            Behaviors.same // Now we wait for Player.Ready message from the Player
+          }
+
+          case InitFailure(errorCode) => {
+            ctx.log.info(
+              s"Init failure message received when initializing connection to player. Error code $errorCode"
+            )
+            Behaviors.same
+          }
+
+          case PlayerReplyCommand(cmd) => {
+            cmd match {
+              case Player.Ready(initialState) => {
+                val player = Sharding().entityRefFor(
+                  Player.TypeKey,
+                  initialState.playerName
+                )
+                val message = PBPlayerInitSuccess.of(
+                  PBPlayerInitialState.of(
+                    PBPlayerPosition.of(
+                      initialState.position.x,
+                      initialState.position.y
+                    ),
+                    PBPlayerEquipment.of(
+                      initialState.equipment.hat,
+                      initialState.equipment.hair,
+                      initialState.equipment.eyes,
+                      initialState.equipment.glasses,
+                      initialState.equipment.facialHair,
+                      initialState.equipment.body,
+                      initialState.equipment.outfit
+                    ),
+                    initialState.mapId
+                  )
+                )
+                conQueue.offer(message)
+                timers.startTimerWithFixedDelay(
+                  "sendHeartbeat",
+                  SendHeartbeat(),
+                  2.seconds
+                )
+                runningBehaviour(State(player, conQueue, playerResponseMapper))
+              }
+
+              case _ => Behaviors.same
+            }
+          }
+
+          case _ => {
+            Behaviors.same
+          }
         }
       }
     }
@@ -294,7 +293,7 @@ object PlayerHandler {
         }
 
         case SendHeartbeat() => {
-          state.player ! Player.Heartbeat()
+          state.player ! Player.Heartbeat(state.playerResponseMapper)
           Behaviors.same
         }
 

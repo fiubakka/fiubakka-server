@@ -39,7 +39,14 @@ object Player {
 
   final case class Init(initialData: InitData) extends Command
 
-  final case class Heartbeat() extends Command
+  // We also send to PlayerHandler ref in case the Player switches cluster nodes or dies
+  // and starts again. In this case we would be stuck waiting for an Init message from the
+  // PlayerHandler that would never arrive! By relying on this fallback message, we fix this issue.
+  //
+  // We still keep the Init message to avoid including other init data (ie. the equipment) being included
+  // in the Heartbeat message and having a more complex message structure.
+  final case class Heartbeat(handler: ActorRef[Player.ReplyCommand])
+      extends Command
   final case class CheckHeartbeat() extends Command
 
   final case class Stop() extends Command
@@ -146,15 +153,11 @@ object Player {
     Behaviors.receive { (ctx, msg) =>
       msg match {
         case InitialState(initialState) => {
-          val (eventConsumer, eventProducer) =
-            getEventHandlers(ctx, initialState.mapId)
-
           initialData match {
             case Some(initialData) =>
               finishInitialization(
+                ctx,
                 persistor,
-                eventProducer,
-                eventConsumer,
                 initialData,
                 initialState
               )
@@ -163,12 +166,20 @@ object Player {
               Behaviors.receiveMessage {
                 case Init(initialData) =>
                   finishInitialization(
+                    ctx,
                     persistor,
-                    eventProducer,
-                    eventConsumer,
                     initialData,
                     initialState
                   )
+
+                // See below usage of Heartbeat to understand this case
+                case Heartbeat(handler) =>
+                  finishInitialization(
+                    ctx,
+                    persistor,
+                    InitData(handler, None),
+                    initialState
+                  ) // No equipment because the Player should already be registered
 
                 // Ignores all other messages until the state is initialized (synced with PlayerPersistor)
                 case _ => {
@@ -182,6 +193,18 @@ object Player {
         // Optimization to avoid waiting for the second Init message to start
         case Init(initData) => {
           initBehaviour(entityId, persistor, Some(initData))
+        }
+
+        // We know that this message will only be recieved if the PlayerHandler is in
+        // the running state, so its safe to assume we won't receive an Init message in this case
+        // and instead set this sender as the PlayerHandler and complete intialization.
+        // This would be what should happen if the Player dies or is moved to another node.
+        case Heartbeat(handler) => {
+          initBehaviour(
+            entityId,
+            persistor,
+            Some(InitData(handler, None))
+          ) // No equipment because the Player should already be registered
         }
 
         case _ => {
@@ -318,7 +341,8 @@ object Player {
             )
           }
 
-          case Heartbeat() => {
+          // We don't care about the PlayerHandler here, it should not change.
+          case Heartbeat(_) => {
             runningBehaviour(
               state.copy(tState =
                 state.tState.copy(
@@ -375,9 +399,8 @@ object Player {
   }
 
   private def finishInitialization(
+      ctx: ActorContext[Command],
       persistor: EntityRef[PlayerPersistor.Command],
-      eventProducer: ActorRef[GameEventProducer.Command],
-      eventConsumer: ActorRef[GameEventConsumer.Command],
       initialData: InitData,
       initialState: DurablePlayerState
   ): Behavior[Command] = {
@@ -391,6 +414,9 @@ object Player {
         equipment = equipment.get
       )
     }
+
+    val (eventConsumer, eventProducer) =
+      getEventHandlers(ctx, initialState.mapId)
 
     handler ! Ready(newState)
     runningBehaviour(
