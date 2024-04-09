@@ -1,6 +1,6 @@
 #!/bin/bash
 
-kafka_2.13-3.6.1/bin/kafka-server-start.sh -daemon kafka_2.13-3.6.1/config/kraft/server.properties
+kafka_2.13-3.6.2/bin/kafka-server-start.sh -daemon kafka_2.13-3.6.2/config/kraft/server.properties
 
 su - postgres -c "pg_ctl -D /var/lib/postgresql/data start"
 
