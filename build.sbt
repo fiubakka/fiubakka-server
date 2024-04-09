@@ -1,20 +1,26 @@
 import Dependencies._
 
-ThisBuild / scalaVersion     := "2.13.12"
+ThisBuild / scalaVersion     := "3.4.1"
 ThisBuild / version          := "0.1.0-SNAPSHOT"
 ThisBuild / organization     := "com.github.MarcosRolando"
 ThisBuild / organizationName := "MarcosRolando"
+// Currently ScalaPB generates deprecation warnings for Scala 3.4.1
+// -rewrite and -source:3.4-migration fixes them but they are not silenced.
+// These warnings cannot be silenced until https://github.com/scala/scala3/pull/18783 is merged.
 ThisBuild / scalacOptions    ++= Seq(
-  "-Ywarn-unused",
+  "-rewrite",
+  "-source:3.4-migration", 
+  "-new-syntax",
+  "-Wunused:all",
   "-deprecation",
-  "-feature"
+  "-feature",
 )
 
 resolvers += "Akka library repository".at("https://repo.akka.io/maven")
 
 inThisBuild(
   List(
-    scalaVersion := "2.13.12",
+    scalaVersion := "3.4.1",
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision
     )

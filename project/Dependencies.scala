@@ -4,7 +4,7 @@ object Dependencies {
   val AkkaVersion = "2.9.0"
   val AeronVersion = "1.42.1"
   val AkkaManagementVersion = "1.5.0"
-  val SlickVersion = "3.4.1"
+  val SlickVersion = "3.5.0"
   val AlpakkaVersion = "5.0.0"
   val JacksonVersion = "2.11.4"
 
@@ -28,7 +28,7 @@ object Dependencies {
   lazy val akkaSerialization = "com.typesafe.akka" %% "akka-serialization-jackson" % AkkaVersion
 
   lazy val akkaPersistence = "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion
-  lazy val akkaPersistenceJdbc = "com.lightbend.akka" %% "akka-persistence-jdbc" % "5.3.0"
+  lazy val akkaPersistenceJdbc = "com.lightbend.akka" %% "akka-persistence-jdbc" % "5.4.0"
   lazy val akkaPersistenceQuery = "com.typesafe.akka" %% "akka-persistence-query" % AkkaVersion
   lazy val postgresJdbc = "org.postgresql" % "postgresql" % "42.6.0"
 
@@ -38,8 +38,8 @@ object Dependencies {
 
   lazy val bcrypt = "org.mindrot" % "jbcrypt" % "0.4"
 
-  lazy val log4jApi = "org.apache.logging.log4j" % "log4j-api" % "2.21.1"
-  lazy val logback = "ch.qos.logback" % "logback-classic" % "1.2.12"
+  lazy val log4jApi = "org.apache.logging.log4j" % "log4j-api" % "2.23.1"
+  lazy val logback = "ch.qos.logback" % "logback-classic" % "1.5.3"
   // This is needed for conditional statements in logback configuration file
   lazy val janino = "org.codehaus.janino" % "janino" % "3.1.8"
 }

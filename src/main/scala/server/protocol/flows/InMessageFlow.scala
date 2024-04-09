@@ -7,15 +7,15 @@ import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
 
-import scala.language.reflectiveCalls
+import scala.reflect.Selectable.reflectiveSelectable
 
 object InMessageFlow {
   def apply[A <: GeneratedEnum, B <: GeneratedMessageCompanion[
-    _ <: GeneratedMessage { def length: Int; def `type`: A }
+    ? <: GeneratedMessage { def length: Int; def `type`: A }
   ]](
       companion: B,
       protocolMessageMap: Map[A, GeneratedMessageCompanion[
-        _ <: GeneratedMessage
+        ? <: GeneratedMessage
       ]]
   ) = {
     Flow[ByteString]

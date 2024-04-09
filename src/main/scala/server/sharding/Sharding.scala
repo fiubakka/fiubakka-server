@@ -18,10 +18,9 @@ object Sharding {
     )
   }
 
-  //
   // TODO It's possible to configure the PlayerPersistor shard to live in the same node of the Player shard.
   // See https://doc.akka.io/docs/akka/current/typed/cluster-sharding.html#colocate-shards
-  def configure(system: ActorSystem[_]) = {
+  def configure(system: ActorSystem[?]) = {
     sharding = Some(ClusterSharding(system))
 
     Sharding().init(

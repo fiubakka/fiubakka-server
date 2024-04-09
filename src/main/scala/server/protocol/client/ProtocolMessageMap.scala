@@ -19,7 +19,7 @@ import scalapb.GeneratedMessageCompanion
 
 object ProtocolMessageMap {
   val clientMessageMap: Map[PBClientMessageType, GeneratedMessageCompanion[
-    _ <: GeneratedMessage
+    ? <: GeneratedMessage
   ]] =
     Map(
       PBClientMessageType.PBPlayerLogin -> PBPlayerLogin,

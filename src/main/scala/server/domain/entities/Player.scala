@@ -21,6 +21,7 @@ import server.protocol.event.GameEventProducer
 import server.sharding.Sharding
 
 import java.time.LocalDateTime
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Random
@@ -116,7 +117,7 @@ object Player {
   ): Behavior[Command] = {
     Behaviors.setup { ctx =>
       Behaviors.withTimers { timers =>
-        implicit val askTimeout = Timeout(30.seconds)
+        implicit val askTimeout = Timeout(30, TimeUnit.SECONDS)
 
         timers.startTimerWithFixedDelay(
           "persist",
@@ -274,7 +275,7 @@ object Player {
             ctx.log.info(
               s"Changing ${ctx.self.path.name} from map ${state.dState.mapId} to $newMapId"
             )
-            if (newMapId == state.dState.mapId) {
+            if newMapId == state.dState.mapId then {
               state.tState.handler ! ChangeMapReady(newMapId)
               Behaviors.same
             } else {
@@ -436,7 +437,7 @@ object Player {
     val InitData(handler, equipment) = initialData
     var newState = initialState
 
-    if (equipment.isDefined) { // If it's a new player
+    if equipment.isDefined then { // If it's a new player
       // In practice, the persistor entityId is the playername, so set it here
       newState = initialState.copy(
         playerName = persistor.entityId,
