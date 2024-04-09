@@ -3,7 +3,7 @@ FROM eclipse-temurin:11.0.21_9-jre-jammy
 
 WORKDIR /usr/app
 
-COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/scala-2.13/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
+COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/scala-3.4.1/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
 
 EXPOSE 8080/tcp
 
