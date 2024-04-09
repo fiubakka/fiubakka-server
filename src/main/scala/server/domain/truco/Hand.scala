@@ -3,9 +3,12 @@ package server.domain.truco
 import server.domain.truco.cards.Card
 import server.domain.truco.cards.Deck
 
-class Hand(deck: Deck) {
+object Hand {
   val InitialCardAmount = 3
-  var cards: List[Card] = deck.take(InitialCardAmount)
+}
+
+class Hand(deck: Deck) {
+  var cards: List[Card] = deck.take(Hand.InitialCardAmount)
 
   def playCardAt(idx: Int): Card = {
     val card = cards(idx)
