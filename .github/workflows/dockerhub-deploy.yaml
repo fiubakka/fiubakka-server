@@ -27,7 +27,7 @@ jobs:
           ssh-keyscan github.com >> ~/.ssh/known_hosts
       -
         name: Install Dagger CLI
-        run: cd /usr/local && { curl -L https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=0.11.0 sh; cd -; }
+        run: cd /usr/local && { curl -L https://dl.dagger.io/dagger/install.sh | DAGGER_VERSION=0.10.3 sh; cd -; }
       -
         name: Install Dagger Python SDK
         run: pip install -r requirements.txt
