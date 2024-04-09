@@ -2,22 +2,20 @@ package server.infra
 
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-import slick.jdbc.PostgresProfile.api._
 
 object DB {
-  private var db: Option[Database] = None
+  private var dc: Option[DatabaseConfig[JdbcProfile]] = None
 
-  def apply(): Database = {
-    db.getOrElse(
+  def apply() = {
+    dc.getOrElse(
       throw new IllegalStateException(
         "Database not initialized. Call configure method first."
       )
-    )
+    ).db
   }
 
   def configure() = {
     // See https://scala-slick.org/doc/stable/database.html#databaseconfig for reference
-    val dc = DatabaseConfig.forConfig[JdbcProfile]("slick")
-    db = Some(dc.db)
+    dc = Some(DatabaseConfig.forConfig[JdbcProfile]("slick"))
   }
 }

@@ -1,6 +1,5 @@
 package server.misc
 
-import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityRef
@@ -15,6 +14,7 @@ import scala.util.Random
 
 object Bot {
   sealed trait Command
+  private type CommandOrPlayerReply = Command | Player.ReplyCommand
 
   final case class RandomMove() extends Command
   final case class Heartbeat() extends Command
@@ -25,7 +25,7 @@ object Bot {
       position: Position
   )
 
-  def apply(): Behavior[Command] = {
+  def apply(): Behavior[CommandOrPlayerReply] = {
     Behaviors.setup { ctx =>
       Behaviors.withTimers { timers =>
         val playerBot = Sharding().entityRefFor(
@@ -33,12 +33,9 @@ object Bot {
           Random.alphanumeric.take(20).mkString
         )
 
-        val playerResponseMapper: ActorRef[Player.ReplyCommand] =
-          ctx.messageAdapter(rsp => PlayerReplyCommand(rsp))
-
         playerBot ! Player.Init(
           InitData(
-            playerResponseMapper,
+            ctx.self,
             None
           )
         )
@@ -49,8 +46,7 @@ object Bot {
           State(
             playerBot,
             Position(20, 20)
-          ),
-          playerResponseMapper
+          )
         )
 
       }
@@ -58,29 +54,30 @@ object Bot {
   }
 
   def behaviour(
-      state: State,
-      adapter: ActorRef[Player.ReplyCommand]
-  ): Behavior[Command] = {
-    Behaviors.receiveMessage {
-      case RandomMove() =>
-        // Generate random velocity with magnitude 1
-        val randVelocity = Velocity(2, 0)
-        val newPosition = Position(
-          state.position.x + randVelocity.x,
-          state.position.y + randVelocity.y
-        )
-        state.playerBot ! Player.Move(
-          velocity = randVelocity,
-          position = newPosition
-        )
-        behaviour(state.copy(position = newPosition), adapter)
+      state: State
+  ): Behavior[CommandOrPlayerReply] = {
+    Behaviors.receive { (ctx, msg) =>
+      msg match {
+        case RandomMove() =>
+          // Generate random velocity with magnitude 1
+          val randVelocity = Velocity(2, 0)
+          val newPosition = Position(
+            state.position.x + randVelocity.x,
+            state.position.y + randVelocity.y
+          )
+          state.playerBot ! Player.Move(
+            velocity = randVelocity,
+            position = newPosition
+          )
+          behaviour(state.copy(position = newPosition))
 
-      case Heartbeat() => {
-        state.playerBot ! Player.Heartbeat(adapter)
-        Behaviors.same
+        case Heartbeat() => {
+          state.playerBot ! Player.Heartbeat(ctx.self)
+          Behaviors.same
+        }
+
+        case _ => Behaviors.same
       }
-
-      case _ => Behaviors.same
     }
   }
 }

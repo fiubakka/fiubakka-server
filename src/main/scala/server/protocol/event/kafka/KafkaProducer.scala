@@ -17,7 +17,7 @@ object KafkaProducer {
     )
   }
 
-  def configure(system: ActorSystem[_]) = {
+  def configure(system: ActorSystem[?]) = {
     producer = Some(
       ProducerSettings(
         system.settings.config.getConfig("akka.kafka-producer"),

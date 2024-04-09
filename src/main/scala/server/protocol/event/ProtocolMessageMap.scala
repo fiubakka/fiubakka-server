@@ -10,7 +10,7 @@ import scalapb.GeneratedMessageCompanion
 object ProtocolMessageMap {
   val eventConsumerMessageMap
       : Map[PBEventMessageType, GeneratedMessageCompanion[
-        _ <: GeneratedMessage
+        ? <: GeneratedMessage
       ]] =
     Map(
       PBEventMessageType.PBGameEntityState -> PBGameEntityState,

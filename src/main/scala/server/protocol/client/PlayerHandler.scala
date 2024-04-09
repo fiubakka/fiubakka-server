@@ -57,11 +57,11 @@ import scala.concurrent.duration._
 object PlayerHandler {
   final case class State(
       player: EntityRef[Player.Command],
-      conQueue: SourceQueueWithComplete[GeneratedMessage],
-      playerResponseMapper: ActorRef[Player.ReplyCommand]
+      conQueue: SourceQueueWithComplete[GeneratedMessage]
   )
 
   sealed trait Command extends CborSerializable
+  private type CommandOrPlayerReply = Command | Player.ReplyCommand
   final case class ConnectionClosed() extends Command
 
   final case class SendHeartbeat() extends Command
@@ -75,7 +75,9 @@ object PlayerHandler {
 
   final case class PlayerReplyCommand(cmd: Player.ReplyCommand) extends Command
 
-  def apply(connection: Tcp.IncomingConnection): Behavior[Command] = {
+  def apply(
+      connection: Tcp.IncomingConnection
+  ): Behavior[CommandOrPlayerReply] = {
     Behaviors.setup { ctx =>
       implicit val mat = Materializer(ctx)
 
@@ -85,17 +87,13 @@ object PlayerHandler {
 
       connection.handleWith(clientStreamHandler(ctx, conSource))
 
-      val playerResponseMapper: ActorRef[Player.ReplyCommand] =
-        ctx.messageAdapter(rsp => PlayerReplyCommand(rsp))
-
-      initBehaviour(conQueue, playerResponseMapper)
+      initBehaviour(conQueue)
     }
   }
 
   private def initBehaviour(
-      conQueue: SourceQueueWithComplete[GeneratedMessage],
-      playerResponseMapper: ActorRef[Player.ReplyCommand]
-  ): Behavior[Command] = {
+      conQueue: SourceQueueWithComplete[GeneratedMessage]
+  ): Behavior[CommandOrPlayerReply] = {
     Behaviors.withTimers { timers =>
       Behaviors.receive { (ctx, msg) =>
         msg match {
@@ -142,7 +140,7 @@ object PlayerHandler {
 
             player ! Player.Init(
               InitData(
-                playerResponseMapper,
+                ctx.self,
                 initInfo.getInitialEquipment()
               )
             ) // Forces the Player to start the first time and syncs the handler
@@ -188,7 +186,7 @@ object PlayerHandler {
                   SendHeartbeat(),
                   2.seconds
                 )
-                runningBehaviour(State(player, conQueue, playerResponseMapper))
+                runningBehaviour(State(player, conQueue))
               }
 
               case _ => Behaviors.same
@@ -203,7 +201,7 @@ object PlayerHandler {
     }
   }
 
-  private def runningBehaviour(state: State): Behavior[Command] = {
+  private def runningBehaviour(state: State): Behavior[CommandOrPlayerReply] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
         case ConnectionClosed() => {
@@ -293,7 +291,7 @@ object PlayerHandler {
         }
 
         case SendHeartbeat() => {
-          state.player ! Player.Heartbeat(state.playerResponseMapper)
+          state.player ! Player.Heartbeat(ctx.self)
           Behaviors.same
         }
 
@@ -305,7 +303,7 @@ object PlayerHandler {
   }
 
   private def clientStreamHandler(
-      ctx: ActorContext[Command],
+      ctx: ActorContext[CommandOrPlayerReply],
       conSource: Source[GeneratedMessage, NotUsed]
   ) = {
     Flow[ByteString]

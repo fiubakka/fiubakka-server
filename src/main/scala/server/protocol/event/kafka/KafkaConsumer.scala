@@ -17,15 +17,16 @@ import server.GameServer
 
 object KafkaConsumer {
   private var consumers
-      : Option[Array[Source[ConsumerRecord[String, Array[Byte]], NotUsed]]] =
+      : Option[List[Source[ConsumerRecord[String, Array[Byte]], NotUsed]]] =
     None
 
   def apply(
       partition: Int
   ): Source[ConsumerRecord[String, Array[Byte]], NotUsed] = {
-    consumers.getOrElse(Array.empty) match {
-      case array if array.nonEmpty => consumers.get(partition)
-      case _ =>
+    consumers match {
+      case Some(consumers) =>
+        consumers.lift(partition).get // Should always exist
+      case None =>
         throw new IllegalStateException(
           "Kafka Consumer not initialized. Call configure method first."
         )
@@ -70,7 +71,7 @@ object KafkaConsumer {
           .buffer(2048, OverflowStrategy.dropBuffer)
           .toMat(BroadcastHub.sink(bufferSize = 2048))(Keep.right)
           .run()
-      }.toArray
+      }.toList
     )
 
     // There seems to be a bug with BroadcastHub where specifying startAfterNrOfConsumers = 0
