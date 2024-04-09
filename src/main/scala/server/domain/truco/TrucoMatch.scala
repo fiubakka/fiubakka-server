@@ -56,6 +56,7 @@ class TrucoMatch {
 
   private def startNextGame(): Unit = {
     round = 0
+    cardsPlayed = List.empty
     startGamePlayer = getNextStartGamePlayer()
     currentPlayer = startGamePlayer
     val deck = new Deck()
