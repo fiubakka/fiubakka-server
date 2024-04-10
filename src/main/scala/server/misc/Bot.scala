@@ -18,7 +18,6 @@ object Bot {
 
   final case class RandomMove() extends Command
   final case class Heartbeat() extends Command
-  final case class PlayerReplyCommand(cmd: Player.ReplyCommand) extends Command
 
   final case class State(
       playerBot: EntityRef[Player.Command],

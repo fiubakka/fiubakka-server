@@ -15,7 +15,6 @@ ThisBuild / scalacOptions    ++= Seq(
   "-Wunused:all",
   "-deprecation",
   "-feature",
-  "-Wconf:help",
   "-Wconf:msg=`_` is deprecated for wildcard arguments of types:silent", // From ScalaPB, fixed by -rewrite -source:3.4-migration
   "-Wconf:msg=this-qualifier:silent", // From ScalaPB, fixed by -rewrite -source:3.4-migration
   "-Werror",
