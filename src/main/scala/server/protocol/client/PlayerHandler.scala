@@ -73,8 +73,6 @@ object PlayerHandler {
   final case class ChangeMap(newMapId: Int) extends Command
   final case class UpdateEquipment(equipment: Equipment) extends Command
 
-  final case class PlayerReplyCommand(cmd: Player.ReplyCommand) extends Command
-
   def apply(
       connection: Tcp.IncomingConnection
   ): Behavior[CommandOrPlayerReply] = {
@@ -155,42 +153,36 @@ object PlayerHandler {
             Behaviors.same
           }
 
-          case PlayerReplyCommand(cmd) => {
-            cmd match {
-              case Player.Ready(initialState) => {
-                val player = Sharding().entityRefFor(
-                  Player.TypeKey,
-                  initialState.playerName
-                )
-                val message = PBPlayerInitSuccess.of(
-                  PBPlayerInitialState.of(
-                    PBPlayerPosition.of(
-                      initialState.position.x,
-                      initialState.position.y
-                    ),
-                    PBPlayerEquipment.of(
-                      initialState.equipment.hat,
-                      initialState.equipment.hair,
-                      initialState.equipment.eyes,
-                      initialState.equipment.glasses,
-                      initialState.equipment.facialHair,
-                      initialState.equipment.body,
-                      initialState.equipment.outfit
-                    ),
-                    initialState.mapId
-                  )
-                )
-                conQueue.offer(message)
-                timers.startTimerWithFixedDelay(
-                  "sendHeartbeat",
-                  SendHeartbeat(),
-                  2.seconds
-                )
-                runningBehaviour(State(player, conQueue))
-              }
-
-              case _ => Behaviors.same
-            }
+          case Player.Ready(initialState) => {
+            val player = Sharding().entityRefFor(
+              Player.TypeKey,
+              initialState.playerName
+            )
+            val message = PBPlayerInitSuccess.of(
+              PBPlayerInitialState.of(
+                PBPlayerPosition.of(
+                  initialState.position.x,
+                  initialState.position.y
+                ),
+                PBPlayerEquipment.of(
+                  initialState.equipment.hat,
+                  initialState.equipment.hair,
+                  initialState.equipment.eyes,
+                  initialState.equipment.glasses,
+                  initialState.equipment.facialHair,
+                  initialState.equipment.body,
+                  initialState.equipment.outfit
+                ),
+                initialState.mapId
+              )
+            )
+            conQueue.offer(message)
+            timers.startTimerWithFixedDelay(
+              "sendHeartbeat",
+              SendHeartbeat(),
+              2.seconds
+            )
+            runningBehaviour(State(player, conQueue))
           }
 
           case _ => {
@@ -230,64 +222,58 @@ object PlayerHandler {
           Behaviors.same
         }
 
-        case PlayerReplyCommand(cmd) => {
-          cmd match {
-            case Player.NotifyEntityStateUpdate(
-                  entityId,
-                  newEntityState
-                ) => {
-              val message = PBGameEntityState
+        case Player.NotifyEntityStateUpdate(
+              entityId,
+              newEntityState
+            ) => {
+          val message = PBGameEntityState
+            .of(
+              entityId,
+              PBGameEntityPosition
                 .of(
-                  entityId,
-                  PBGameEntityPosition
-                    .of(
-                      newEntityState.position.x,
-                      newEntityState.position.y
-                    ),
-                  PBGameEntityVelocity
-                    .of(
-                      newEntityState.velocity.x,
-                      newEntityState.velocity.y
-                    ),
-                  PBGameEntityEquipment.of(
-                    newEntityState.equipment.hat,
-                    newEntityState.equipment.hair,
-                    newEntityState.equipment.eyes,
-                    newEntityState.equipment.glasses,
-                    newEntityState.equipment.facialHair,
-                    newEntityState.equipment.body,
-                    newEntityState.equipment.outfit
-                  )
-                )
-              state.conQueue.offer(message)
-              Behaviors.same
-            }
+                  newEntityState.position.x,
+                  newEntityState.position.y
+                ),
+              PBGameEntityVelocity
+                .of(
+                  newEntityState.velocity.x,
+                  newEntityState.velocity.y
+                ),
+              PBGameEntityEquipment.of(
+                newEntityState.equipment.hat,
+                newEntityState.equipment.hair,
+                newEntityState.equipment.eyes,
+                newEntityState.equipment.glasses,
+                newEntityState.equipment.facialHair,
+                newEntityState.equipment.body,
+                newEntityState.equipment.outfit
+              )
+            )
+          state.conQueue.offer(message)
+          Behaviors.same
+        }
 
-            case Player.NotifyMessageReceived(entityId, msg) => {
-              val message = PBPlayerMessageServer.of(entityId, msg)
-              state.conQueue.offer(message)
-              Behaviors.same
-            }
+        case Player.NotifyMessageReceived(entityId, msg) => {
+          val message = PBPlayerMessageServer.of(entityId, msg)
+          state.conQueue.offer(message)
+          Behaviors.same
+        }
 
-            case Player.NotifyEntityDisconnect(entityId) => {
-              val message = PBGameEntityDisconnect.of(entityId)
-              state.conQueue.offer(message)
-              Behaviors.same
-            }
+        case Player.NotifyEntityDisconnect(entityId) => {
+          val message = PBGameEntityDisconnect.of(entityId)
+          state.conQueue.offer(message)
+          Behaviors.same
+        }
 
-            case Player.ChangeMapReady(newMapId) => {
-              val message = PBPlayerChangeMapReady.of(newMapId)
-              state.conQueue.offer(message)
-              Behaviors.same
-            }
+        case Player.ChangeMapReady(newMapId) => {
+          val message = PBPlayerChangeMapReady.of(newMapId)
+          state.conQueue.offer(message)
+          Behaviors.same
+        }
 
-            case Player.ReplyStop() => {
-              ctx.log.info("Player stopped!")
-              Behaviors.stopped
-            }
-
-            case _ => Behaviors.same
-          }
+        case Player.ReplyStop() => {
+          ctx.log.info("Player stopped!")
+          Behaviors.stopped
         }
 
         case SendHeartbeat() => {

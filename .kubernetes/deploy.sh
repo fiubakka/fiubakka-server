@@ -36,7 +36,7 @@ done
 
 kubectl run fiubakka-kafka-client --restart='Never' --image docker.io/bitnami/kafka:3.7.0-debian-12-r0 \
     --namespace "$NAMESPACE" --command -- \
-    kafka-topics.sh --bootstrap-server fiubakka-kafka.fiubakka-server-1.svc.cluster.local:9092 --create --topic game-zone --partitions 3
+    kafka-topics.sh --bootstrap-server fiubakka-kafka.fiubakka-server-1.svc.cluster.local:9092 --create --topic game-zone --partitions 4
 
 echo "Waiting for Postgres deployment to be ready..."
 kubectl wait --for=condition=ready pod/fiubakka-postgres-postgresql-0 -n "$NAMESPACE" --timeout=120s

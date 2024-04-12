@@ -8,7 +8,7 @@ FROM eclipse-temurin:11.0.21_9-jre-alpine
 
 WORKDIR /usr/app
 
-COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/scala-2.13/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
+COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/scala-3.4.1/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
 
 # Install PostgreSQL
 
@@ -37,13 +37,13 @@ RUN su - postgres -c " \
 
 # Install Kafka
 
-RUN curl https://dlcdn.apache.org/kafka/3.6.1/kafka_2.13-3.6.1.tgz -o kafka_2.13-3.6.1.tgz \
-    && tar -xzf kafka_2.13-3.6.1.tgz \
-    && cd kafka_2.13-3.6.1 \
+RUN curl https://dlcdn.apache.org/kafka/3.6.2/kafka_2.13-3.6.2.tgz -o kafka_2.13-3.6.2.tgz \
+    && tar -xzf kafka_2.13-3.6.2.tgz \
+    && cd kafka_2.13-3.6.2 \
     && KAFKA_CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)" \
     && bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c config/kraft/server.properties \
     && bin/kafka-server-start.sh -daemon config/kraft/server.properties \
-    && bin/kafka-topics.sh --create --topic game-zone --partitions 3 --bootstrap-server localhost:9092
+    && bin/kafka-topics.sh --create --topic game-zone --partitions 4 --bootstrap-server localhost:9092
 
 # PostgreSQL
 EXPOSE 5432/tcp

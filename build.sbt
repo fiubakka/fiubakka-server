@@ -6,7 +6,8 @@ ThisBuild / organization     := "com.github.MarcosRolando"
 ThisBuild / organizationName := "MarcosRolando"
 // Currently ScalaPB generates deprecation warnings for Scala 3.4.1
 // -rewrite and -source:3.4-migration fixes them but they are not silenced.
-// These warnings cannot be silenced until https://github.com/scala/scala3/pull/18783 is merged.
+// These warnings cannot be silenced easily until https://github.com/scala/scala3/pull/18783 is merged.
+// For now as a workaround we silence them via regex (to avoid silencing other deprecation warnings).
 ThisBuild / scalacOptions    ++= Seq(
   "-rewrite",
   "-source:3.4-migration", 
@@ -14,6 +15,9 @@ ThisBuild / scalacOptions    ++= Seq(
   "-Wunused:all",
   "-deprecation",
   "-feature",
+  "-Wconf:msg=`_` is deprecated for wildcard arguments of types:silent", // From ScalaPB, fixed by -rewrite -source:3.4-migration
+  "-Wconf:msg=this-qualifier:silent", // From ScalaPB, fixed by -rewrite -source:3.4-migration
+  "-Werror",
 )
 
 resolvers += "Akka library repository".at("https://repo.akka.io/maven")
