@@ -8,10 +8,10 @@ class Deck {
     val suits = CardSuit.values.toList
     val random = new Random()
     random.shuffle(
-      for {
+      for
         number <- numbers
         suit <- suits
-      } yield new Card(number, suit)
+      yield new Card(number, suit)
     )
   }
 

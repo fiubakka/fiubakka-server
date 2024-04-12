@@ -1,6 +1,5 @@
 package server.domain.truco
 
-import server.domain.truco.Hand
 import server.domain.truco.cards.Card
 
 class TrucoPlayer(var hand: Hand) {

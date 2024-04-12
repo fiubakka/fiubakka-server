@@ -1,7 +1,5 @@
 package server.domain.truco
 
-import server.domain.truco.Hand
-import server.domain.truco.TrucoPlayer
 import server.domain.truco.cards.Card
 import server.domain.truco.cards.Deck
 import server.domain.truco.state.CardsRound
@@ -37,24 +35,14 @@ class TrucoMatch {
     }
     currentPlayer = getNextPlayer()
     currentRoundCards match {
-      case CardsRound(Some(_), Some(_)) if round == TrucoMatch.LastRound =>
-        startNextGame()
+      case CardsRound(Some(_), Some(_))
+          if round == TrucoMatch.LastRound => // Do nothing, next game must be explicitly started
       case CardsRound(Some(f), Some(s)) => startNextRound(f, s)
       case _                            => // Do nothing
     }
   }
 
-  private def startNextRound(
-      firstPlayerCard: Card,
-      secondPlayerCard: Card
-  ): Unit = {
-    round += 1
-    if (firstPlayerCard > secondPlayerCard) currentPlayer = firstPlayer
-    else if (firstPlayerCard < secondPlayerCard) currentPlayer = secondPlayer
-    // If the cards are equal, the currentPlayer remains the same
-  }
-
-  private def startNextGame(): Unit = {
+  def startNextGame(): Unit = {
     round = 0
     cardsPlayed = List.empty
     startGamePlayer = getNextStartGamePlayer()
@@ -62,6 +50,16 @@ class TrucoMatch {
     val deck = new Deck()
     firstPlayer.replaceHand(new Hand(deck))
     secondPlayer.replaceHand(new Hand(deck))
+  }
+
+  private def startNextRound(
+      firstPlayerCard: Card,
+      secondPlayerCard: Card
+  ): Unit = {
+    round += 1
+    if firstPlayerCard > secondPlayerCard then currentPlayer = firstPlayer
+    else if firstPlayerCard < secondPlayerCard then currentPlayer = secondPlayer
+    // If the cards are equal, the currentPlayer remains the same
   }
 
   private def getCurrentCardsPlayed(): CardsRound = {
@@ -76,12 +74,12 @@ class TrucoMatch {
   }
 
   private def getNextPlayer(): TrucoPlayer = {
-    if (currentPlayer == firstPlayer) secondPlayer
+    if currentPlayer == firstPlayer then secondPlayer
     else firstPlayer
   }
 
   private def getNextStartGamePlayer(): TrucoPlayer = {
-    if (startGamePlayer == firstPlayer) secondPlayer
+    if startGamePlayer == firstPlayer then secondPlayer
     else firstPlayer
   }
 }
