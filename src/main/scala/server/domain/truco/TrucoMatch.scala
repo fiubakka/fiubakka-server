@@ -43,6 +43,7 @@ class TrucoMatch {
   }
 
   def startNextGame(): Unit = {
+    updateWinnerPoints()
     round = 0
     cardsPlayed = List.empty
     startGamePlayer = getNextStartGamePlayer()
@@ -81,5 +82,48 @@ class TrucoMatch {
   private def getNextStartGamePlayer(): TrucoPlayer = {
     if startGamePlayer == firstPlayer then secondPlayer
     else firstPlayer
+  }
+
+  private def getGameWinner(): Option[TrucoPlayer] = {
+    // Game ends when the 3 rounds are played or when one of the players
+    // wins 2 rounds.
+    // Positive netScore means the first player won the game (if 3 rounds played).
+    // Negative netScore means the second player won the game (if 3 rounds played).
+    // Zero netScore means the first player to play the a card in the game
+    // won, known as "mano" in Truco game rules (if 3 rounds played).
+    // If the score is +-2, the game ends regardless of the rounds played (so it could end in the second round).
+
+    val netScore = cardsPlayed.foldLeft(0) { (acc, cardsRound) =>
+      cardsRound match {
+        case CardsRound(Some(firstPlayerCard), Some(secondPlayerCard)) =>
+          if firstPlayerCard > secondPlayerCard then acc + 1
+          else if firstPlayerCard < secondPlayerCard then acc - 1
+          else acc
+        case _ => acc
+      }
+    }
+
+    val currentCardsPlayed = getCurrentCardsPlayed()
+
+    round match {
+      case TrucoMatch.LastRound
+          if currentCardsPlayed.firstPlayerCard.isDefined && currentCardsPlayed.secondPlayerCard.isDefined =>
+        if netScore > 0 then Some(firstPlayer)
+        else if netScore < 0 then Some(secondPlayer)
+        else if startGamePlayer == firstPlayer then Some(firstPlayer)
+        else Some(secondPlayer)
+      case _ =>
+        if netScore == 2 then Some(firstPlayer)
+        else if netScore == -2 then Some(secondPlayer)
+        else None
+    }
+  }
+
+  private def updateWinnerPoints(): Unit = {
+    val maybeWinner = getGameWinner()
+    maybeWinner match {
+      case Some(winner) => winner.points += 1
+      case None         => // Should never happen
+    }
   }
 }
