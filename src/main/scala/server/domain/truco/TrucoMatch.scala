@@ -86,6 +86,7 @@ class TrucoMatch {
       shout
     ) // Store the corresponding shout in the player
     currentPlayer = getNextPlayer()
+    currentPlayer.shout = None // Reset other players shout
   }
 
   def startNextGame(): Unit = {
