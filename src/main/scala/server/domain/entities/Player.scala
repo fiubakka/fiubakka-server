@@ -74,6 +74,9 @@ object Player {
   final case class ChangeMap(
       newMapId: Int
   ) extends Command
+  final case class BeginTrucoMatch(opponentUsername: String) extends Command
+  final case class AskBeginTrucoMatch(opponentUsername: String) extends Command
+  final case class AcceptTrucoMatch(opponentUsername: String) extends Command
 
   // GameEventConsumer messages
 
@@ -109,6 +112,8 @@ object Player {
   final case class ReplyStop() extends ReplyCommand
   final case class Ready(initialState: DurablePlayerState) extends ReplyCommand
   final case class ChangeMapReady(newMapId: Int) extends ReplyCommand
+  final case class NotifyAskBeginTrucoMatch(opponentUsername: String)
+      extends ReplyCommand
 
   val TypeKey = EntityTypeKey[Command]("Player")
 
@@ -340,6 +345,23 @@ object Player {
               ),
               persistor
             )
+          }
+
+          case BeginTrucoMatch(opponentUsername) => {
+            val opponentPlayer =
+              Sharding().entityRefFor(Player.TypeKey, opponentUsername)
+            opponentPlayer ! Player.AskBeginTrucoMatch(state.dState.playerName)
+            Behaviors.same
+          }
+
+          case AskBeginTrucoMatch(opponentUsername) => {
+            state.tState.handler ! NotifyAskBeginTrucoMatch(opponentUsername)
+            Behaviors.same
+          }
+
+          case AcceptTrucoMatch(opponentUsername) => {
+            // val trucoManager = ctx.spawn(TrucoManager(opponentUsername, state.dState.playerName), s"TrucoManager-${state.dState.playerName}-${opponentUsername}")
+            Behaviors.same
           }
 
           // We don't care about the PlayerHandler here, it should not change.

@@ -22,6 +22,7 @@ import protobuf.client.inventory.update_equipment.PBPlayerUpdateEquipment
 import protobuf.client.map.change_map.PBPlayerChangeMap
 import protobuf.client.metadata.PBClientMetadata
 import protobuf.client.movement.player_movement.PBPlayerMovement
+import protobuf.client.truco.begin_match.PBBeginTrucoMatch
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
 import protobuf.server.init.player_init.PBPlayerEquipment
 import protobuf.server.init.player_init.PBPlayerInitErrorCode
@@ -36,6 +37,7 @@ import protobuf.server.state.game_entity_state.PBGameEntityEquipment
 import protobuf.server.state.game_entity_state.PBGameEntityPosition
 import protobuf.server.state.game_entity_state.PBGameEntityState
 import protobuf.server.state.game_entity_state.PBGameEntityVelocity
+import protobuf.server.truco.accept_match.PBAcceptTrucoMatch
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import server.domain.entities.InitData
@@ -72,6 +74,8 @@ object PlayerHandler {
   final case class AddMessage(msg: String) extends Command
   final case class ChangeMap(newMapId: Int) extends Command
   final case class UpdateEquipment(equipment: Equipment) extends Command
+  final case class BeginTrucoMatch(opponentUsername: String) extends Command
+  final case class AcceptTrucoMatch(opponentUsername: String) extends Command
 
   def apply(
       connection: Tcp.IncomingConnection
@@ -222,6 +226,22 @@ object PlayerHandler {
           Behaviors.same
         }
 
+        case BeginTrucoMatch(opponentUsername) => {
+          state.player ! Player.BeginTrucoMatch(opponentUsername)
+          Behaviors.same
+        }
+
+        case AcceptTrucoMatch(opponentUsername) => {
+          state.player ! Player.AcceptTrucoMatch(opponentUsername)
+          Behaviors.same
+        }
+
+        case Player.NotifyAskBeginTrucoMatch(opponentUsername) => {
+          val message = PBAcceptTrucoMatch.of(opponentUsername)
+          state.conQueue.offer(message)
+          Behaviors.same
+        }
+
         case Player.NotifyEntityStateUpdate(
               entityId,
               newEntityState
@@ -367,5 +387,9 @@ object PlayerHandler {
           body
         )
       )
+    case PBBeginTrucoMatch(opponentUsername, _) =>
+      BeginTrucoMatch(opponentUsername)
+    case PBAcceptTrucoMatch(opponentUsername, _) =>
+      AcceptTrucoMatch(opponentUsername)
   }
 }
