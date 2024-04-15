@@ -1,0 +1,14 @@
+{
+    // See https://scala-cli.virtuslab.org/docs/cookbooks/introduction/debugging/#configuration
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "scala",
+            "buildTarget": "root",
+            "name": "Debug",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": 5005
+        }
+    ]
+}
