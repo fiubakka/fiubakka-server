@@ -25,6 +25,7 @@ import protobuf.client.movement.player_movement.PBPlayerMovement
 import protobuf.client.truco.begin_match.PBBeginTrucoMatch
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
 import protobuf.server.init.player_init.PBPlayerEquipment
+import protobuf.server.init.player_init.PBPlayerInitError
 import protobuf.server.init.player_init.PBPlayerInitErrorCode
 import protobuf.server.init.player_init.PBPlayerInitSuccess
 import protobuf.server.init.player_init.PBPlayerInitialState
@@ -154,6 +155,8 @@ object PlayerHandler {
             ctx.log.info(
               s"Init failure message received when initializing connection to player. Error code $errorCode"
             )
+            val message = PBPlayerInitError.of(errorCode.name)
+            conQueue.offer(message)
             Behaviors.same
           }
 
