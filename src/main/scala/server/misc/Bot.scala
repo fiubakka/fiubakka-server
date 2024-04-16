@@ -41,7 +41,7 @@ object Bot {
         timers.startTimerWithFixedDelay(Heartbeat(), 2.seconds)
         timers.startTimerWithFixedDelay(RandomMove(), 16.millis)
 
-        behaviour(
+        runningBehavior(
           State(
             playerBot,
             Position(20, 20)
@@ -52,7 +52,7 @@ object Bot {
     }
   }
 
-  def behaviour(
+  def runningBehavior(
       state: State
   ): Behavior[CommandOrPlayerReply] = {
     Behaviors.receive { (ctx, msg) =>
@@ -68,7 +68,7 @@ object Bot {
             velocity = randVelocity,
             position = newPosition
           )
-          behaviour(state.copy(position = newPosition))
+          runningBehavior(state.copy(position = newPosition))
 
         case Heartbeat() => {
           state.playerBot ! Player.Heartbeat(ctx.self)

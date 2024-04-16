@@ -5,6 +5,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityRef
 import akka.serialization.jackson.CborSerializable
 import server.domain.entities.Player
+import server.sharding.Sharding
 
 object TrucoManager {
   final case class State(
@@ -25,12 +26,12 @@ object TrucoManager {
         secondPlayerName
       )
 
-      // val sharding = Sharding()
+      val sharding = Sharding()
 
-      // val state = State(
-      //   sharding.entityRefFor(Player.TypeKey, firstPlayerName),
-      //   sharding.entityRefFor(Player.TypeKey, secondPlayerName)
-      // )
+      State(
+        sharding.entityRefFor(Player.TypeKey, firstPlayerName),
+        sharding.entityRefFor(Player.TypeKey, secondPlayerName)
+      )
 
       Behaviors.receiveMessage { case _ =>
         Behaviors.same

@@ -89,11 +89,11 @@ object PlayerHandler {
 
       connection.handleWith(clientStreamHandler(ctx, conSource))
 
-      initBehaviour(conQueue)
+      initBehavior(conQueue)
     }
   }
 
-  private def initBehaviour(
+  private def initBehavior(
       conQueue: SourceQueueWithComplete[GeneratedMessage]
   ): Behavior[CommandOrPlayerReply] = {
     Behaviors.withTimers { timers =>
@@ -186,7 +186,7 @@ object PlayerHandler {
               SendHeartbeat(),
               2.seconds
             )
-            runningBehaviour(State(player, conQueue))
+            runningBehavior(State(player, conQueue))
           }
 
           case _ => {
@@ -197,7 +197,7 @@ object PlayerHandler {
     }
   }
 
-  private def runningBehaviour(state: State): Behavior[CommandOrPlayerReply] = {
+  private def runningBehavior(state: State): Behavior[CommandOrPlayerReply] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
         case ConnectionClosed() => {
