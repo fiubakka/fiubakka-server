@@ -2,18 +2,23 @@ package server.truco
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.scaladsl.EntityRef
 import akka.serialization.jackson.CborSerializable
 import server.domain.entities.Player
+import server.domain.structs.truco.TrucoManagerPlayerState
+import server.domain.structs.truco.TrucoManagerState
+import server.domain.truco.TrucoMatch
 import server.sharding.Sharding
 
-object TrucoManager {
-  final case class State(
-      firstPlayer: EntityRef[Player.Command],
-      secondPlayer: EntityRef[Player.Command]
-  )
+import scala.concurrent.duration._
 
+object TrucoManager {
   sealed trait Command extends CborSerializable
+
+  final case class FailMatchPlayersSync()
+      extends Command // Will stop the TrucoManager if players don't sync in time
+  final case class AskPlayersToStartMatch() extends Command
+  final case class PlayerSyncedTrucoMatchStart(playerName: String)
+      extends Command
 
   def apply(
       firstPlayerName: String,
@@ -28,14 +33,86 @@ object TrucoManager {
 
       val sharding = Sharding()
 
-      State(
-        sharding.entityRefFor(Player.TypeKey, firstPlayerName),
-        sharding.entityRefFor(Player.TypeKey, secondPlayerName)
+      val state = TrucoManagerState(
+        TrucoManagerPlayerState(
+          sharding.entityRefFor(Player.TypeKey, firstPlayerName),
+          playerName = firstPlayerName,
+          hasInit = false
+        ),
+        TrucoManagerPlayerState(
+          sharding.entityRefFor(Player.TypeKey, secondPlayerName),
+          playerName = secondPlayerName,
+          hasInit = false
+        ),
+        new TrucoMatch()
       )
 
-      Behaviors.receiveMessage { case _ =>
-        Behaviors.same
+      initBehavior(state)
+    }
+  }
+
+  def initBehavior(state: TrucoManagerState): Behavior[Command] = {
+    Behaviors.withTimers { timers =>
+      timers.startTimerWithFixedDelay(
+        "startMatchPlayersSync",
+        AskPlayersToStartMatch(),
+        250.milli
+      )
+      timers.startTimerAtFixedRate(
+        "failMatchPlayersSync",
+        FailMatchPlayersSync(),
+        10.seconds
+      ) // At 10 seconds, stop the Truco match if players don't sync
+      Behaviors.receive { (ctx, msg) =>
+        msg match {
+          case AskPlayersToStartMatch() => {
+            if !state.firstPlayer.hasInit then {
+              state.firstPlayer.player ! Player.SyncTrucoMatchStart(ctx.self)
+            }
+            if !state.secondPlayer.hasInit then {
+              state.secondPlayer.player ! Player.SyncTrucoMatchStart(ctx.self)
+            }
+            Behaviors.same
+          }
+
+          case PlayerSyncedTrucoMatchStart(playerName) => {
+            val newState = playerName match {
+              case state.firstPlayer.playerName => {
+                state.copy(
+                  firstPlayer = state.firstPlayer.copy(hasInit = true)
+                )
+              }
+              case state.secondPlayer.playerName => {
+                state.copy(
+                  secondPlayer = state.secondPlayer.copy(hasInit = true)
+                )
+              }
+            }
+            if newState.firstPlayer.hasInit && newState.secondPlayer.hasInit
+            then {
+              timers.cancel("failMatchPlayersSync")
+              runningBehavior(
+                newState
+              ) // Setup ready, both players accepted the match
+            } else {
+              initBehavior(newState)
+            }
+          }
+
+          case FailMatchPlayersSync() => {
+            ctx.log.error(
+              "Truco match failed to start, players didn't sync in time! Stopping TrucoManager"
+            )
+            Behaviors.stopped // TODO send match aborted to optimize player returning to lobby
+          }
+        }
       }
+    }
+  }
+
+  def runningBehavior(state: TrucoManagerState): Behavior[Command] = {
+    Behaviors.receive { (ctx, msg) =>
+      Behaviors.same // TODO Implement
     }
   }
 }

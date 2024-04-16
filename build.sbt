@@ -17,7 +17,7 @@ ThisBuild / scalacOptions    ++= Seq(
   "-feature",
   "-Wconf:msg=`_` is deprecated for wildcard arguments of types:silent", // From ScalaPB, fixed by -rewrite -source:3.4-migration
   "-Wconf:msg=this-qualifier:silent", // From ScalaPB, fixed by -rewrite -source:3.4-migration
-  // "-Werror",
+  "-Werror",
 )
 
 resolvers += "Akka library repository".at("https://repo.akka.io/maven")
