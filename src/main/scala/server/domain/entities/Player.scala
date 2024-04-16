@@ -19,6 +19,7 @@ import server.infra.PlayerPersistor
 import server.protocol.event.GameEventConsumer
 import server.protocol.event.GameEventProducer
 import server.sharding.Sharding
+import server.truco.TrucoManager
 
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
@@ -75,6 +76,15 @@ object Player {
       newMapId: Int
   ) extends Command
 
+  // Truco messages
+
+  final case class BeginTrucoMatch(opponentUsername: String) extends Command
+  final case class AskBeginTrucoMatch(opponentUsername: String) extends Command
+  final case class AcceptTrucoMatch(opponentUsername: String) extends Command
+  final case class SyncTrucoMatchStart(
+      trucoManager: ActorRef[TrucoManager.Command]
+  ) extends Command
+
   // GameEventConsumer messages
 
   final case class ReceiveMessage(
@@ -109,6 +119,8 @@ object Player {
   final case class ReplyStop() extends ReplyCommand
   final case class Ready(initialState: DurablePlayerState) extends ReplyCommand
   final case class ChangeMapReady(newMapId: Int) extends ReplyCommand
+  final case class NotifyAskBeginTrucoMatch(opponentUsername: String)
+      extends ReplyCommand
 
   val TypeKey = EntityTypeKey[Command]("Player")
 
@@ -151,12 +163,12 @@ object Player {
           }
         }
 
-        initBehaviour(entityId, persistor)
+        initBehavior(entityId, persistor)
       }
     }
   }
 
-  def initBehaviour(
+  def initBehavior(
       entityId: String,
       persistor: EntityRef[PlayerPersistor.Command],
       initialData: Option[InitData] = None
@@ -203,7 +215,7 @@ object Player {
 
         // Optimization to avoid waiting for the second Init message to start
         case Init(initData) => {
-          initBehaviour(entityId, persistor, Some(initData))
+          initBehavior(entityId, persistor, Some(initData))
         }
 
         // We know that this message will only be recieved if the PlayerHandler is in
@@ -211,7 +223,7 @@ object Player {
         // and instead set this sender as the PlayerHandler and complete intialization.
         // This would be what should happen if the Player dies or is moved to another node.
         case Heartbeat(handler) => {
-          initBehaviour(
+          initBehavior(
             entityId,
             persistor,
             Some(InitData(handler, None))
@@ -226,7 +238,7 @@ object Player {
     }
   }
 
-  def runningBehaviour(
+  def runningBehavior(
       state: PlayerState,
       persistor: EntityRef[PlayerPersistor.Command]
   ): Behavior[Command] = {
@@ -245,7 +257,7 @@ object Player {
             state.tState.eventProducer ! GameEventProducer.PlayerStateUpdate(
               newState
             )
-            runningBehaviour(newState, persistor)
+            runningBehavior(newState, persistor)
           }
 
           case PersistState() => {
@@ -298,7 +310,7 @@ object Player {
               persistor ! PlayerPersistor.Persist(newState.dState)
               state.tState.handler ! ChangeMapReady(newMapId)
 
-              runningBehaviour(
+              runningBehavior(
                 newState,
                 persistor
               )
@@ -315,7 +327,7 @@ object Player {
             state.tState.eventProducer ! GameEventProducer.PlayerStateUpdate(
               newState
             )
-            runningBehaviour(newState, persistor)
+            runningBehavior(newState, persistor)
           }
 
           case Stop() => {
@@ -324,13 +336,13 @@ object Player {
             state.tState.eventProducer ! GameEventProducer.PlayerDisconnect()
             persistor ! PlayerPersistor.Persist(state.dState)
             timers.startSingleTimer(StopReady(), 2.seconds)
-            stoppingBehaviour()
+            stoppingBehavior()
           }
 
           // If the PlayerHandler failed and the client inits a new connection, we need to update the PlayerHandler
           case Init(InitData(newHandler, _)) => {
             state.tState.handler ! Ready(state.dState)
-            runningBehaviour(
+            runningBehavior(
               state.copy(tState =
                 state.tState.copy(
                   lastHeartbeatTime =
@@ -342,9 +354,37 @@ object Player {
             )
           }
 
+          case BeginTrucoMatch(opponentUsername) => {
+            val opponentPlayer =
+              Sharding().entityRefFor(Player.TypeKey, opponentUsername)
+            opponentPlayer ! Player.AskBeginTrucoMatch(state.dState.playerName)
+            Behaviors.same
+          }
+
+          case AskBeginTrucoMatch(opponentUsername) => {
+            state.tState.handler ! NotifyAskBeginTrucoMatch(opponentUsername)
+            Behaviors.same
+          }
+
+          case AcceptTrucoMatch(opponentUsername) => {
+            // If the TrucoManager fails to establish connection with the players, it will suicide itself
+            ctx.spawn(
+              TrucoManager(opponentUsername, state.dState.playerName),
+              s"TrucoManager-${state.dState.playerName}-${opponentUsername}"
+            )
+            Behaviors.same
+          }
+
+          case SyncTrucoMatchStart(trucoManager) => {
+            ctx.log.info(
+              "Starting Truco match, completed handshake with TrucoManager!"
+            )
+            trucoBehavior(state, trucoManager)
+          }
+
           // We don't care about the PlayerHandler here, it should not change.
           case Heartbeat(_) => {
-            runningBehaviour(
+            runningBehavior(
               state.copy(tState =
                 state.tState.copy(
                   lastHeartbeatTime = LocalDateTime.now()
@@ -385,7 +425,20 @@ object Player {
     }
   }
 
-  def stoppingBehaviour(): Behavior[Command] = {
+  def trucoBehavior(
+      state: PlayerState,
+      trucoManager: ActorRef[TrucoManager.Command]
+  ): Behavior[Command] = {
+    Behaviors.receive { (ctx, msg) =>
+      msg match {
+        case _ => {
+          Behaviors.same // TODO handle messages
+        }
+      }
+    }
+  }
+
+  def stoppingBehavior(): Behavior[Command] = {
     Behaviors.receive { (_, msg) =>
       msg match {
         case StopReady() => {
@@ -449,7 +502,7 @@ object Player {
       getEventHandlers(ctx, initialState.mapId)
 
     handler ! Ready(newState)
-    runningBehaviour(
+    runningBehavior(
       PlayerState(
         newState,
         tState = TransientPlayerState(
