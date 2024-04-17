@@ -15,6 +15,7 @@ import server.domain.structs.TransientPlayerState
 import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
+import server.domain.structs.truco.TrucoMatchChallengeReplyEnum
 import server.infra.PlayerPersistor
 import server.protocol.event.GameEventConsumer
 import server.protocol.event.GameEventProducer
@@ -80,7 +81,12 @@ object Player {
 
   final case class BeginTrucoMatch(opponentUsername: String) extends Command
   final case class AskBeginTrucoMatch(opponentUsername: String) extends Command
-  final case class AcceptTrucoMatch(opponentUsername: String) extends Command
+  final case class BeginTrucoMatchDenied(opponentUsername: String)
+      extends Command
+  final case class ReplyBeginTrucoMatch(
+      opponentUsername: String,
+      replyStatus: TrucoMatchChallengeReplyEnum
+  ) extends Command
   final case class SyncTrucoMatchStart(
       trucoManager: ActorRef[TrucoManager.Command]
   ) extends Command
@@ -120,6 +126,8 @@ object Player {
   final case class Ready(initialState: DurablePlayerState) extends ReplyCommand
   final case class ChangeMapReady(newMapId: Int) extends ReplyCommand
   final case class NotifyAskBeginTrucoMatch(opponentUsername: String)
+      extends ReplyCommand
+  final case class NotifyBeginTrucoMatchDenied(opponentUsername: String)
       extends ReplyCommand
 
   val TypeKey = EntityTypeKey[Command]("Player")
@@ -366,11 +374,24 @@ object Player {
             Behaviors.same
           }
 
-          case AcceptTrucoMatch(opponentUsername) => {
-            // If the TrucoManager fails to establish connection with the players, it will suicide itself
-            ctx.spawn(
-              TrucoManager(opponentUsername, state.dState.playerName),
-              s"TrucoManager-${state.dState.playerName}-${opponentUsername}"
+          case ReplyBeginTrucoMatch(opponentUsername, replyStatus) => {
+            if replyStatus == TrucoMatchChallengeReplyEnum.Accepted then {
+              // If the TrucoManager fails to establish connection with the players, it will suicide itself
+              ctx.spawn(
+                TrucoManager(opponentUsername, state.dState.playerName),
+                s"TrucoManager-${state.dState.playerName}-${opponentUsername}"
+              )
+            } else {
+              val opponentPlayer =
+                Sharding().entityRefFor(Player.TypeKey, opponentUsername)
+              opponentPlayer ! Player.BeginTrucoMatchDenied(opponentUsername)
+            }
+            Behaviors.same
+          }
+
+          case BeginTrucoMatchDenied(opponentUsername) => {
+            state.tState.handler ! Player.NotifyBeginTrucoMatchDenied(
+              opponentUsername
             )
             Behaviors.same
           }

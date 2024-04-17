@@ -34,17 +34,18 @@ object TrucoManager {
       val sharding = Sharding()
 
       val state = TrucoManagerState(
-        TrucoManagerPlayerState(
+        firstPlayer = TrucoManagerPlayerState(
           sharding.entityRefFor(Player.TypeKey, firstPlayerName),
           playerName = firstPlayerName,
           hasInit = false
         ),
-        TrucoManagerPlayerState(
+        secondPlayer = TrucoManagerPlayerState(
           sharding.entityRefFor(Player.TypeKey, secondPlayerName),
           playerName = secondPlayerName,
           hasInit = false
         ),
-        new TrucoMatch()
+        trucoMatch = new TrucoMatch(),
+        playId = 0
       )
 
       initBehavior(state)

@@ -13,5 +13,6 @@ final case class TrucoManagerPlayerState(
 final case class TrucoManagerState(
     firstPlayer: TrucoManagerPlayerState,
     secondPlayer: TrucoManagerPlayerState,
-    trucoMatch: TrucoMatch
+    trucoMatch: TrucoMatch,
+    playId: Int // ID to keep track of current play
 )

@@ -22,7 +22,9 @@ import protobuf.client.inventory.update_equipment.PBPlayerUpdateEquipment
 import protobuf.client.map.change_map.PBPlayerChangeMap
 import protobuf.client.metadata.PBClientMetadata
 import protobuf.client.movement.player_movement.PBPlayerMovement
-import protobuf.client.truco.begin_match.PBBeginTrucoMatch
+import protobuf.client.truco.match_challenge.PBTrucoMatchChallenge
+import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReply
+import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReplyEnum
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
 import protobuf.server.init.player_init.PBPlayerEquipment
 import protobuf.server.init.player_init.PBPlayerInitError
@@ -38,7 +40,8 @@ import protobuf.server.state.game_entity_state.PBGameEntityEquipment
 import protobuf.server.state.game_entity_state.PBGameEntityPosition
 import protobuf.server.state.game_entity_state.PBGameEntityState
 import protobuf.server.state.game_entity_state.PBGameEntityVelocity
-import protobuf.server.truco.accept_match.PBAcceptTrucoMatch
+import protobuf.server.truco.match_challenge_denied.PBTrucoMatchChallengeDenied
+import protobuf.server.truco.match_challenge_request.PBTrucoMatchChallengeRequest
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import server.domain.entities.InitData
@@ -49,6 +52,7 @@ import server.domain.structs.init.RegisterInfo
 import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
+import server.domain.structs.truco.TrucoMatchChallengeReplyEnum
 import server.infra.repository.PlayerRepository
 import server.protocol.flows.InMessageFlow
 import server.protocol.flows.server.protocol.flows.OutMessageFlow
@@ -75,8 +79,11 @@ object PlayerHandler {
   final case class AddMessage(msg: String) extends Command
   final case class ChangeMap(newMapId: Int) extends Command
   final case class UpdateEquipment(equipment: Equipment) extends Command
-  final case class BeginTrucoMatch(opponentUsername: String) extends Command
-  final case class AcceptTrucoMatch(opponentUsername: String) extends Command
+  final case class TrucoMatchChallenge(opponentUsername: String) extends Command
+  final case class TrucoMatchChallengeReply(
+      opponentUsername: String,
+      status: TrucoMatchChallengeReplyEnum
+  ) extends Command
 
   def apply(
       connection: Tcp.IncomingConnection
@@ -115,9 +122,11 @@ object PlayerHandler {
                         PBPlayerInitErrorCode.INVALID_PLAYER_CREDENTIALS
                       )
                   }
-                  .recover {
-                    case _ => // TODO can we log this error? We cant use the ctx.log
-                      ctx.self ! InitFailure(PBPlayerInitErrorCode.UNKNOWN)
+                  .recover { case err =>
+                    Console.err.println(
+                      "Unkown error validating player credentials: " + err
+                    )
+                    ctx.self ! InitFailure(PBPlayerInitErrorCode.UNKNOWN)
                   }
 
               case RegisterInfo(playerName, password, _) =>
@@ -229,18 +238,24 @@ object PlayerHandler {
           Behaviors.same
         }
 
-        case BeginTrucoMatch(opponentUsername) => {
+        case TrucoMatchChallenge(opponentUsername) => {
           state.player ! Player.BeginTrucoMatch(opponentUsername)
           Behaviors.same
         }
 
-        case AcceptTrucoMatch(opponentUsername) => {
-          state.player ! Player.AcceptTrucoMatch(opponentUsername)
+        case TrucoMatchChallengeReply(opponentUsername, status) => {
+          state.player ! Player.ReplyBeginTrucoMatch(opponentUsername, status)
           Behaviors.same
         }
 
         case Player.NotifyAskBeginTrucoMatch(opponentUsername) => {
-          val message = PBAcceptTrucoMatch.of(opponentUsername)
+          val message = PBTrucoMatchChallengeRequest.of(opponentUsername)
+          state.conQueue.offer(message)
+          Behaviors.same
+        }
+
+        case Player.NotifyBeginTrucoMatchDenied(opponentUsername) => {
+          val message = PBTrucoMatchChallengeDenied.of(opponentUsername)
           state.conQueue.offer(message)
           Behaviors.same
         }
@@ -390,9 +405,23 @@ object PlayerHandler {
           body
         )
       )
-    case PBBeginTrucoMatch(opponentUsername, _) =>
-      BeginTrucoMatch(opponentUsername)
-    case PBAcceptTrucoMatch(opponentUsername, _) =>
-      AcceptTrucoMatch(opponentUsername)
+    case PBTrucoMatchChallenge(opponentUsername, _) =>
+      TrucoMatchChallenge(opponentUsername)
+    case PBTrucoMatchChallengeReply(opponentUsername, status, _) =>
+      TrucoMatchChallengeReply(
+        opponentUsername,
+        status match {
+          case PBTrucoMatchChallengeReplyEnum.ACCEPTED =>
+            TrucoMatchChallengeReplyEnum.Accepted
+          case PBTrucoMatchChallengeReplyEnum.REJECTED =>
+            TrucoMatchChallengeReplyEnum.Rejected
+          case invalidValue => {
+            Console.err.println(
+              "Rejecting TrucoMatch because of invalid TrucoMatchChallengeReplyEnum: " + invalidValue
+            )
+            TrucoMatchChallengeReplyEnum.Rejected
+          }
+        }
+      )
   }
 }
