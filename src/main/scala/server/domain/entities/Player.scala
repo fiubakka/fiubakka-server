@@ -16,6 +16,7 @@ import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 import server.domain.structs.truco.TrucoMatchChallengeReplyEnum
+import server.domain.structs.truco.TrucoPlay
 import server.infra.PlayerPersistor
 import server.protocol.event.GameEventConsumer
 import server.protocol.event.GameEventProducer
@@ -90,6 +91,7 @@ object Player {
   final case class SyncTrucoMatchStart(
       trucoManager: ActorRef[TrucoManager.Command]
   ) extends Command
+  final case class TrucoMatchPlay(playId: Int, play: TrucoPlay) extends Command
 
   // GameEventConsumer messages
 
@@ -452,9 +454,16 @@ object Player {
   ): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
-        case _ => {
-          Behaviors.same // TODO handle messages
+        case TrucoMatchPlay(playId, play) => {
+          trucoManager ! TrucoManager.MakePlay(
+            state.dState.playerName,
+            playId,
+            play
+          )
+          Behaviors.same
         }
+
+        case _ => Behaviors.same
       }
     }
   }

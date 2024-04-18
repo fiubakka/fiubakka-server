@@ -6,6 +6,7 @@ import akka.serialization.jackson.CborSerializable
 import server.domain.entities.Player
 import server.domain.structs.truco.TrucoManagerPlayerState
 import server.domain.structs.truco.TrucoManagerState
+import server.domain.structs.truco.TrucoPlay
 import server.domain.truco.TrucoMatch
 import server.sharding.Sharding
 
@@ -14,10 +15,15 @@ import scala.concurrent.duration._
 object TrucoManager {
   sealed trait Command extends CborSerializable
 
+  // Init / sync
   final case class FailMatchPlayersSync()
       extends Command // Will stop the TrucoManager if players don't sync in time
   final case class AskPlayersToStartMatch() extends Command
   final case class PlayerSyncedTrucoMatchStart(playerName: String)
+      extends Command
+
+  // Match
+  final case class MakePlay(playerName: String, playId: Int, play: TrucoPlay)
       extends Command
 
   def apply(
@@ -89,9 +95,11 @@ object TrucoManager {
                 )
               }
             }
+
             if newState.firstPlayer.hasInit && newState.secondPlayer.hasInit
             then {
               timers.cancel("failMatchPlayersSync")
+              ctx.log.info("Both players synced, starting Truco match")
               runningBehavior(
                 newState
               ) // Setup ready, both players accepted the match
@@ -106,6 +114,8 @@ object TrucoManager {
             )
             Behaviors.stopped // TODO send match aborted to optimize player returning to lobby
           }
+
+          case _ => Behaviors.same
         }
       }
     }
@@ -113,7 +123,7 @@ object TrucoManager {
 
   def runningBehavior(state: TrucoManagerState): Behavior[Command] = {
     Behaviors.receive { (ctx, msg) =>
-      Behaviors.same // TODO Implement
+      Behaviors.same // TODO Implement MakePlay
     }
   }
 }

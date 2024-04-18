@@ -25,6 +25,17 @@ import protobuf.client.movement.player_movement.PBPlayerMovement
 import protobuf.client.truco.match_challenge.PBTrucoMatchChallenge
 import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReply
 import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReplyEnum
+import protobuf.client.truco.play.PBTrucoPlay
+import protobuf.client.truco.play.PBTrucoPlayType.CARD
+import protobuf.client.truco.play.PBTrucoPlayType.SHOUT
+import protobuf.client.truco.play.PBTrucoShout.ENVIDO
+import protobuf.client.truco.play.PBTrucoShout.FALTA_ENVIDO
+import protobuf.client.truco.play.PBTrucoShout.NO_QUIERO
+import protobuf.client.truco.play.PBTrucoShout.QUIERO
+import protobuf.client.truco.play.PBTrucoShout.REAL_ENVIDO
+import protobuf.client.truco.play.PBTrucoShout.RETRUCO
+import protobuf.client.truco.play.PBTrucoShout.TRUCO
+import protobuf.client.truco.play.PBTrucoShout.VALE_CUATRO
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
 import protobuf.server.init.player_init.PBPlayerEquipment
 import protobuf.server.init.player_init.PBPlayerInitError
@@ -52,7 +63,11 @@ import server.domain.structs.init.RegisterInfo
 import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
+import server.domain.structs.truco.TrucoCardPlay
 import server.domain.structs.truco.TrucoMatchChallengeReplyEnum
+import server.domain.structs.truco.TrucoPlay
+import server.domain.structs.truco.TrucoShoutEnum
+import server.domain.structs.truco.TrucoShoutPlay
 import server.infra.repository.PlayerRepository
 import server.protocol.flows.InMessageFlow
 import server.protocol.flows.server.protocol.flows.OutMessageFlow
@@ -84,6 +99,7 @@ object PlayerHandler {
       opponentUsername: String,
       status: TrucoMatchChallengeReplyEnum
   ) extends Command
+  final case class TrucoMatchPlay(playId: Int, play: TrucoPlay) extends Command
 
   def apply(
       connection: Tcp.IncomingConnection
@@ -245,6 +261,11 @@ object PlayerHandler {
 
         case TrucoMatchChallengeReply(opponentUsername, status) => {
           state.player ! Player.ReplyBeginTrucoMatch(opponentUsername, status)
+          Behaviors.same
+        }
+
+        case TrucoMatchPlay(playId, play) => {
+          state.player ! Player.TrucoMatchPlay(playId, play)
           Behaviors.same
         }
 
@@ -421,6 +442,28 @@ object PlayerHandler {
             )
             TrucoMatchChallengeReplyEnum.Rejected
           }
+        }
+      )
+    case PBTrucoPlay(playId, playType, card, shout, _) =>
+      TrucoMatchPlay(
+        playId,
+        playType match {
+          case CARD => TrucoCardPlay(card.get)
+          case SHOUT =>
+            TrucoShoutPlay(shout.get match {
+              case ENVIDO       => TrucoShoutEnum.Envido
+              case REAL_ENVIDO  => TrucoShoutEnum.RealEnvido
+              case FALTA_ENVIDO => TrucoShoutEnum.FaltaEnvido
+              case TRUCO        => TrucoShoutEnum.Truco
+              case RETRUCO      => TrucoShoutEnum.Retruco
+              case VALE_CUATRO  => TrucoShoutEnum.ValeCuatro
+              case QUIERO       => TrucoShoutEnum.Quiero
+              case NO_QUIERO    => TrucoShoutEnum.NoQuiero
+              case invalidShout =>
+                throw new Exception("Invalid TrucoShoutEnum: " + invalidShout)
+            })
+          case invalidPlayType =>
+            throw new Exception("Invalid TrucoPlayType: " + invalidPlayType)
         }
       )
   }
