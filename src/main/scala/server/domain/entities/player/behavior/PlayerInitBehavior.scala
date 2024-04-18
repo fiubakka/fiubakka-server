@@ -5,7 +5,6 @@ import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityRef
 import server.domain.entities.player.Player
-import server.domain.entities.player.Player._
 import server.domain.entities.player.command.PlayerCommand._
 import server.domain.entities.player.command.PlayerReplyCommand._
 import server.domain.entities.player.utils.PlayerUtils
@@ -21,7 +20,7 @@ object PlayerInitBehavior {
   def apply(
       entityId: String,
       persistor: EntityRef[PlayerPersistor.Command],
-      initialData: Option[InitData] = None
+      initialData: Option[Player.InitData] = None
   ): Behavior[Player.Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
@@ -50,7 +49,7 @@ object PlayerInitBehavior {
                   finishInitialization(
                     ctx,
                     persistor,
-                    InitData(handler, None),
+                    Player.InitData(handler, None),
                     initialState
                   ) // No equipment because the Player should already be registered
 
@@ -76,7 +75,7 @@ object PlayerInitBehavior {
           apply(
             entityId,
             persistor,
-            Some(InitData(handler, None))
+            Some(Player.InitData(handler, None))
           ) // No equipment because the Player should already be registered
         }
 
@@ -91,10 +90,10 @@ object PlayerInitBehavior {
   private def finishInitialization(
       ctx: ActorContext[Player.Command],
       persistor: EntityRef[PlayerPersistor.Command],
-      initialData: InitData,
+      initialData: Player.InitData,
       initialState: DurablePlayerState
   ): Behavior[Player.Command] = {
-    val InitData(handler, equipment) = initialData
+    val Player.InitData(handler, equipment) = initialData
     var newState = initialState
 
     if equipment.isDefined then { // If it's a new player

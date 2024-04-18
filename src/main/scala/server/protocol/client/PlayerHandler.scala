@@ -56,8 +56,6 @@ import protobuf.server.truco.match_challenge_request.PBTrucoMatchChallengeReques
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import server.domain.entities.player.Player
-import server.domain.entities.player.command.PlayerCommand
-import server.domain.entities.player.command.PlayerReplyCommand
 import server.domain.structs.init.InitInfo
 import server.domain.structs.init.LoginInfo
 import server.domain.structs.init.RegisterInfo
@@ -84,7 +82,7 @@ object PlayerHandler {
   )
 
   sealed trait Command extends CborSerializable
-  private type CommandOrPlayerReply = Command | PlayerReplyCommand.Command
+  private type CommandOrPlayerReply = Command | Player.ReplyCommand
   final case class ConnectionClosed() extends Command
 
   final case class SendHeartbeat() extends Command
@@ -167,7 +165,7 @@ object PlayerHandler {
               initInfo.playerName
             )
 
-            player ! PlayerCommand.Init(
+            player ! Player.Init(
               Player.InitData(
                 ctx.self,
                 initInfo.getInitialEquipment()
@@ -186,7 +184,7 @@ object PlayerHandler {
             Behaviors.same
           }
 
-          case PlayerReplyCommand.Ready(initialState) => {
+          case Player.Ready(initialState) => {
             val player = Sharding().entityRefFor(
               Player.TypeKey,
               initialState.playerName
@@ -231,37 +229,37 @@ object PlayerHandler {
       msg match {
         case ConnectionClosed() => {
           ctx.log.info("Closing connection!")
-          state.player ! PlayerCommand.Stop()
+          state.player ! Player.Stop()
           Behaviors.stopped
         }
 
         case Move(velocity, position) => {
-          state.player ! PlayerCommand.Move(velocity, position)
+          state.player ! Player.Move(velocity, position)
           Behaviors.same
         }
 
         case AddMessage(msg) => {
-          state.player ! PlayerCommand.AddMessage(msg)
+          state.player ! Player.AddMessage(msg)
           Behaviors.same
         }
 
         case ChangeMap(newMapId) => {
-          state.player ! PlayerCommand.ChangeMap(newMapId)
+          state.player ! Player.ChangeMap(newMapId)
           Behaviors.same
         }
 
         case UpdateEquipment(equipment) => {
-          state.player ! PlayerCommand.UpdateEquipment(equipment)
+          state.player ! Player.UpdateEquipment(equipment)
           Behaviors.same
         }
 
         case TrucoMatchChallenge(opponentUsername) => {
-          state.player ! PlayerCommand.BeginTrucoMatch(opponentUsername)
+          state.player ! Player.BeginTrucoMatch(opponentUsername)
           Behaviors.same
         }
 
         case TrucoMatchChallengeReply(opponentUsername, status) => {
-          state.player ! PlayerCommand.ReplyBeginTrucoMatch(
+          state.player ! Player.ReplyBeginTrucoMatch(
             opponentUsername,
             status
           )
@@ -269,17 +267,17 @@ object PlayerHandler {
         }
 
         case TrucoMatchPlay(playId, play) => {
-          state.player ! PlayerCommand.TrucoMatchPlay(playId, play)
+          state.player ! Player.TrucoMatchPlay(playId, play)
           Behaviors.same
         }
 
-        case PlayerReplyCommand.NotifyAskBeginTrucoMatch(opponentUsername) => {
+        case Player.NotifyAskBeginTrucoMatch(opponentUsername) => {
           val message = PBTrucoMatchChallengeRequest.of(opponentUsername)
           state.conQueue.offer(message)
           Behaviors.same
         }
 
-        case PlayerReplyCommand.NotifyBeginTrucoMatchDenied(
+        case Player.NotifyBeginTrucoMatchDenied(
               opponentUsername
             ) => {
           val message = PBTrucoMatchChallengeDenied.of(opponentUsername)
@@ -287,7 +285,7 @@ object PlayerHandler {
           Behaviors.same
         }
 
-        case PlayerReplyCommand.NotifyEntityStateUpdate(
+        case Player.NotifyEntityStateUpdate(
               entityId,
               newEntityState
             ) => {
@@ -318,31 +316,31 @@ object PlayerHandler {
           Behaviors.same
         }
 
-        case PlayerReplyCommand.NotifyMessageReceived(entityId, msg) => {
+        case Player.NotifyMessageReceived(entityId, msg) => {
           val message = PBPlayerMessageServer.of(entityId, msg)
           state.conQueue.offer(message)
           Behaviors.same
         }
 
-        case PlayerReplyCommand.NotifyEntityDisconnect(entityId) => {
+        case Player.NotifyEntityDisconnect(entityId) => {
           val message = PBGameEntityDisconnect.of(entityId)
           state.conQueue.offer(message)
           Behaviors.same
         }
 
-        case PlayerReplyCommand.ChangeMapReady(newMapId) => {
+        case Player.ChangeMapReady(newMapId) => {
           val message = PBPlayerChangeMapReady.of(newMapId)
           state.conQueue.offer(message)
           Behaviors.same
         }
 
-        case PlayerReplyCommand.ReplyStop() => {
+        case Player.ReplyStop() => {
           ctx.log.info("Player stopped!")
           Behaviors.stopped
         }
 
         case SendHeartbeat() => {
-          state.player ! PlayerCommand.Heartbeat(ctx.self)
+          state.player ! Player.Heartbeat(ctx.self)
           Behaviors.same
         }
 

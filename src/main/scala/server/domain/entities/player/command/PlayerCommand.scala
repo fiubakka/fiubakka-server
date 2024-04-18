@@ -23,7 +23,7 @@ object PlayerCommand {
   //
   // We still keep the Init message to avoid including other init data (ie. the equipment) being included
   // in the Heartbeat message and having a more complex message structure.
-  final case class Heartbeat(handler: ActorRef[PlayerReplyCommand.Command])
+  final case class Heartbeat(handler: ActorRef[PlayerReplyCommand.ReplyCommand])
       extends Command
   final case class CheckHeartbeat() extends Command
 
@@ -52,7 +52,7 @@ object PlayerCommand {
   ) extends Command
 
   final case class GameEventConsumerCommand(
-      command: PlayerEventCommand.Command,
+      command: PlayerEventCommand.EventCommand,
       consumerRef: ActorRef[GameEventConsumer.Command]
   ) extends Command
 

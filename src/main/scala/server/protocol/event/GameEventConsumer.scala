@@ -13,8 +13,6 @@ import protobuf.event.state.game_entity_disconnect.PBGameEntityDisconnect
 import protobuf.event.state.game_entity_state.PBGameEntityState
 import scalapb.GeneratedMessage
 import server.domain.entities.player.Player
-import server.domain.entities.player.command.PlayerCommand
-import server.domain.entities.player.command.PlayerEventCommand
 import server.domain.structs.GameEntityState
 import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
@@ -58,7 +56,7 @@ object GameEventConsumer {
       Behaviors.receiveMessage {
         case EventReceived(msg) => {
           ctx.log.debug(s"$playerId: Event received: $msg")
-          player ! PlayerCommand.GameEventConsumerCommand(
+          player ! Player.GameEventConsumerCommand(
             eventCommandFromEventMessage(msg),
             ctx.self
           )
@@ -75,9 +73,9 @@ object GameEventConsumer {
   }
 
   private val eventCommandFromEventMessage
-      : PartialFunction[GeneratedMessage, PlayerEventCommand.Command] = {
+      : PartialFunction[GeneratedMessage, Player.EventCommand] = {
     case PBGameEntityState(entityId, position, velocity, equipment, _) =>
-      PlayerEventCommand.UpdateEntityState(
+      Player.UpdateEntityState(
         entityId,
         GameEntityState(
           Position(
@@ -100,9 +98,9 @@ object GameEventConsumer {
         )
       )
     case PBPlayerMessage(entityId, msg, _) =>
-      PlayerEventCommand.ReceiveMessage(entityId, msg)
+      Player.ReceiveMessage(entityId, msg)
     case PBGameEntityDisconnect(entityId, _) => {
-      PlayerEventCommand.EntityDisconnect(entityId)
+      Player.EntityDisconnect(entityId)
     }
   }
 }

@@ -2,7 +2,7 @@ package server.domain.structs
 
 import akka.actor.typed.ActorRef
 import akka.serialization.jackson.CborSerializable
-import server.domain.entities.player.command.PlayerReplyCommand
+import server.domain.entities.player.Player
 import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
@@ -19,7 +19,7 @@ final case class DurablePlayerState(
 ) extends CborSerializable
 
 final case class TransientPlayerState(
-    handler: ActorRef[PlayerReplyCommand.Command],
+    handler: ActorRef[Player.ReplyCommand],
     eventProducer: ActorRef[GameEventProducer.Command],
     eventConsumer: ActorRef[GameEventConsumer.Command],
     lastHeartbeatTime: LocalDateTime,

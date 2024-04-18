@@ -6,9 +6,6 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.util.Timeout
 import server.domain.entities.player.behavior.PlayerInitBehavior
-import server.domain.entities.player.command.PlayerCommand._
-import server.domain.entities.player.command.PlayerEventCommand._
-import server.domain.entities.player.command.PlayerReplyCommand._
 import server.domain.entities.player.command._
 import server.domain.structs.DurablePlayerState
 import server.domain.structs.inventory.Equipment
@@ -21,10 +18,12 @@ import scala.util.Failure
 import scala.util.Success
 
 object Player {
-  type Command = PlayerCommand.Command | PlayerEventCommand.Command
+  export PlayerCommand._
+  export PlayerEventCommand._
+  export PlayerReplyCommand._
 
   final case class InitData(
-      handler: ActorRef[PlayerReplyCommand.Command],
+      handler: ActorRef[PlayerReplyCommand.ReplyCommand],
       equipment: Option[Equipment]
   )
 

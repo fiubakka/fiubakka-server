@@ -5,24 +5,24 @@ import server.domain.structs.DurablePlayerState
 import server.domain.structs.GameEntityState
 
 object PlayerReplyCommand {
-  sealed trait Command extends CborSerializable
+  sealed trait ReplyCommand extends CborSerializable
 
   final case class NotifyEntityStateUpdate(
       entityId: String,
       newEntityState: GameEntityState
-  ) extends Command
+  ) extends ReplyCommand
   final case class NotifyMessageReceived(
       entityId: String,
       msg: String
-  ) extends Command
+  ) extends ReplyCommand
   final case class NotifyEntityDisconnect(
       entityId: String
-  ) extends Command
-  final case class ReplyStop() extends Command
-  final case class Ready(initialState: DurablePlayerState) extends Command
-  final case class ChangeMapReady(newMapId: Int) extends Command
+  ) extends ReplyCommand
+  final case class ReplyStop() extends ReplyCommand
+  final case class Ready(initialState: DurablePlayerState) extends ReplyCommand
+  final case class ChangeMapReady(newMapId: Int) extends ReplyCommand
   final case class NotifyAskBeginTrucoMatch(opponentUsername: String)
-      extends Command
+      extends ReplyCommand
   final case class NotifyBeginTrucoMatchDenied(opponentUsername: String)
-      extends Command
+      extends ReplyCommand
 }

@@ -4,9 +4,7 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityRef
 import server.domain.entities.player.Player
-import server.domain.entities.player.Player._
 import server.domain.entities.player.command.PlayerCommand._
-import server.domain.entities.player.command.PlayerEventCommand
 import server.domain.entities.player.command.PlayerEventCommand._
 import server.domain.entities.player.command.PlayerReplyCommand._
 import server.domain.entities.player.utils.PlayerUtils
@@ -123,7 +121,7 @@ object PlayerRunningBehavior {
           }
 
           // If the PlayerHandler failed and the client inits a new connection, we need to update the PlayerHandler
-          case Init(InitData(newHandler, _)) => {
+          case Init(Player.InitData(newHandler, _)) => {
             state.tState.handler ! Ready(state.dState)
             apply(
               state.copy(tState =
@@ -222,7 +220,7 @@ object PlayerRunningBehavior {
   }
 
   private def handleConsumerMessage(
-      msg: PlayerEventCommand.Command,
+      msg: Player.EventCommand,
       state: PlayerState
   ): Behavior[Player.Command] = {
     msg match {
