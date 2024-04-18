@@ -4,7 +4,7 @@ import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.cluster.sharding.typed.scaladsl.Entity
 import akka.persistence.typed.PersistenceId
-import server.domain.entities.Player
+import server.domain.entities.player.Player
 import server.infra.PlayerPersistor
 
 object Sharding {

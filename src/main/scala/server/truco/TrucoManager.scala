@@ -3,7 +3,8 @@ package server.truco
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.serialization.jackson.CborSerializable
-import server.domain.entities.Player
+import server.domain.entities.player.Player
+import server.domain.entities.player.command.PlayerCommand
 import server.domain.structs.truco.TrucoManagerPlayerState
 import server.domain.structs.truco.TrucoManagerState
 import server.domain.structs.truco.TrucoPlay
@@ -74,10 +75,14 @@ object TrucoManager {
         msg match {
           case AskPlayersToStartMatch() => {
             if !state.firstPlayer.hasInit then {
-              state.firstPlayer.player ! Player.SyncTrucoMatchStart(ctx.self)
+              state.firstPlayer.player ! PlayerCommand.SyncTrucoMatchStart(
+                ctx.self
+              )
             }
             if !state.secondPlayer.hasInit then {
-              state.secondPlayer.player ! Player.SyncTrucoMatchStart(ctx.self)
+              state.secondPlayer.player ! PlayerCommand.SyncTrucoMatchStart(
+                ctx.self
+              )
             }
             Behaviors.same
           }

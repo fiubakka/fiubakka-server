@@ -3,8 +3,9 @@ package server.misc
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityRef
-import server.domain.entities.InitData
-import server.domain.entities.Player
+import server.domain.entities.player.Player
+import server.domain.entities.player.command.PlayerCommand
+import server.domain.entities.player.command.PlayerReplyCommand
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 import server.sharding.Sharding
@@ -14,7 +15,7 @@ import scala.util.Random
 
 object Bot {
   sealed trait Command
-  private type CommandOrPlayerReply = Command | Player.ReplyCommand
+  private type CommandOrPlayerReply = Command | PlayerReplyCommand.Command
 
   final case class RandomMove() extends Command
   final case class Heartbeat() extends Command
@@ -32,8 +33,8 @@ object Bot {
           Random.alphanumeric.take(20).mkString
         )
 
-        playerBot ! Player.Init(
-          InitData(
+        playerBot ! PlayerCommand.Init(
+          Player.InitData(
             ctx.self,
             None
           )
@@ -64,14 +65,14 @@ object Bot {
             state.position.x + randVelocity.x,
             state.position.y + randVelocity.y
           )
-          state.playerBot ! Player.Move(
+          state.playerBot ! PlayerCommand.Move(
             velocity = randVelocity,
             position = newPosition
           )
           runningBehavior(state.copy(position = newPosition))
 
         case Heartbeat() => {
-          state.playerBot ! Player.Heartbeat(ctx.self)
+          state.playerBot ! PlayerCommand.Heartbeat(ctx.self)
           Behaviors.same
         }
 
