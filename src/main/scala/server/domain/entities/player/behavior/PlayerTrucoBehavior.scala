@@ -5,8 +5,8 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import server.domain.entities.player.Player
 import server.domain.entities.player.command.PlayerCommand._
+import server.domain.entities.truco.TrucoManager
 import server.domain.structs.PlayerState
-import server.truco.TrucoManager
 
 object PlayerTrucoBehavior {
   def apply(
@@ -15,6 +15,16 @@ object PlayerTrucoBehavior {
   ): Behavior[Player.Command] = {
     Behaviors.receive { (ctx, msg) =>
       msg match {
+        case SyncTrucoMatchStart(trucoManager) => {
+          ctx.log.info(
+            "Resending handshake confirmation to TrucoManager!"
+          )
+          trucoManager ! TrucoManager.PlayerSyncedTrucoMatchStart(
+            state.dState.playerName
+          )
+          Behaviors.same
+        }
+
         case TrucoMatchPlay(playId, play) => {
           trucoManager ! TrucoManager.MakePlay(
             state.dState.playerName,

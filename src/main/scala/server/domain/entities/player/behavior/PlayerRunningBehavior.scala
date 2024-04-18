@@ -8,12 +8,12 @@ import server.domain.entities.player.command.PlayerCommand._
 import server.domain.entities.player.command.PlayerEventCommand._
 import server.domain.entities.player.command.PlayerReplyCommand._
 import server.domain.entities.player.utils.PlayerUtils
+import server.domain.entities.truco.TrucoManager
 import server.domain.structs.PlayerState
 import server.domain.structs.truco.TrucoMatchChallengeReplyEnum
 import server.infra.PlayerPersistor
 import server.protocol.event.GameEventProducer
 import server.sharding.Sharding
-import server.truco.TrucoManager
 
 import java.time.LocalDateTime
 import scala.concurrent.duration._
@@ -117,7 +117,7 @@ object PlayerRunningBehavior {
             state.tState.eventProducer ! GameEventProducer.PlayerDisconnect()
             persistor ! PlayerPersistor.Persist(state.dState)
             timers.startSingleTimer(StopReady(), 2.seconds)
-            PlayerStopBehavior()
+            PlayerStoppingBehavior()
           }
 
           // If the PlayerHandler failed and the client inits a new connection, we need to update the PlayerHandler
@@ -172,6 +172,9 @@ object PlayerRunningBehavior {
           case SyncTrucoMatchStart(trucoManager) => {
             ctx.log.info(
               "Starting Truco match, completed handshake with TrucoManager!"
+            )
+            trucoManager ! TrucoManager.PlayerSyncedTrucoMatchStart(
+              state.dState.playerName
             )
             PlayerTrucoBehavior(state, trucoManager)
           }

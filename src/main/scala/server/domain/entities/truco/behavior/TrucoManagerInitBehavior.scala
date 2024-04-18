@@ -1,64 +1,15 @@
-package server.truco
+package server.domain.entities.truco.behavior
 
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-import akka.serialization.jackson.CborSerializable
 import server.domain.entities.player.Player
-import server.domain.structs.truco.TrucoManagerPlayerState
+import server.domain.entities.truco.command.TrucoManagerCommand._
 import server.domain.structs.truco.TrucoManagerState
-import server.domain.structs.truco.TrucoPlay
-import server.domain.truco.TrucoMatch
-import server.sharding.Sharding
 
 import scala.concurrent.duration._
 
-object TrucoManager {
-  sealed trait Command extends CborSerializable
-
-  // Init / sync
-  final case class FailMatchPlayersSync()
-      extends Command // Will stop the TrucoManager if players don't sync in time
-  final case class AskPlayersToStartMatch() extends Command
-  final case class PlayerSyncedTrucoMatchStart(playerName: String)
-      extends Command
-
-  // Match
-  final case class MakePlay(playerName: String, playId: Int, play: TrucoPlay)
-      extends Command
-
-  def apply(
-      firstPlayerName: String,
-      secondPlayerName: String
-  ): Behavior[Command] = {
-    Behaviors.setup { ctx =>
-      ctx.log.info(
-        "Starting TrucoManager for players {} and {}",
-        firstPlayerName,
-        secondPlayerName
-      )
-
-      val sharding = Sharding()
-
-      val state = TrucoManagerState(
-        firstPlayer = TrucoManagerPlayerState(
-          sharding.entityRefFor(Player.TypeKey, firstPlayerName),
-          playerName = firstPlayerName,
-          hasInit = false
-        ),
-        secondPlayer = TrucoManagerPlayerState(
-          sharding.entityRefFor(Player.TypeKey, secondPlayerName),
-          playerName = secondPlayerName,
-          hasInit = false
-        ),
-        trucoMatch = new TrucoMatch(),
-        playId = 0
-      )
-
-      initBehavior(state)
-    }
-  }
-
-  def initBehavior(state: TrucoManagerState): Behavior[Command] = {
+object TrucoManagerInitBehavior {
+  def apply(state: TrucoManagerState): Behavior[Command] = {
     Behaviors.withTimers { timers =>
       timers.startTimerWithFixedDelay(
         "startMatchPlayersSync",
@@ -104,11 +55,11 @@ object TrucoManager {
             then {
               timers.cancel("failMatchPlayersSync")
               ctx.log.info("Both players synced, starting Truco match")
-              runningBehavior(
+              TrucoManagerRunningBehavior(
                 newState
               ) // Setup ready, both players accepted the match
             } else {
-              initBehavior(newState)
+              apply(newState)
             }
           }
 
@@ -122,12 +73,6 @@ object TrucoManager {
           case _ => Behaviors.same
         }
       }
-    }
-  }
-
-  def runningBehavior(state: TrucoManagerState): Behavior[Command] = {
-    Behaviors.receive { (ctx, msg) =>
-      Behaviors.same // TODO Implement MakePlay
     }
   }
 }

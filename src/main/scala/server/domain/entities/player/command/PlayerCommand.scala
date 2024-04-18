@@ -3,6 +3,7 @@ package server.domain.entities.player.command
 import akka.actor.typed.ActorRef
 import akka.serialization.jackson.CborSerializable
 import server.domain.entities.player.Player
+import server.domain.entities.truco.TrucoManager
 import server.domain.structs.DurablePlayerState
 import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
@@ -10,7 +11,6 @@ import server.domain.structs.movement.Velocity
 import server.domain.structs.truco.TrucoMatchChallengeReplyEnum
 import server.domain.structs.truco.TrucoPlay
 import server.protocol.event.GameEventConsumer
-import server.truco.TrucoManager
 
 object PlayerCommand {
   sealed trait Command extends CborSerializable
