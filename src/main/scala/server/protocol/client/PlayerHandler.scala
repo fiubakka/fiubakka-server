@@ -29,12 +29,14 @@ import protobuf.client.truco.play.PBTrucoPlay
 import protobuf.client.truco.play.PBTrucoPlayType.CARD
 import protobuf.client.truco.play.PBTrucoPlayType.SHOUT
 import protobuf.client.truco.play.PBTrucoShout.ENVIDO
+import protobuf.client.truco.play.PBTrucoShout.ENVIDO_NO_QUIERO
+import protobuf.client.truco.play.PBTrucoShout.ENVIDO_QUIERO
 import protobuf.client.truco.play.PBTrucoShout.FALTA_ENVIDO
-import protobuf.client.truco.play.PBTrucoShout.NO_QUIERO
-import protobuf.client.truco.play.PBTrucoShout.QUIERO
 import protobuf.client.truco.play.PBTrucoShout.REAL_ENVIDO
 import protobuf.client.truco.play.PBTrucoShout.RETRUCO
 import protobuf.client.truco.play.PBTrucoShout.TRUCO
+import protobuf.client.truco.play.PBTrucoShout.TRUCO_NO_QUIERO
+import protobuf.client.truco.play.PBTrucoShout.TRUCO_QUIERO
 import protobuf.client.truco.play.PBTrucoShout.VALE_CUATRO
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
 import protobuf.server.init.player_init.PBPlayerEquipment
@@ -455,14 +457,16 @@ object PlayerHandler {
           case CARD => TrucoCardPlay(card.get)
           case SHOUT =>
             TrucoShoutPlay(shout.get match {
-              case ENVIDO       => TrucoShoutEnum.Envido
-              case REAL_ENVIDO  => TrucoShoutEnum.RealEnvido
-              case FALTA_ENVIDO => TrucoShoutEnum.FaltaEnvido
-              case TRUCO        => TrucoShoutEnum.Truco
-              case RETRUCO      => TrucoShoutEnum.Retruco
-              case VALE_CUATRO  => TrucoShoutEnum.ValeCuatro
-              case QUIERO       => TrucoShoutEnum.Quiero
-              case NO_QUIERO    => TrucoShoutEnum.NoQuiero
+              case ENVIDO           => TrucoShoutEnum.Envido
+              case REAL_ENVIDO      => TrucoShoutEnum.RealEnvido
+              case FALTA_ENVIDO     => TrucoShoutEnum.FaltaEnvido
+              case ENVIDO_QUIERO    => TrucoShoutEnum.EnvidoQuiero
+              case ENVIDO_NO_QUIERO => TrucoShoutEnum.EnvidoNoQuiero
+              case TRUCO            => TrucoShoutEnum.Truco
+              case RETRUCO          => TrucoShoutEnum.Retruco
+              case VALE_CUATRO      => TrucoShoutEnum.Valecuatro
+              case TRUCO_QUIERO     => TrucoShoutEnum.TrucoQuiero
+              case TRUCO_NO_QUIERO  => TrucoShoutEnum.TrucoNoQuiero
               case invalidShout =>
                 throw new Exception("Invalid TrucoShoutEnum: " + invalidShout)
             })
