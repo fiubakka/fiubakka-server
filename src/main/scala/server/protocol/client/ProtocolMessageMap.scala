@@ -9,7 +9,7 @@ import protobuf.client.metadata.PBClientMessageType
 import protobuf.client.movement.player_movement.PBPlayerMovement
 import protobuf.client.truco.match_challenge.PBTrucoMatchChallenge
 import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReply
-import protobuf.client.truco.play.PBTrucoPlay
+import protobuf.client.truco.play.{PBTrucoPlay => PBClientTrucoPlay}
 import protobuf.server.chat.message.{PBPlayerMessage => PBServerPlayerMessage}
 import protobuf.server.init.player_init.PBPlayerInitError
 import protobuf.server.init.player_init.PBPlayerInitSuccess
@@ -19,6 +19,7 @@ import protobuf.server.state.game_entity_disconnect.PBGameEntityDisconnect
 import protobuf.server.state.game_entity_state.PBGameEntityState
 import protobuf.server.truco.match_challenge_denied.PBTrucoMatchChallengeDenied
 import protobuf.server.truco.match_challenge_request.PBTrucoMatchChallengeRequest
+import protobuf.server.truco.play.{PBTrucoPlay => PBServerTrucoPlay}
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
 
@@ -35,7 +36,7 @@ object ProtocolMessageMap {
       PBClientMessageType.PBPlayerUpdateEquipment -> PBPlayerUpdateEquipment,
       PBClientMessageType.PBTrucoMatchChallenge -> PBTrucoMatchChallenge,
       PBClientMessageType.PBTrucoMatchChallengeReply -> PBTrucoMatchChallengeReply,
-      PBClientMessageType.PBTrucoPlay -> PBTrucoPlay
+      PBClientMessageType.PBTrucoPlay -> PBClientTrucoPlay
     )
 
   val serverMessageMap: Map[String, PBServerMessageType] =
@@ -46,7 +47,8 @@ object ProtocolMessageMap {
       PBServerPlayerMessage.getClass.toString -> PBServerMessageType.PBPlayerMessage,
       PBPlayerChangeMapReady.getClass.toString -> PBServerMessageType.PBPlayerChangeMapReady,
       PBGameEntityDisconnect.getClass.toString -> PBServerMessageType.PBGameEntityDisconnect,
+      PBTrucoMatchChallengeRequest.getClass.toString -> PBServerMessageType.PBTrucoMatchChallengeRequest,
       PBTrucoMatchChallengeDenied.getClass.toString -> PBServerMessageType.PBTrucoMatchChallengeDenied,
-      PBTrucoMatchChallengeRequest.getClass.toString -> PBServerMessageType.PBTrucoMatchChallengeRequest
+      PBServerTrucoPlay.getClass.toString -> PBServerMessageType.PBTrucoPlay
     )
 }
