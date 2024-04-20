@@ -4,7 +4,7 @@ import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import server.domain.entities.player.Player
-import server.domain.entities.player.command.PlayerCommand._
+import server.domain.entities.player.command.PlayerActionCommand._
 import server.domain.entities.truco.TrucoManager
 import server.domain.structs.PlayerState
 

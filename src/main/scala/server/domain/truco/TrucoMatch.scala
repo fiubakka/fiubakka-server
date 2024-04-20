@@ -39,6 +39,13 @@ class TrucoMatch {
   var canPlayEnvido = true
   var shouts = List.empty: List[EnvidoEnum | TrucoEnum]
 
+  def getLastPlay(): Card | EnvidoEnum | TrucoEnum = {
+    currentPlayer match {
+      case `firstPlayer`  => secondPlayer.getLastAction()
+      case `secondPlayer` => secondPlayer.getLastAction()
+    }
+  }
+
   def play(cardIdx: Int): Unit = {
     if isGameFinished then
       throw new IllegalStateException(
@@ -55,6 +62,7 @@ class TrucoMatch {
       case `secondPlayer` =>
         currentRoundCards.secondPlayerCard = Some(cardPlayed)
     }
+    resetLastPlayerAction()
     currentPlayer = getNextPlayer()
     currentRoundCards match {
       case CardsRound(Some(_), Some(_))
@@ -82,11 +90,9 @@ class TrucoMatch {
         if canPlayEnvido then envidoShout(e)
         else throw new IllegalArgumentException("Cannot shout Envido now")
     }
-    currentPlayer.shout = Some(
-      shout
-    ) // Store the corresponding shout in the player
+    currentPlayer.shout(shout)
+    resetLastPlayerAction()
     currentPlayer = getNextPlayer()
-    currentPlayer.shout = None // Reset other players shout
   }
 
   def startNextGame(): Unit = {
@@ -262,6 +268,13 @@ class TrucoMatch {
     gameWinner match {
       case Some(winner) => winner.points += trucoPoints
       case None         => // Should never happen
+    }
+  }
+
+  private def resetLastPlayerAction(): Unit = {
+    currentPlayer match {
+      case `firstPlayer`  => secondPlayer.resetLastAction()
+      case `secondPlayer` => firstPlayer.resetLastAction()
     }
   }
 }

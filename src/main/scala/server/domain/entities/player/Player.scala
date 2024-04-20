@@ -7,6 +7,7 @@ import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.util.Timeout
 import server.domain.entities.player.behavior.PlayerInitBehavior
 import server.domain.entities.player.command._
+import server.domain.entities.truco.TrucoManager
 import server.domain.structs.DurablePlayerState
 import server.domain.structs.inventory.Equipment
 import server.infra.PlayerPersistor
@@ -18,7 +19,7 @@ import scala.util.Failure
 import scala.util.Success
 
 object Player {
-  export PlayerCommand._
+  export PlayerActionCommand._
   export PlayerEventCommand._
   export PlayerReplyCommand._
 
@@ -26,6 +27,8 @@ object Player {
       handler: ActorRef[PlayerReplyCommand.ReplyCommand],
       equipment: Option[Equipment]
   )
+
+  type Command = ActionCommand | TrucoManager.ReplyCommand
 
   val TypeKey = EntityTypeKey[Command]("Player")
 

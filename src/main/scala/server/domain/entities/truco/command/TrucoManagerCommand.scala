@@ -16,4 +16,5 @@ object TrucoManagerCommand {
   // Match
   final case class MakePlay(playerName: String, playId: Int, play: TrucoPlay)
       extends Command
+  final case class NotifyPlay() extends Command
 }

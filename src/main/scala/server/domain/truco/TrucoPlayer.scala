@@ -9,13 +9,29 @@ class TrucoPlayer(var hand: Hand) {
   var shout =
     None: Option[
       TrucoEnum | EnvidoEnum
-    ] // None if no shout was made in the last turn
+    ] // None if no shout was made in their last turn
+  var cardPlayed =
+    None: Option[Card] // None if no card was played in their last turn
 
   def replaceHand(newHand: Hand): Unit = {
     hand = newHand
   }
 
   def play(cardIdx: Int): Card = {
-    hand.playCardAt(cardIdx)
+    cardPlayed = Some(hand.playCardAt(cardIdx))
+    cardPlayed.get
+  }
+
+  def shout(shout: TrucoEnum | EnvidoEnum): Unit = {
+    this.shout = Some(shout)
+  }
+
+  def getLastAction(): Card | TrucoEnum | EnvidoEnum = {
+    shout.getOrElse(cardPlayed.get)
+  }
+
+  def resetLastAction() = {
+    shout = None
+    cardPlayed = None
   }
 }

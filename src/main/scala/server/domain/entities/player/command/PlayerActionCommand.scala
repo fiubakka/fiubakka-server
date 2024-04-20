@@ -12,10 +12,10 @@ import server.domain.structs.truco.TrucoMatchChallengeReplyEnum
 import server.domain.structs.truco.TrucoPlay
 import server.protocol.event.GameEventConsumer
 
-object PlayerCommand {
-  sealed trait Command extends CborSerializable
+object PlayerActionCommand {
+  sealed trait ActionCommand extends CborSerializable
 
-  final case class Init(initialData: Player.InitData) extends Command
+  final case class Init(initialData: Player.InitData) extends ActionCommand
 
   // We also send to PlayerHandler ref in case the Player switches cluster nodes or dies
   // and starts again. In this case we would be stuck waiting for an Init message from the
@@ -24,50 +24,53 @@ object PlayerCommand {
   // We still keep the Init message to avoid including other init data (ie. the equipment) being included
   // in the Heartbeat message and having a more complex message structure.
   final case class Heartbeat(handler: ActorRef[PlayerReplyCommand.ReplyCommand])
-      extends Command
-  final case class CheckHeartbeat() extends Command
+      extends ActionCommand
+  final case class CheckHeartbeat() extends ActionCommand
 
-  final case class Stop() extends Command
-  final case class StopReady() extends Command
+  final case class Stop() extends ActionCommand
+  final case class StopReady() extends ActionCommand
 
   final case class InitialState(
       initialState: DurablePlayerState
-  ) extends Command
+  ) extends ActionCommand
 
   final case class Move(
       velocity: Velocity,
       position: Position
-  ) extends Command
+  ) extends ActionCommand
 
-  final case class PersistState() extends Command
+  final case class PersistState() extends ActionCommand
 
   final case class AddMessage(
       msg: String
-  ) extends Command
+  ) extends ActionCommand
   final case class UpdateEquipment(
       equipment: Equipment
-  ) extends Command
+  ) extends ActionCommand
   final case class ChangeMap(
       newMapId: Int
-  ) extends Command
+  ) extends ActionCommand
 
   final case class GameEventConsumerCommand(
       command: PlayerEventCommand.EventCommand,
       consumerRef: ActorRef[GameEventConsumer.Command]
-  ) extends Command
+  ) extends ActionCommand
 
   // Truco messages
 
-  final case class BeginTrucoMatch(opponentUsername: String) extends Command
-  final case class AskBeginTrucoMatch(opponentUsername: String) extends Command
+  final case class BeginTrucoMatch(opponentUsername: String)
+      extends ActionCommand
+  final case class AskBeginTrucoMatch(opponentUsername: String)
+      extends ActionCommand
   final case class BeginTrucoMatchDenied(opponentUsername: String)
-      extends Command
+      extends ActionCommand
   final case class ReplyBeginTrucoMatch(
       opponentUsername: String,
       replyStatus: TrucoMatchChallengeReplyEnum
-  ) extends Command
+  ) extends ActionCommand
   final case class SyncTrucoMatchStart(
       trucoManager: ActorRef[TrucoManager.Command]
-  ) extends Command
-  final case class TrucoMatchPlay(playId: Int, play: TrucoPlay) extends Command
+  ) extends ActionCommand
+  final case class TrucoMatchPlay(playId: Int, play: TrucoPlay)
+      extends ActionCommand
 }

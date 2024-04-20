@@ -5,6 +5,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import server.domain.entities.player.Player
 import server.domain.entities.truco.behavior.TrucoManagerInitBehavior
 import server.domain.entities.truco.command.TrucoManagerCommand
+import server.domain.entities.truco.command.TrucoManagerReplyCommand
 import server.domain.structs.truco.TrucoManagerPlayerState
 import server.domain.structs.truco.TrucoManagerState
 import server.domain.truco.TrucoMatch
@@ -12,6 +13,7 @@ import server.sharding.Sharding
 
 object TrucoManager {
   export TrucoManagerCommand._
+  export TrucoManagerReplyCommand._
 
   def apply(
       firstPlayerName: String,

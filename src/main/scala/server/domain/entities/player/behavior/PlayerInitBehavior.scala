@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityRef
 import server.domain.entities.player.Player
-import server.domain.entities.player.command.PlayerCommand._
+import server.domain.entities.player.command.PlayerActionCommand._
 import server.domain.entities.player.command.PlayerReplyCommand._
 import server.domain.entities.player.utils.PlayerUtils
 import server.domain.structs.DurablePlayerState

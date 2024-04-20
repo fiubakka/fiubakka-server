@@ -1,8 +1,5 @@
 package server.domain.truco.cards
 
-import server.domain.truco.cards.CardNumber.CardNumber
-import server.domain.truco.cards.CardSuit.CardSuit
-
 object Card {
   private val CardOrder: List[(CardNumber, Option[CardSuit])] = List(
     (CardNumber.Ace, Some(CardSuit.Swords)),

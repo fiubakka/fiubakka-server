@@ -31,6 +31,21 @@ object TrucoShoutEnum {
       case TrucoNoQuiero  => TrucoEnum.NoQuiero
     }
   }
+
+  def fromShoutPlayEnum(shout: TrucoEnum | EnvidoEnum) = {
+    shout match {
+      case EnvidoEnum.Envido      => Envido
+      case EnvidoEnum.RealEnvido  => RealEnvido
+      case EnvidoEnum.FaltaEnvido => FaltaEnvido
+      case EnvidoEnum.Quiero      => EnvidoQuiero
+      case EnvidoEnum.NoQuiero    => EnvidoNoQuiero
+      case TrucoEnum.Truco        => Truco
+      case TrucoEnum.Retruco      => Retruco
+      case TrucoEnum.Valecuatro   => Valecuatro
+      case TrucoEnum.Quiero       => TrucoQuiero
+      case TrucoEnum.NoQuiero     => TrucoNoQuiero
+    }
+  }
 }
 
 final case class TrucoCardPlay(
