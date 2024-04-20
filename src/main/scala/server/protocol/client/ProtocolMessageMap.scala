@@ -15,10 +15,10 @@ import protobuf.server.init.player_init.PBPlayerInitError
 import protobuf.server.init.player_init.PBPlayerInitSuccess
 import protobuf.server.map.change_map_ready.PBPlayerChangeMapReady
 import protobuf.server.metadata.PBServerMessageType
-import protobuf.server.metadata.PBServerMessageType.PBTrucoMatchChallengeDenied
-import protobuf.server.metadata.PBServerMessageType.PBTrucoMatchChallengeRequest
 import protobuf.server.state.game_entity_disconnect.PBGameEntityDisconnect
 import protobuf.server.state.game_entity_state.PBGameEntityState
+import protobuf.server.truco.match_challenge_denied.PBTrucoMatchChallengeDenied
+import protobuf.server.truco.match_challenge_request.PBTrucoMatchChallengeRequest
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
 
