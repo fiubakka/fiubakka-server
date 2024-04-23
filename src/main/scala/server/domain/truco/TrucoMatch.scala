@@ -47,7 +47,7 @@ class TrucoMatch {
   }
 
   def play(cardIdx: Int): Unit = {
-    if isGameFinished then
+    if isGameOver then
       throw new IllegalStateException(
         "Cannot play card, waiting for next game start."
       )
@@ -74,7 +74,7 @@ class TrucoMatch {
 
   // "Cantar" is a Truco term that means to challenge the opponent to play a higher card.
   def shout(shout: EnvidoEnum | TrucoEnum): Unit = {
-    if isGameFinished then
+    if isGameOver then
       throw new IllegalStateException(
         "Cannot shout, waiting for next game start."
       )
@@ -108,6 +108,19 @@ class TrucoMatch {
     val deck = new Deck()
     firstPlayer.replaceHand(new Hand(deck))
     secondPlayer.replaceHand(new Hand(deck))
+  }
+
+  def isPlayingCardLegalMove: Boolean = {
+    !areShouting && !isGameOver
+  }
+
+  def isGameOver: Boolean = {
+    gameWinner.isDefined
+  }
+
+  def isMatchOver: Boolean = {
+    firstPlayer.points == TrucoMatch.MaxPoints ||
+    secondPlayer.points == TrucoMatch.MaxPoints
   }
 
   private def trucoShout(shout: TrucoEnum): Unit = {
@@ -162,10 +175,6 @@ class TrucoMatch {
     }
   }
 
-  private def isGameFinished: Boolean = {
-    gameWinner.isDefined
-  }
-
   private def startNextRound(
       firstPlayerCard: Card,
       secondPlayerCard: Card
@@ -199,7 +208,7 @@ class TrucoMatch {
 
   private def gameWinner: Option[TrucoPlayer] = {
     // Game ends when the 3 rounds are played or when one of the players
-    // wins 2 rounds.
+    // wins 2 rounds. It can also end if one of the players deny a Truco shout.
     // Positive netScore means the first player won the game (if 3 rounds played).
     // Negative netScore means the second player won the game (if 3 rounds played).
     // Zero netScore means the first player to play the a card in the game

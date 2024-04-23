@@ -55,7 +55,7 @@ object TrucoManagerInitBehavior {
             then {
               timers.cancel("failMatchPlayersSync")
               ctx.log.info("Both players synced, starting Truco match")
-              TrucoManagerRunningBehavior(
+              TrucoManagerPlayAckBehavior(
                 newState
               ) // Setup ready, both players accepted the match
             } else {

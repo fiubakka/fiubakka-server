@@ -10,7 +10,7 @@ class TrucoPlayer(var hand: Hand) {
     None: Option[
       TrucoEnum | EnvidoEnum
     ] // None if no shout was made in their last turn
-  var cardPlayed =
+  private var cardPlayed =
     None: Option[Card] // None if no card was played in their last turn
 
   def replaceHand(newHand: Hand): Unit = {

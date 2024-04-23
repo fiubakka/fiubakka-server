@@ -6,13 +6,15 @@ import server.domain.truco.cards.Card
 final case class PlayState(
     playId: Int,
     playType: PlayType,
+    firstPlayerPoints: TrucoPoints,
+    secondPlayerPoints: TrucoPoints,
+    playerCards: Seq[Card],
+    opponentCardAmount: Int,
     isGameOver: Boolean,
     isMatchOver: Boolean,
     card: Option[Card] = None,
     shout: Option[TrucoShoutEnum] = None,
-    nextPlayInfo: Option[NextPlayInfo] = None,
-    firstPlayerPoints: Option[TrucoPoints] = None,
-    secondPlayerPoints: Option[TrucoPoints] = None
+    nextPlayInfo: Option[NextPlayInfo] = None
 )
 
 enum PlayType {
