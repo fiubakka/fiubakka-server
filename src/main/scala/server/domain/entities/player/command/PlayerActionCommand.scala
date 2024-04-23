@@ -73,4 +73,5 @@ object PlayerActionCommand {
   ) extends ActionCommand
   final case class TrucoMatchPlay(playId: Int, play: TrucoPlay)
       extends ActionCommand
+  final case class TrucoMatchAckPlay(playId: Int) extends ActionCommand
 }

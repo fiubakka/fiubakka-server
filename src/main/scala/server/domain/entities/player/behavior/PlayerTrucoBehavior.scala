@@ -5,7 +5,9 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import server.domain.entities.player.Player
 import server.domain.entities.player.command.PlayerActionCommand._
+import server.domain.entities.player.command.PlayerReplyCommand.NotifyTrucoPlayStateInfo
 import server.domain.entities.truco.TrucoManager
+import server.domain.entities.truco.command.TrucoManagerReplyCommand.PlayStateInfo
 import server.domain.structs.PlayerState
 
 object PlayerTrucoBehavior {
@@ -31,6 +33,20 @@ object PlayerTrucoBehavior {
             playId,
             play
           )
+          Behaviors.same
+        }
+
+        case TrucoMatchAckPlay(playId) => {
+          trucoManager ! TrucoManager.AckPlay(
+            state.dState.playerName,
+            playId
+          )
+          Behaviors.same
+        }
+
+        case PlayStateInfo(playState) => {
+          ctx.log.info(s"Received play state info: $playState")
+          state.tState.handler ! NotifyTrucoPlayStateInfo(playState)
           Behaviors.same
         }
 

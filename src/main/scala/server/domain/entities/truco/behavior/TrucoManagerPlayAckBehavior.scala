@@ -9,9 +9,9 @@ import server.domain.structs.truco.TrucoShoutEnum
 import server.domain.truco.cards.Card
 import server.domain.truco.shouts.EnvidoEnum
 import server.domain.truco.shouts.TrucoEnum
-import server.protocol.truco.NextPlayInfo
-import server.protocol.truco.PlayState
-import server.protocol.truco.PlayType
+import server.protocol.truco.TrucoNextPlayInfo
+import server.protocol.truco.TrucoPlayState
+import server.protocol.truco.TrucoPlayType
 import server.protocol.truco.TrucoPoints
 
 import scala.concurrent.duration._
@@ -76,13 +76,13 @@ object TrucoManagerPlayAckBehavior {
   private def getPlayStateInfoForPlayer(
       playerName: String,
       state: TrucoManagerState
-  ): PlayState = {
+  ): TrucoPlayState = {
     val lastPlay = state.trucoMatch.getLastPlay()
-    PlayState(
+    TrucoPlayState(
       playId = state.playId,
       playType = lastPlay match {
-        case _: Card => PlayType.Card
-        case _       => PlayType.Shout
+        case _: Card => TrucoPlayType.Card
+        case _       => TrucoPlayType.Shout
       }, // TODO this does not make sense if its the first message of each game, as no play has been made yet. Maybe a new play type StartGame?
       playerCards = playerName match {
         case state.firstPlayer.playerName =>
@@ -114,7 +114,7 @@ object TrucoManagerPlayAckBehavior {
         )
       ),
       nextPlayInfo = Some(
-        NextPlayInfo(
+        TrucoNextPlayInfo(
           nextPlayer = getNextPlayerName(state),
           isPlayCardAvailable = state.trucoMatch.isPlayingCardLegalMove,
           availableShouts = Seq(TrucoShoutEnum.Envido) // TODO

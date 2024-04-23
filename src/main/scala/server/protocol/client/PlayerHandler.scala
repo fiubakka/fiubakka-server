@@ -22,10 +22,10 @@ import protobuf.client.inventory.update_equipment.PBPlayerUpdateEquipment
 import protobuf.client.map.change_map.PBPlayerChangeMap
 import protobuf.client.metadata.PBClientMetadata
 import protobuf.client.movement.player_movement.PBPlayerMovement
+import protobuf.client.truco.ack_play.PBTrucoAckPlay
 import protobuf.client.truco.match_challenge.PBTrucoMatchChallenge
 import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReply
 import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReplyEnum
-import protobuf.client.truco.play.PBTrucoPlay
 import protobuf.client.truco.play.PBTrucoPlayType.CARD
 import protobuf.client.truco.play.PBTrucoPlayType.SHOUT
 import protobuf.client.truco.play.PBTrucoShout.ENVIDO
@@ -38,6 +38,7 @@ import protobuf.client.truco.play.PBTrucoShout.TRUCO
 import protobuf.client.truco.play.PBTrucoShout.TRUCO_NO_QUIERO
 import protobuf.client.truco.play.PBTrucoShout.TRUCO_QUIERO
 import protobuf.client.truco.play.PBTrucoShout.VALE_CUATRO
+import protobuf.client.truco.play.{PBTrucoPlay => PBClientTrucoPlay}
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
 import protobuf.server.init.player_init.PBPlayerEquipment
 import protobuf.server.init.player_init.PBPlayerInitError
@@ -55,6 +56,9 @@ import protobuf.server.state.game_entity_state.PBGameEntityState
 import protobuf.server.state.game_entity_state.PBGameEntityVelocity
 import protobuf.server.truco.match_challenge_denied.PBTrucoMatchChallengeDenied
 import protobuf.server.truco.match_challenge_request.PBTrucoMatchChallengeRequest
+import protobuf.server.truco.play.PBTrucoPlayType
+import protobuf.server.truco.play.PBTrucoPoints
+import protobuf.server.truco.play.{PBTrucoPlay => PBServerTrucoPlay}
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import server.domain.entities.player.Player
@@ -72,6 +76,7 @@ import server.domain.structs.truco.TrucoShoutPlay
 import server.infra.repository.PlayerRepository
 import server.protocol.flows.InMessageFlow
 import server.protocol.flows.server.protocol.flows.OutMessageFlow
+import server.protocol.truco.TrucoPlayType
 import server.sharding.Sharding
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -101,6 +106,7 @@ object PlayerHandler {
       status: TrucoMatchChallengeReplyEnum
   ) extends Command
   final case class TrucoMatchPlay(playId: Int, play: TrucoPlay) extends Command
+  final case class TrucoMatchAckPlay(playId: Int) extends Command
 
   def apply(
       connection: Tcp.IncomingConnection
@@ -273,6 +279,11 @@ object PlayerHandler {
           Behaviors.same
         }
 
+        case TrucoMatchAckPlay(playId) => {
+          state.player ! Player.TrucoMatchAckPlay(playId)
+          Behaviors.same
+        }
+
         case Player.NotifyAskBeginTrucoMatch(opponentUsername) => {
           val message = PBTrucoMatchChallengeRequest.of(opponentUsername)
           state.conQueue.offer(message)
@@ -283,6 +294,35 @@ object PlayerHandler {
               opponentUsername
             ) => {
           val message = PBTrucoMatchChallengeDenied.of(opponentUsername)
+          state.conQueue.offer(message)
+          Behaviors.same
+        }
+
+        case Player.NotifyTrucoPlayStateInfo(playState) => {
+          val message = PBServerTrucoPlay(
+            playId = playState.playId,
+            playType = playState.playType match {
+              case TrucoPlayType.Card =>
+                PBTrucoPlayType.CARD
+              case TrucoPlayType.Shout =>
+                PBTrucoPlayType.SHOUT
+            },
+            playerCards = Seq.empty, // TODO use the ones from playSate
+            opponentCardAmount = playState.opponentCardAmount,
+            firstPlayerPoints = PBTrucoPoints.of(
+              playState.firstPlayerPoints.playerName,
+              playState.firstPlayerPoints.points
+            ),
+            secondPlayerPoints = PBTrucoPoints.of(
+              playState.secondPlayerPoints.playerName,
+              playState.secondPlayerPoints.points
+            ),
+            isGameOver = playState.isGameOver,
+            isMatchOver = playState.isMatchOver,
+            card = None, // TODO
+            shout = None, // TODO
+            nextPlayInfo = None // TODO
+          )
           state.conQueue.offer(message)
           Behaviors.same
         }
@@ -450,7 +490,7 @@ object PlayerHandler {
           }
         }
       )
-    case PBTrucoPlay(playId, playType, card, shout, _) =>
+    case PBClientTrucoPlay(playId, playType, card, shout, _) =>
       TrucoMatchPlay(
         playId,
         playType match {
@@ -474,5 +514,6 @@ object PlayerHandler {
             throw new Exception("Invalid TrucoPlayType: " + invalidPlayType)
         }
       )
+    case PBTrucoAckPlay(playId, _) => TrucoMatchAckPlay(playId)
   }
 }
