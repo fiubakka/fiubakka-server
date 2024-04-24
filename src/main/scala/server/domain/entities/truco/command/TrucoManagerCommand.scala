@@ -18,4 +18,5 @@ object TrucoManagerCommand {
       extends Command
   final case class NotifyPlay() extends Command
   final case class AckPlay(playuerName: String, playId: Int) extends Command
+  final case class NotifyAllowPlay() extends Command
 }

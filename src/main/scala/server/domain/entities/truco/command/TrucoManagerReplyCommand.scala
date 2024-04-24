@@ -6,5 +6,7 @@ import server.protocol.truco.TrucoPlayState
 object TrucoManagerReplyCommand {
   sealed trait ReplyCommand extends CborSerializable
 
-  final case class PlayStateInfo(playState: TrucoPlayState) extends ReplyCommand
+  final case class TrucoPlayStateInfo(playState: TrucoPlayState)
+      extends ReplyCommand
+  final case class TrucoAllowPlay(playId: Int) extends ReplyCommand
 }

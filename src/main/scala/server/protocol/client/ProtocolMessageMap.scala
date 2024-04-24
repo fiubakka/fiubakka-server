@@ -18,6 +18,7 @@ import protobuf.server.map.change_map_ready.PBPlayerChangeMapReady
 import protobuf.server.metadata.PBServerMessageType
 import protobuf.server.state.game_entity_disconnect.PBGameEntityDisconnect
 import protobuf.server.state.game_entity_state.PBGameEntityState
+import protobuf.server.truco.allow_play.PBTrucoAllowPlay
 import protobuf.server.truco.match_challenge_denied.PBTrucoMatchChallengeDenied
 import protobuf.server.truco.match_challenge_request.PBTrucoMatchChallengeRequest
 import protobuf.server.truco.play.{PBTrucoPlay => PBServerTrucoPlay}
@@ -51,6 +52,7 @@ object ProtocolMessageMap {
       PBGameEntityDisconnect.getClass.toString -> PBServerMessageType.PBGameEntityDisconnect,
       PBTrucoMatchChallengeRequest.getClass.toString -> PBServerMessageType.PBTrucoMatchChallengeRequest,
       PBTrucoMatchChallengeDenied.getClass.toString -> PBServerMessageType.PBTrucoMatchChallengeDenied,
-      PBServerTrucoPlay.getClass.toString -> PBServerMessageType.PBTrucoPlay
+      PBServerTrucoPlay.getClass.toString -> PBServerMessageType.PBTrucoPlay,
+      PBTrucoAllowPlay.getClass.toString -> PBServerMessageType.PBTrucoAllowPlay
     )
 }

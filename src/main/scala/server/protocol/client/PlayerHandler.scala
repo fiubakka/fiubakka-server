@@ -45,6 +45,7 @@ import protobuf.server.state.game_entity_state.PBGameEntityEquipment
 import protobuf.server.state.game_entity_state.PBGameEntityPosition
 import protobuf.server.state.game_entity_state.PBGameEntityState
 import protobuf.server.state.game_entity_state.PBGameEntityVelocity
+import protobuf.server.truco.allow_play.PBTrucoAllowPlay
 import protobuf.server.truco.match_challenge_denied.PBTrucoMatchChallengeDenied
 import protobuf.server.truco.match_challenge_request.PBTrucoMatchChallengeRequest
 import protobuf.server.truco.play.PBTrucoCard
@@ -383,6 +384,12 @@ object PlayerHandler {
               )
             }
           )
+          state.conQueue.offer(message)
+          Behaviors.same
+        }
+
+        case Player.NotifyTrucoAllowPlay(playId) => {
+          val message = PBTrucoAllowPlay.of(playId)
           state.conQueue.offer(message)
           Behaviors.same
         }

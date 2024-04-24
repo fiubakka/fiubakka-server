@@ -4,28 +4,57 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.scaladsl.Behaviors
 import server.domain.entities.truco.command.TrucoManagerCommand._
+import server.domain.entities.truco.command.TrucoManagerReplyCommand._
 import server.domain.structs.truco.TrucoCardPlay
 import server.domain.structs.truco.TrucoManagerState
 import server.domain.structs.truco.TrucoPlay
 import server.domain.structs.truco.TrucoShoutEnum
 import server.domain.structs.truco.TrucoShoutPlay
 
+import scala.concurrent.duration._
+
 object TrucoManagerRunningBehavior {
   def apply(state: TrucoManagerState): Behavior[Command] = {
-    Behaviors.receive { (ctx, msg) =>
-      msg match {
-        case MakePlay(playerName, playId, play) => {
-          if state.playId >= playId then {
-            Behaviors.same // Ignore old plays
-          } else {
-            ctx.log.info("Player {} made play {}", playerName, play)
-            val newState = handlePlay(ctx, state, play)
-            ctx.self ! NotifyPlay() // Optimization to reduce latency
-            TrucoManagerPlayAckBehavior(newState)
-          }
-        }
+    Behaviors.withTimers { timers =>
+      timers.startTimerWithFixedDelay(
+        "sendAllowPlay",
+        NotifyAllowPlay(),
+        2.seconds
+      )
+      behavior(state)
+    }
+  }
 
-        case _ => Behaviors.same
+  private def behavior(state: TrucoManagerState): Behavior[Command] = {
+    Behaviors.withTimers { timers =>
+      Behaviors.receive { (ctx, msg) =>
+        msg match {
+          case MakePlay(playerName, playId, play) => {
+            if state.playId >= playId then {
+              Behaviors.same // Ignore old plays
+            } else {
+              ctx.log.info("Player {} made play {}", playerName, play)
+              val newState = handlePlay(ctx, state, play)
+              ctx.self ! NotifyPlay() // Optimization to reduce latency
+              timers.cancel("sendAllowPlay")
+              TrucoManagerPlayAckBehavior(newState)
+            }
+          }
+
+          // We keep notify the corresponding player that he is allowed to play
+          // until we receive his play
+          case NotifyAllowPlay() => {
+            state.trucoMatch.currentPlayer match {
+              case state.trucoMatch.firstPlayer =>
+                state.firstPlayer.player ! TrucoAllowPlay(state.playId + 1)
+              case state.trucoMatch.secondPlayer =>
+                state.secondPlayer.player ! TrucoAllowPlay(state.playId + 1)
+            }
+            Behaviors.same
+          }
+
+          case _ => Behaviors.same
+        }
       }
     }
   }

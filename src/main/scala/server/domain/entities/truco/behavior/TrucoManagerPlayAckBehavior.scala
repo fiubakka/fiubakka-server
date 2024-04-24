@@ -49,10 +49,10 @@ object TrucoManagerPlayAckBehavior {
           }
 
           case NotifyPlay() => {
-            state.firstPlayer.player ! PlayStateInfo(
+            state.firstPlayer.player ! TrucoPlayStateInfo(
               getPlayStateInfoForPlayer(state.firstPlayer.playerName, state)
             )
-            state.secondPlayer.player ! PlayStateInfo(
+            state.secondPlayer.player ! TrucoPlayStateInfo(
               getPlayStateInfoForPlayer(state.secondPlayer.playerName, state)
             )
             Behaviors.same
@@ -127,7 +127,8 @@ object TrucoManagerPlayAckBehavior {
         TrucoNextPlayInfo(
           nextPlayer = getNextPlayerName(state),
           isPlayCardAvailable = state.trucoMatch.isPlayingCardLegalMove,
-          availableShouts = Seq(TrucoShoutEnum.Envido) // TODO
+          availableShouts =
+            Seq(TrucoShoutEnum.Envido) // TODO fill with actual values
         )
       )
     )

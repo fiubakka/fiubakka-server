@@ -31,4 +31,7 @@ object PlayerReplyCommand {
   final case class NotifyTrucoPlayStateInfo(
       playState: TrucoPlayState
   ) extends ReplyCommand
+  final case class NotifyTrucoAllowPlay(
+      playId: Int
+  ) extends ReplyCommand
 }
