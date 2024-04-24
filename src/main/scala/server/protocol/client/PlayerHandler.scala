@@ -28,8 +28,8 @@ import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReply
 import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReplyEnum
 import protobuf.client.truco.play.PBTrucoPlayType.CARD
 import protobuf.client.truco.play.PBTrucoPlayType.SHOUT
-import protobuf.client.truco.play.PBTrucoShout
 import protobuf.client.truco.play.{PBTrucoPlay => PBClientTrucoPlay}
+import protobuf.client.truco.play.{PBTrucoShout => PBClientTrucoShout}
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
 import protobuf.server.init.player_init.PBPlayerEquipment
 import protobuf.server.init.player_init.PBPlayerInitError
@@ -47,9 +47,13 @@ import protobuf.server.state.game_entity_state.PBGameEntityState
 import protobuf.server.state.game_entity_state.PBGameEntityVelocity
 import protobuf.server.truco.match_challenge_denied.PBTrucoMatchChallengeDenied
 import protobuf.server.truco.match_challenge_request.PBTrucoMatchChallengeRequest
+import protobuf.server.truco.play.PBTrucoCard
+import protobuf.server.truco.play.PBTrucoCardSuit
+import protobuf.server.truco.play.PBTrucoNextPlay
 import protobuf.server.truco.play.PBTrucoPlayType
 import protobuf.server.truco.play.PBTrucoPoints
 import protobuf.server.truco.play.{PBTrucoPlay => PBServerTrucoPlay}
+import protobuf.server.truco.play.{PBTrucoShout => PBServerTrucoShout}
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import server.domain.entities.player.Player
@@ -64,6 +68,7 @@ import server.domain.structs.truco.TrucoMatchChallengeReplyEnum
 import server.domain.structs.truco.TrucoPlay
 import server.domain.structs.truco.TrucoShoutEnum
 import server.domain.structs.truco.TrucoShoutPlay
+import server.domain.truco.cards.CardSuit
 import server.infra.repository.PlayerRepository
 import server.protocol.flows.InMessageFlow
 import server.protocol.flows.server.protocol.flows.OutMessageFlow
@@ -298,7 +303,18 @@ object PlayerHandler {
               case TrucoPlayType.Shout =>
                 PBTrucoPlayType.SHOUT
             },
-            playerCards = Seq.empty, // TODO
+            playerCards = playState.playerCards.map { c =>
+              PBTrucoCard.of(
+                cardId = c.cardId,
+                suit = c.card.suit match {
+                  case CardSuit.Clubs  => PBTrucoCardSuit.CLUBS
+                  case CardSuit.Swords => PBTrucoCardSuit.SWORDS
+                  case CardSuit.Cups   => PBTrucoCardSuit.CUPS
+                  case CardSuit.Coins  => PBTrucoCardSuit.COINS
+                },
+                number = c.numberToInt()
+              )
+            },
             opponentCardAmount = playState.opponentCardAmount,
             firstPlayerPoints = PBTrucoPoints.of(
               playState.firstPlayerPoints.playerName,
@@ -310,9 +326,64 @@ object PlayerHandler {
             ),
             isGameOver = playState.isGameOver,
             isMatchOver = playState.isMatchOver,
-            card = None, // TODO
-            shout = None, // TODO
-            nextPlayInfo = None // TODO
+            card = playState.card.map { c =>
+              PBTrucoCard.of(
+                cardId = c.cardId, // Not actually used, contains a dummy value
+                suit = c.card.suit match {
+                  case CardSuit.Clubs  => PBTrucoCardSuit.CLUBS
+                  case CardSuit.Swords => PBTrucoCardSuit.SWORDS
+                  case CardSuit.Cups   => PBTrucoCardSuit.CUPS
+                  case CardSuit.Coins  => PBTrucoCardSuit.COINS
+                },
+                number = c.numberToInt()
+              )
+            },
+            shout = playState.shout.map {
+              _ match {
+                case TrucoShoutEnum.Envido     => PBServerTrucoShout.ENVIDO
+                case TrucoShoutEnum.RealEnvido => PBServerTrucoShout.REAL_ENVIDO
+                case TrucoShoutEnum.FaltaEnvido =>
+                  PBServerTrucoShout.FALTA_ENVIDO
+                case TrucoShoutEnum.EnvidoQuiero =>
+                  PBServerTrucoShout.ENVIDO_QUIERO
+                case TrucoShoutEnum.EnvidoNoQuiero =>
+                  PBServerTrucoShout.ENVIDO_NO_QUIERO
+                case TrucoShoutEnum.Truco      => PBServerTrucoShout.TRUCO
+                case TrucoShoutEnum.Retruco    => PBServerTrucoShout.RETRUCO
+                case TrucoShoutEnum.Valecuatro => PBServerTrucoShout.VALE_CUATRO
+                case TrucoShoutEnum.TrucoQuiero =>
+                  PBServerTrucoShout.TRUCO_QUIERO
+                case TrucoShoutEnum.TrucoNoQuiero =>
+                  PBServerTrucoShout.TRUCO_NO_QUIERO
+              }
+            },
+            nextPlayInfo = playState.nextPlayInfo.map { np =>
+              PBTrucoNextPlay.of(
+                nextPlayer = np.nextPlayer,
+                isPlayCardAvailable = np.isPlayCardAvailable,
+                availableShouts = np.availableShouts.map {
+                  _ match {
+                    case TrucoShoutEnum.Envido => PBServerTrucoShout.ENVIDO
+                    case TrucoShoutEnum.RealEnvido =>
+                      PBServerTrucoShout.REAL_ENVIDO
+                    case TrucoShoutEnum.FaltaEnvido =>
+                      PBServerTrucoShout.FALTA_ENVIDO
+                    case TrucoShoutEnum.EnvidoQuiero =>
+                      PBServerTrucoShout.ENVIDO_QUIERO
+                    case TrucoShoutEnum.EnvidoNoQuiero =>
+                      PBServerTrucoShout.ENVIDO_NO_QUIERO
+                    case TrucoShoutEnum.Truco   => PBServerTrucoShout.TRUCO
+                    case TrucoShoutEnum.Retruco => PBServerTrucoShout.RETRUCO
+                    case TrucoShoutEnum.Valecuatro =>
+                      PBServerTrucoShout.VALE_CUATRO
+                    case TrucoShoutEnum.TrucoQuiero =>
+                      PBServerTrucoShout.TRUCO_QUIERO
+                    case TrucoShoutEnum.TrucoNoQuiero =>
+                      PBServerTrucoShout.TRUCO_NO_QUIERO
+                  }
+                }
+              )
+            }
           )
           state.conQueue.offer(message)
           Behaviors.same
@@ -488,17 +559,19 @@ object PlayerHandler {
           case CARD => TrucoCardPlay(card.get)
           case SHOUT =>
             TrucoShoutPlay(shout.get match {
-              case PBTrucoShout.ENVIDO        => TrucoShoutEnum.Envido
-              case PBTrucoShout.REAL_ENVIDO   => TrucoShoutEnum.RealEnvido
-              case PBTrucoShout.FALTA_ENVIDO  => TrucoShoutEnum.FaltaEnvido
-              case PBTrucoShout.ENVIDO_QUIERO => TrucoShoutEnum.EnvidoQuiero
-              case PBTrucoShout.ENVIDO_NO_QUIERO =>
+              case PBClientTrucoShout.ENVIDO       => TrucoShoutEnum.Envido
+              case PBClientTrucoShout.REAL_ENVIDO  => TrucoShoutEnum.RealEnvido
+              case PBClientTrucoShout.FALTA_ENVIDO => TrucoShoutEnum.FaltaEnvido
+              case PBClientTrucoShout.ENVIDO_QUIERO =>
+                TrucoShoutEnum.EnvidoQuiero
+              case PBClientTrucoShout.ENVIDO_NO_QUIERO =>
                 TrucoShoutEnum.EnvidoNoQuiero
-              case PBTrucoShout.TRUCO           => TrucoShoutEnum.Truco
-              case PBTrucoShout.RETRUCO         => TrucoShoutEnum.Retruco
-              case PBTrucoShout.VALE_CUATRO     => TrucoShoutEnum.Valecuatro
-              case PBTrucoShout.TRUCO_QUIERO    => TrucoShoutEnum.TrucoQuiero
-              case PBTrucoShout.TRUCO_NO_QUIERO => TrucoShoutEnum.TrucoNoQuiero
+              case PBClientTrucoShout.TRUCO        => TrucoShoutEnum.Truco
+              case PBClientTrucoShout.RETRUCO      => TrucoShoutEnum.Retruco
+              case PBClientTrucoShout.VALE_CUATRO  => TrucoShoutEnum.Valecuatro
+              case PBClientTrucoShout.TRUCO_QUIERO => TrucoShoutEnum.TrucoQuiero
+              case PBClientTrucoShout.TRUCO_NO_QUIERO =>
+                TrucoShoutEnum.TrucoNoQuiero
               case invalidShout =>
                 throw new Exception("Invalid TrucoShoutEnum: " + invalidShout)
             })

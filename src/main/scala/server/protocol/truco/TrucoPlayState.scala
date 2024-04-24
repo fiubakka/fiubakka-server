@@ -12,7 +12,7 @@ final case class TrucoPlayState(
     opponentCardAmount: Int,
     isGameOver: Boolean,
     isMatchOver: Boolean,
-    card: Option[Card] = None,
+    card: Option[TrucoCard] = None,
     shout: Option[TrucoShoutEnum] = None,
     nextPlayInfo: Option[TrucoNextPlayInfo] = None
 )
@@ -20,7 +20,20 @@ final case class TrucoPlayState(
 final case class TrucoCard(
     cardId: Int,
     card: Card
-)
+) {
+  def numberToInt(): Int = card.number match {
+    case server.domain.truco.cards.CardNumber.Ace    => 1
+    case server.domain.truco.cards.CardNumber.Two    => 2
+    case server.domain.truco.cards.CardNumber.Three  => 3
+    case server.domain.truco.cards.CardNumber.Four   => 4
+    case server.domain.truco.cards.CardNumber.Five   => 5
+    case server.domain.truco.cards.CardNumber.Six    => 6
+    case server.domain.truco.cards.CardNumber.Seven  => 7
+    case server.domain.truco.cards.CardNumber.Ten    => 10
+    case server.domain.truco.cards.CardNumber.Eleven => 11
+    case server.domain.truco.cards.CardNumber.Twelve => 12
+  }
+}
 
 enum TrucoPlayType {
   case Card, Shout

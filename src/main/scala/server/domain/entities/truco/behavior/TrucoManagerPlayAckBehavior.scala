@@ -113,8 +113,9 @@ object TrucoManagerPlayAckBehavior {
       ),
       isGameOver = state.trucoMatch.isGameOver,
       isMatchOver = state.trucoMatch.isMatchOver,
-      card =
-        Option.when(lastPlay.isInstanceOf[Card])(lastPlay.asInstanceOf[Card]),
+      card = Option.when(lastPlay.isInstanceOf[Card])(
+        TrucoCard(-1, lastPlay.asInstanceOf[Card])
+      ), // Card id is not actually used, so fill it with dummy value
       shout = Option.when(!lastPlay.isInstanceOf[Card])(
         TrucoShoutEnum.fromShoutPlayEnum(
           lastPlay.asInstanceOf[EnvidoEnum | TrucoEnum]
