@@ -49,12 +49,16 @@ object TrucoManagerPlayAckBehavior {
           }
 
           case NotifyPlay() => {
-            state.firstPlayer.player ! TrucoPlayStateInfo(
-              getPlayStateInfoForPlayer(state.firstPlayer.playerName, state)
-            )
-            state.secondPlayer.player ! TrucoPlayStateInfo(
-              getPlayStateInfoForPlayer(state.secondPlayer.playerName, state)
-            )
+            if !firstPlayerAck then {
+              state.firstPlayer.player ! TrucoPlayStateInfo(
+                getPlayStateInfoForPlayer(state.firstPlayer.playerName, state)
+              )
+            }
+            if !secondPlayerAck then {
+              state.secondPlayer.player ! TrucoPlayStateInfo(
+                getPlayStateInfoForPlayer(state.secondPlayer.playerName, state)
+              )
+            }
             Behaviors.same
           }
 

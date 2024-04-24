@@ -8,6 +8,7 @@ import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 import server.protocol.event.GameEventConsumer
 import server.protocol.event.GameEventProducer
+import server.utils.ActorMetrics
 
 import java.time.LocalDateTime
 
@@ -23,7 +24,8 @@ final case class TransientPlayerState(
     eventProducer: ActorRef[GameEventProducer.Command],
     eventConsumer: ActorRef[GameEventConsumer.Command],
     lastHeartbeatTime: LocalDateTime,
-    velocity: Velocity
+    velocity: Velocity,
+    metrics: ActorMetrics
 )
 
 final case class PlayerState(

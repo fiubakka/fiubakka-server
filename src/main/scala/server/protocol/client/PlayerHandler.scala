@@ -419,7 +419,8 @@ object PlayerHandler {
                 newEntityState.equipment.facialHair,
                 newEntityState.equipment.body,
                 newEntityState.equipment.outfit
-              )
+              ),
+              metrics = None // TODO send actual metrics
             )
           state.conQueue.offer(message)
           Behaviors.same

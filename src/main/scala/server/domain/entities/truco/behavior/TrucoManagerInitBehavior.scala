@@ -21,6 +21,12 @@ object TrucoManagerInitBehavior {
         FailMatchPlayersSync(),
         10.seconds
       ) // At 10 seconds, stop the Truco match if players don't sync
+      behavior(state)
+    }
+  }
+
+  private def behavior(state: TrucoManagerState): Behavior[Command] = {
+    Behaviors.withTimers { timers =>
       Behaviors.receive { (ctx, msg) =>
         msg match {
           case AskPlayersToStartMatch() => {

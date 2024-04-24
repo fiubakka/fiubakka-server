@@ -13,6 +13,7 @@ import server.domain.structs.PlayerState
 import server.domain.structs.TransientPlayerState
 import server.domain.structs.movement.Velocity
 import server.infra.PlayerPersistor
+import server.utils.ActorMetrics
 
 import java.time.LocalDateTime
 
@@ -116,7 +117,8 @@ object PlayerInitBehavior {
           eventProducer,
           eventConsumer,
           LocalDateTime.now(),
-          Velocity(0, 0)
+          Velocity(0, 0),
+          ActorMetrics()
         )
       ),
       persistor

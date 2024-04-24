@@ -25,6 +25,8 @@ object PlayerRunningBehavior {
   ): Behavior[Player.Command] = {
     Behaviors.receive { (ctx, msg) =>
       Behaviors.withTimers { timers =>
+        state.tState.metrics.incrementMessageCount()
+
         msg match {
           case Move(newVelocity, newPosition) => {
             val newState = state.copy(
