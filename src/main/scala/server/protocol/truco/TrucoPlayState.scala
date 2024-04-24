@@ -8,13 +8,18 @@ final case class TrucoPlayState(
     playType: TrucoPlayType,
     firstPlayerPoints: TrucoPoints,
     secondPlayerPoints: TrucoPoints,
-    playerCards: Seq[Card],
+    playerCards: Seq[TrucoCard],
     opponentCardAmount: Int,
     isGameOver: Boolean,
     isMatchOver: Boolean,
     card: Option[Card] = None,
     shout: Option[TrucoShoutEnum] = None,
     nextPlayInfo: Option[TrucoNextPlayInfo] = None
+)
+
+final case class TrucoCard(
+    cardId: Int,
+    card: Card
 )
 
 enum TrucoPlayType {

@@ -9,6 +9,7 @@ import server.domain.structs.truco.TrucoShoutEnum
 import server.domain.truco.cards.Card
 import server.domain.truco.shouts.EnvidoEnum
 import server.domain.truco.shouts.TrucoEnum
+import server.protocol.truco.TrucoCard
 import server.protocol.truco.TrucoNextPlayInfo
 import server.protocol.truco.TrucoPlayState
 import server.protocol.truco.TrucoPlayType
@@ -86,9 +87,15 @@ object TrucoManagerPlayAckBehavior {
       }, // TODO this does not make sense if its the first message of each game, as no play has been made yet. Maybe a new play type StartGame?
       playerCards = playerName match {
         case state.firstPlayer.playerName =>
-          state.trucoMatch.firstPlayer.hand.cards
+          state.trucoMatch.firstPlayer.hand.cards.zipWithIndex.map {
+            (card, idx) =>
+              TrucoCard(idx, card)
+          }
         case state.secondPlayer.playerName =>
-          state.trucoMatch.secondPlayer.hand.cards
+          state.trucoMatch.secondPlayer.hand.cards.zipWithIndex.map {
+            (card, idx) =>
+              TrucoCard(idx, card)
+          }
       },
       opponentCardAmount = playerName match {
         case state.firstPlayer.playerName =>

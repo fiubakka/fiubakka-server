@@ -28,16 +28,7 @@ import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReply
 import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReplyEnum
 import protobuf.client.truco.play.PBTrucoPlayType.CARD
 import protobuf.client.truco.play.PBTrucoPlayType.SHOUT
-import protobuf.client.truco.play.PBTrucoShout.ENVIDO
-import protobuf.client.truco.play.PBTrucoShout.ENVIDO_NO_QUIERO
-import protobuf.client.truco.play.PBTrucoShout.ENVIDO_QUIERO
-import protobuf.client.truco.play.PBTrucoShout.FALTA_ENVIDO
-import protobuf.client.truco.play.PBTrucoShout.REAL_ENVIDO
-import protobuf.client.truco.play.PBTrucoShout.RETRUCO
-import protobuf.client.truco.play.PBTrucoShout.TRUCO
-import protobuf.client.truco.play.PBTrucoShout.TRUCO_NO_QUIERO
-import protobuf.client.truco.play.PBTrucoShout.TRUCO_QUIERO
-import protobuf.client.truco.play.PBTrucoShout.VALE_CUATRO
+import protobuf.client.truco.play.PBTrucoShout
 import protobuf.client.truco.play.{PBTrucoPlay => PBClientTrucoPlay}
 import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
 import protobuf.server.init.player_init.PBPlayerEquipment
@@ -307,7 +298,7 @@ object PlayerHandler {
               case TrucoPlayType.Shout =>
                 PBTrucoPlayType.SHOUT
             },
-            playerCards = Seq.empty, // TODO use the ones from playSate
+            playerCards = Seq.empty, // TODO
             opponentCardAmount = playState.opponentCardAmount,
             firstPlayerPoints = PBTrucoPoints.of(
               playState.firstPlayerPoints.playerName,
@@ -497,16 +488,17 @@ object PlayerHandler {
           case CARD => TrucoCardPlay(card.get)
           case SHOUT =>
             TrucoShoutPlay(shout.get match {
-              case ENVIDO           => TrucoShoutEnum.Envido
-              case REAL_ENVIDO      => TrucoShoutEnum.RealEnvido
-              case FALTA_ENVIDO     => TrucoShoutEnum.FaltaEnvido
-              case ENVIDO_QUIERO    => TrucoShoutEnum.EnvidoQuiero
-              case ENVIDO_NO_QUIERO => TrucoShoutEnum.EnvidoNoQuiero
-              case TRUCO            => TrucoShoutEnum.Truco
-              case RETRUCO          => TrucoShoutEnum.Retruco
-              case VALE_CUATRO      => TrucoShoutEnum.Valecuatro
-              case TRUCO_QUIERO     => TrucoShoutEnum.TrucoQuiero
-              case TRUCO_NO_QUIERO  => TrucoShoutEnum.TrucoNoQuiero
+              case PBTrucoShout.ENVIDO        => TrucoShoutEnum.Envido
+              case PBTrucoShout.REAL_ENVIDO   => TrucoShoutEnum.RealEnvido
+              case PBTrucoShout.FALTA_ENVIDO  => TrucoShoutEnum.FaltaEnvido
+              case PBTrucoShout.ENVIDO_QUIERO => TrucoShoutEnum.EnvidoQuiero
+              case PBTrucoShout.ENVIDO_NO_QUIERO =>
+                TrucoShoutEnum.EnvidoNoQuiero
+              case PBTrucoShout.TRUCO           => TrucoShoutEnum.Truco
+              case PBTrucoShout.RETRUCO         => TrucoShoutEnum.Retruco
+              case PBTrucoShout.VALE_CUATRO     => TrucoShoutEnum.Valecuatro
+              case PBTrucoShout.TRUCO_QUIERO    => TrucoShoutEnum.TrucoQuiero
+              case PBTrucoShout.TRUCO_NO_QUIERO => TrucoShoutEnum.TrucoNoQuiero
               case invalidShout =>
                 throw new Exception("Invalid TrucoShoutEnum: " + invalidShout)
             })
