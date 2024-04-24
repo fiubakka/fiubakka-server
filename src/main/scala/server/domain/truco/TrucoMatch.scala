@@ -39,10 +39,10 @@ class TrucoMatch {
   var canPlayEnvido = true
   var shouts = List.empty: List[EnvidoEnum | TrucoEnum]
 
-  def getLastPlay(): Card | EnvidoEnum | TrucoEnum = {
+  def lastPlay: Option[Card | EnvidoEnum | TrucoEnum] = {
     currentPlayer match {
-      case `firstPlayer`  => secondPlayer.getLastAction()
-      case `secondPlayer` => secondPlayer.getLastAction()
+      case `firstPlayer`  => secondPlayer.lastAction
+      case `secondPlayer` => secondPlayer.lastAction
     }
   }
 

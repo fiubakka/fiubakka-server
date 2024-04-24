@@ -302,6 +302,8 @@ object PlayerHandler {
                 PBTrucoPlayType.CARD
               case TrucoPlayType.Shout =>
                 PBTrucoPlayType.SHOUT
+              case TrucoPlayType.Update =>
+                PBTrucoPlayType.UPDATE
             },
             playerCards = playState.playerCards.map { c =>
               PBTrucoCard.of(
@@ -339,48 +341,44 @@ object PlayerHandler {
               )
             },
             shout = playState.shout.map {
-              _ match {
-                case TrucoShoutEnum.Envido     => PBServerTrucoShout.ENVIDO
-                case TrucoShoutEnum.RealEnvido => PBServerTrucoShout.REAL_ENVIDO
-                case TrucoShoutEnum.FaltaEnvido =>
-                  PBServerTrucoShout.FALTA_ENVIDO
-                case TrucoShoutEnum.EnvidoQuiero =>
-                  PBServerTrucoShout.ENVIDO_QUIERO
-                case TrucoShoutEnum.EnvidoNoQuiero =>
-                  PBServerTrucoShout.ENVIDO_NO_QUIERO
-                case TrucoShoutEnum.Truco      => PBServerTrucoShout.TRUCO
-                case TrucoShoutEnum.Retruco    => PBServerTrucoShout.RETRUCO
-                case TrucoShoutEnum.Valecuatro => PBServerTrucoShout.VALE_CUATRO
-                case TrucoShoutEnum.TrucoQuiero =>
-                  PBServerTrucoShout.TRUCO_QUIERO
-                case TrucoShoutEnum.TrucoNoQuiero =>
-                  PBServerTrucoShout.TRUCO_NO_QUIERO
-              }
+              case TrucoShoutEnum.Envido     => PBServerTrucoShout.ENVIDO
+              case TrucoShoutEnum.RealEnvido => PBServerTrucoShout.REAL_ENVIDO
+              case TrucoShoutEnum.FaltaEnvido =>
+                PBServerTrucoShout.FALTA_ENVIDO
+              case TrucoShoutEnum.EnvidoQuiero =>
+                PBServerTrucoShout.ENVIDO_QUIERO
+              case TrucoShoutEnum.EnvidoNoQuiero =>
+                PBServerTrucoShout.ENVIDO_NO_QUIERO
+              case TrucoShoutEnum.Truco      => PBServerTrucoShout.TRUCO
+              case TrucoShoutEnum.Retruco    => PBServerTrucoShout.RETRUCO
+              case TrucoShoutEnum.Valecuatro => PBServerTrucoShout.VALE_CUATRO
+              case TrucoShoutEnum.TrucoQuiero =>
+                PBServerTrucoShout.TRUCO_QUIERO
+              case TrucoShoutEnum.TrucoNoQuiero =>
+                PBServerTrucoShout.TRUCO_NO_QUIERO
             },
             nextPlayInfo = playState.nextPlayInfo.map { np =>
               PBTrucoNextPlay.of(
                 nextPlayer = np.nextPlayer,
                 isPlayCardAvailable = np.isPlayCardAvailable,
                 availableShouts = np.availableShouts.map {
-                  _ match {
-                    case TrucoShoutEnum.Envido => PBServerTrucoShout.ENVIDO
-                    case TrucoShoutEnum.RealEnvido =>
-                      PBServerTrucoShout.REAL_ENVIDO
-                    case TrucoShoutEnum.FaltaEnvido =>
-                      PBServerTrucoShout.FALTA_ENVIDO
-                    case TrucoShoutEnum.EnvidoQuiero =>
-                      PBServerTrucoShout.ENVIDO_QUIERO
-                    case TrucoShoutEnum.EnvidoNoQuiero =>
-                      PBServerTrucoShout.ENVIDO_NO_QUIERO
-                    case TrucoShoutEnum.Truco   => PBServerTrucoShout.TRUCO
-                    case TrucoShoutEnum.Retruco => PBServerTrucoShout.RETRUCO
-                    case TrucoShoutEnum.Valecuatro =>
-                      PBServerTrucoShout.VALE_CUATRO
-                    case TrucoShoutEnum.TrucoQuiero =>
-                      PBServerTrucoShout.TRUCO_QUIERO
-                    case TrucoShoutEnum.TrucoNoQuiero =>
-                      PBServerTrucoShout.TRUCO_NO_QUIERO
-                  }
+                  case TrucoShoutEnum.Envido => PBServerTrucoShout.ENVIDO
+                  case TrucoShoutEnum.RealEnvido =>
+                    PBServerTrucoShout.REAL_ENVIDO
+                  case TrucoShoutEnum.FaltaEnvido =>
+                    PBServerTrucoShout.FALTA_ENVIDO
+                  case TrucoShoutEnum.EnvidoQuiero =>
+                    PBServerTrucoShout.ENVIDO_QUIERO
+                  case TrucoShoutEnum.EnvidoNoQuiero =>
+                    PBServerTrucoShout.ENVIDO_NO_QUIERO
+                  case TrucoShoutEnum.Truco   => PBServerTrucoShout.TRUCO
+                  case TrucoShoutEnum.Retruco => PBServerTrucoShout.RETRUCO
+                  case TrucoShoutEnum.Valecuatro =>
+                    PBServerTrucoShout.VALE_CUATRO
+                  case TrucoShoutEnum.TrucoQuiero =>
+                    PBServerTrucoShout.TRUCO_QUIERO
+                  case TrucoShoutEnum.TrucoNoQuiero =>
+                    PBServerTrucoShout.TRUCO_NO_QUIERO
                 }
               )
             }

@@ -26,8 +26,12 @@ class TrucoPlayer(var hand: Hand) {
     this.shout = Some(shout)
   }
 
-  def getLastAction(): Card | TrucoEnum | EnvidoEnum = {
-    shout.getOrElse(cardPlayed.get)
+  def lastAction: Option[Card | TrucoEnum | EnvidoEnum] = {
+    if (shout.isEmpty && cardPlayed.isEmpty) then {
+      None
+    } else {
+      Some(shout.getOrElse(cardPlayed.get))
+    }
   }
 
   def resetLastAction() = {

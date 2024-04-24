@@ -78,13 +78,14 @@ object TrucoManagerPlayAckBehavior {
       playerName: String,
       state: TrucoManagerState
   ): TrucoPlayState = {
-    val lastPlay = state.trucoMatch.getLastPlay()
+    val lastPlay = state.trucoMatch.lastPlay
     TrucoPlayState(
       playId = state.playId,
       playType = lastPlay match {
-        case _: Card => TrucoPlayType.Card
-        case _       => TrucoPlayType.Shout
-      }, // TODO this does not make sense if its the first message of each game, as no play has been made yet. Maybe a new play type StartGame?
+        case None           => TrucoPlayType.Update
+        case Some(lp: Card) => TrucoPlayType.Card
+        case _              => TrucoPlayType.Shout
+      },
       playerCards = playerName match {
         case state.firstPlayer.playerName =>
           state.trucoMatch.firstPlayer.hand.cards.zipWithIndex.map {
@@ -113,14 +114,15 @@ object TrucoManagerPlayAckBehavior {
       ),
       isGameOver = state.trucoMatch.isGameOver,
       isMatchOver = state.trucoMatch.isMatchOver,
-      card = Option.when(lastPlay.isInstanceOf[Card])(
-        TrucoCard(-1, lastPlay.asInstanceOf[Card])
-      ), // Card id is not actually used, so fill it with dummy value
-      shout = Option.when(!lastPlay.isInstanceOf[Card])(
-        TrucoShoutEnum.fromShoutPlayEnum(
-          lastPlay.asInstanceOf[EnvidoEnum | TrucoEnum]
-        )
-      ),
+      card = lastPlay match {
+        case Some(c: Card) => Some(TrucoCard(-1, c))
+        case _             => None
+      }, // Card id is not actually used, so fill it with dummy value
+      shout = lastPlay match {
+        case Some(s: TrucoEnum)  => Some(TrucoShoutEnum.fromShoutPlayEnum(s))
+        case Some(s: EnvidoEnum) => Some(TrucoShoutEnum.fromShoutPlayEnum(s))
+        case _                   => None
+      },
       nextPlayInfo = Some(
         TrucoNextPlayInfo(
           nextPlayer = getNextPlayerName(state),

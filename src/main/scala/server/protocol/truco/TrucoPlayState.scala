@@ -36,7 +36,7 @@ final case class TrucoCard(
 }
 
 enum TrucoPlayType {
-  case Card, Shout
+  case Card, Shout, Update
 }
 
 final case class TrucoNextPlayInfo(
