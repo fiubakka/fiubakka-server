@@ -35,16 +35,22 @@ object TrucoManagerPlayAckBehavior {
         msg match {
           case AckPlay(playerName, playId) if playId == state.playId => {
             ctx.log.info("Player {} acknowledged play {}", playerName, playId)
-            if firstPlayerAck && secondPlayerAck then {
+            val firstPlayerAckPlay =
+              if playerName == state.firstPlayer.playerName then true
+              else firstPlayerAck
+            val secondPlayerAckPlay =
+              if playerName == state.secondPlayer.playerName then true
+              else secondPlayerAck
+            if firstPlayerAckPlay && secondPlayerAckPlay then {
               ctx.log.info("Both player acknowledged play {}", playId)
               timers.cancel("sendMatchState")
               behaviorAfterAck(state)
             } else
               playerName match {
                 case state.firstPlayer.playerName =>
-                  behavior(state, firstPlayerAck = true, secondPlayerAck)
+                  behavior(state, firstPlayerAckPlay, secondPlayerAckPlay)
                 case state.secondPlayer.playerName =>
-                  behavior(state, firstPlayerAck, secondPlayerAck = true)
+                  behavior(state, firstPlayerAck, secondPlayerAckPlay)
               }
           }
 
