@@ -42,7 +42,7 @@ class TrucoMatch {
   def lastPlay: Option[Card | EnvidoEnum | TrucoEnum] = {
     currentPlayer match {
       case `firstPlayer`  => secondPlayer.lastAction
-      case `secondPlayer` => secondPlayer.lastAction
+      case `secondPlayer` => firstPlayer.lastAction
     }
   }
 
