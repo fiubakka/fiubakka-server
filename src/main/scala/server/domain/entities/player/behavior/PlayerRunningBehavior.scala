@@ -20,8 +20,7 @@ import scala.concurrent.duration._
 
 object PlayerRunningBehavior {
   def apply(
-      state: PlayerState,
-      persistor: EntityRef[PlayerPersistor.Command]
+      state: PlayerState
   ): Behavior[Player.Command] = {
     Behaviors.receive { (ctx, msg) =>
       Behaviors.withTimers { timers =>
@@ -40,12 +39,12 @@ object PlayerRunningBehavior {
             state.tState.eventProducer ! GameEventProducer.PlayerStateUpdate(
               newState
             )
-            apply(newState, persistor)
+            apply(newState)
           }
 
           case PersistState() => {
             ctx.log.debug(s"Persisting current state: ${state.dState}")
-            persistor ! PlayerPersistor.Persist(state.dState)
+            state.tState.persistor ! PlayerPersistor.Persist(state.dState)
             Behaviors.same
           }
 
@@ -90,12 +89,11 @@ object PlayerRunningBehavior {
                 )
               )
 
-              persistor ! PlayerPersistor.Persist(newState.dState)
+              state.tState.persistor ! PlayerPersistor.Persist(newState.dState)
               state.tState.handler ! ChangeMapReady(newMapId)
 
               apply(
-                newState,
-                persistor
+                newState
               )
             }
           }
@@ -106,18 +104,18 @@ object PlayerRunningBehavior {
                 equipment = equipment
               )
             )
-            persistor ! PlayerPersistor.Persist(newState.dState)
+            state.tState.persistor ! PlayerPersistor.Persist(newState.dState)
             state.tState.eventProducer ! GameEventProducer.PlayerStateUpdate(
               newState
             )
-            apply(newState, persistor)
+            apply(newState)
           }
 
           case Stop() => {
             ctx.log.info(s"Stopping player ${ctx.self.path.name}")
             timers.cancelAll()
             state.tState.eventProducer ! GameEventProducer.PlayerDisconnect()
-            persistor ! PlayerPersistor.Persist(state.dState)
+            state.tState.persistor ! PlayerPersistor.Persist(state.dState)
             timers.startSingleTimer(StopReady(), 2.seconds)
             PlayerStoppingBehavior()
           }
@@ -132,8 +130,7 @@ object PlayerRunningBehavior {
                     LocalDateTime.now(), // Just in case optimization
                   handler = newHandler
                 )
-              ),
-              persistor
+              )
             )
           }
 
@@ -181,38 +178,8 @@ object PlayerRunningBehavior {
             PlayerTrucoBehavior(state, trucoManager)
           }
 
-          // We don't care about the PlayerHandler here, it should not change.
-          case Heartbeat(_) => {
-            apply(
-              state.copy(tState =
-                state.tState.copy(
-                  lastHeartbeatTime = LocalDateTime.now()
-                )
-              ),
-              persistor
-            )
-          }
-
-          case CheckHeartbeat() => {
-            val lastHeartbeatTime = state.tState.lastHeartbeatTime
-            val heartStopped =
-              LocalDateTime.now().isAfter(lastHeartbeatTime.plusSeconds(10))
-            heartStopped match {
-              case true =>
-                ctx.log.warn(
-                  s"Player ${ctx.self.path.name} has not sent a heartbeat in the last 10 seconds, disconnecting"
-                )
-                state.tState.eventProducer ! GameEventProducer
-                  .PlayerDisconnect()
-                state.tState.handler ! ReplyStop() // Player handler it's most likely dead but just in case
-                Behaviors.stopped
-              case false =>
-                state.tState.eventProducer ! GameEventProducer
-                  .PlayerStateUpdate(
-                    state
-                  )
-                Behaviors.same
-            }
+          case heartMessage @ (Heartbeat(_) | CheckHeartbeat()) => {
+            PlayerUtils.handleHeartbeatMessage(ctx, heartMessage, state, apply)
           }
 
           case _ => {

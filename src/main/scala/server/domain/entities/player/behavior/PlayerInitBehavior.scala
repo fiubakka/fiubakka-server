@@ -116,12 +116,12 @@ object PlayerInitBehavior {
           handler,
           eventProducer,
           eventConsumer,
+          persistor,
           LocalDateTime.now(),
           Velocity(0, 0),
           ActorMetrics()
         )
-      ),
-      persistor
+      )
     )
   }
 }

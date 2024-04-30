@@ -6,6 +6,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import server.domain.entities.player.Player
 import server.domain.entities.player.command.PlayerActionCommand._
 import server.domain.entities.player.command.PlayerReplyCommand._
+import server.domain.entities.player.utils.PlayerUtils
 import server.domain.entities.truco.TrucoManager
 import server.domain.entities.truco.command.TrucoManagerReplyCommand._
 import server.domain.structs.PlayerState
@@ -54,6 +55,15 @@ object PlayerTrucoBehavior {
           ctx.log.info(s"Received truco allowed play: $playId")
           state.tState.handler ! NotifyTrucoAllowPlay(playId)
           Behaviors.same
+        }
+
+        case heartMessage @ (Heartbeat(_) | CheckHeartbeat()) => {
+          PlayerUtils.handleHeartbeatMessage(
+            ctx,
+            heartMessage,
+            state,
+            (newState) => apply(newState, trucoManager)
+          )
         }
 
         case _ => Behaviors.same
