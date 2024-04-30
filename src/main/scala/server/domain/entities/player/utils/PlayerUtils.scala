@@ -41,7 +41,8 @@ object PlayerUtils {
       ctx: ActorContext[Command],
       msg: Heartbeat | CheckHeartbeat,
       state: PlayerState,
-      updateBehaviorFunc: (state: PlayerState) => Behavior[Command]
+      updateBehaviorFunc: (state: PlayerState) => Behavior[Command],
+      notifyStateToProducer: Boolean = true
   ): Behavior[Command] = {
     msg match {
       // We don't care about the PlayerHandler here, it should not change.
@@ -69,10 +70,12 @@ object PlayerUtils {
             state.tState.handler ! ReplyStop() // Player handler it's most likely dead but just in case
             Behaviors.stopped
           case false =>
-            state.tState.eventProducer ! GameEventProducer
-              .PlayerStateUpdate(
-                state
-              )
+            if notifyStateToProducer then {
+              state.tState.eventProducer ! GameEventProducer
+                .PlayerStateUpdate(
+                  state
+                )
+            }
             Behaviors.same
         }
       }

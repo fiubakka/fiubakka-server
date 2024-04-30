@@ -175,6 +175,8 @@ object PlayerRunningBehavior {
             trucoManager ! TrucoManager.PlayerSyncedTrucoMatchStart(
               state.dState.playerName
             )
+            state.tState.eventProducer ! GameEventProducer
+              .PlayerDisconnect() // Removes player from map
             PlayerTrucoBehavior(state, trucoManager)
           }
 

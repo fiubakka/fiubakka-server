@@ -62,7 +62,8 @@ object PlayerTrucoBehavior {
             ctx,
             heartMessage,
             state,
-            (newState) => apply(newState, trucoManager)
+            (newState) => apply(newState, trucoManager),
+            notifyStateToProducer = false
           )
         }
 

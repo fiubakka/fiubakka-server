@@ -28,6 +28,7 @@ object GameEventProducer {
   sealed trait Command
   final case class PlayerStateUpdate(playerState: PlayerState) extends Command
   final case class AddMessage(msg: String) extends Command
+  // This is actually also used anytime the Player should disappear from the map (ie. when starting a Truco match)
   final case class PlayerDisconnect() extends Command
 
   def apply(playerId: String, partition: Int): Behavior[Command] = {
