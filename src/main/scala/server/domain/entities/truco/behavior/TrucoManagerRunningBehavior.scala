@@ -31,6 +31,11 @@ object TrucoManagerRunningBehavior {
         msg match {
           case MakePlay(playerName, playId, play) => {
             if state.playId >= playId then {
+              ctx.log.info(
+                "Ignoring old play with playId {} from player {}",
+                playId,
+                playerName
+              )
               Behaviors.same // Ignore old plays
             } else {
               ctx.log.info("Player {} made play {}", playerName, play)

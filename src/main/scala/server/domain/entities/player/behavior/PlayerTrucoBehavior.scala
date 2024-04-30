@@ -52,7 +52,6 @@ object PlayerTrucoBehavior {
         }
 
         case TrucoAllowPlay(playId) => {
-          ctx.log.info(s"Received truco allowed play: $playId")
           state.tState.handler ! NotifyTrucoAllowPlay(playId)
           Behaviors.same
         }

@@ -42,7 +42,7 @@ object TrucoManagerPlayAckBehavior {
               if playerName == state.secondPlayer.playerName then true
               else secondPlayerAck
             if firstPlayerAckPlay && secondPlayerAckPlay then {
-              ctx.log.info("Both player acknowledged play {}", playId)
+              ctx.log.info("Both players acknowledged play {}", playId)
               timers.cancel("sendMatchState")
               behaviorAfterAck(state)
             } else
@@ -100,13 +100,19 @@ object TrucoManagerPlayAckBehavior {
         case state.firstPlayer.playerName =>
           state.trucoMatch.firstPlayer.hand.cards.zipWithIndex.map {
             (card, idx) =>
-              TrucoCard(idx, card)
-          }
+              card match {
+                case Some(c) => Some(TrucoCard(idx, c))
+                case None    => None
+              }
+          }.flatten
         case state.secondPlayer.playerName =>
           state.trucoMatch.secondPlayer.hand.cards.zipWithIndex.map {
             (card, idx) =>
-              TrucoCard(idx, card)
-          }
+              card match {
+                case Some(c) => Some(TrucoCard(idx, c))
+                case None    => None
+              }
+          }.flatten
       },
       opponentCardAmount = playerName match {
         case state.firstPlayer.playerName =>

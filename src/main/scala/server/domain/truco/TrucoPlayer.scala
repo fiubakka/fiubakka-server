@@ -18,7 +18,7 @@ class TrucoPlayer(var hand: Hand) {
   }
 
   def isValidCard(cardId: Int): Boolean = {
-    cardId >= 0 && cardId < hand.cards.length
+    cardId >= 0 && cardId < hand.cards.length && hand.cards(cardId).isDefined
   }
 
   def play(cardIdx: Int): Card = {

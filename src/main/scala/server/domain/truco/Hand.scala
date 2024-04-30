@@ -8,11 +8,12 @@ object Hand {
 }
 
 class Hand(deck: Deck) {
-  var cards: List[Card] = deck.take(Hand.InitialCardAmount)
+  var cards: List[Option[Card]] =
+    deck.take(Hand.InitialCardAmount).map { c => Some(c) }
 
   def playCardAt(idx: Int): Card = {
     val card = cards(idx)
-    cards = cards.patch(idx, Nil, 1)
-    card
+    cards = cards.patch(idx, List(None), 1)
+    card.get
   }
 }

@@ -40,10 +40,10 @@ class TrucoMatch {
   var shouts = List.empty: List[EnvidoEnum | TrucoEnum]
 
   def lastPlay: Option[Card | EnvidoEnum | TrucoEnum] = {
-    currentPlayer match {
-      case `firstPlayer`  => secondPlayer.lastAction
-      case `secondPlayer` => firstPlayer.lastAction
-    }
+    // Only one player at a time should have a lastAction defined
+    if firstPlayer.lastAction.isDefined then firstPlayer.lastAction
+    else if secondPlayer.lastAction.isDefined then secondPlayer.lastAction
+    else None
   }
 
   def play(cardId: Int): Unit = {
@@ -107,6 +107,8 @@ class TrucoMatch {
     cardsPlayed = List.empty
     startGamePlayer = getNextStartGamePlayer()
     currentPlayer = startGamePlayer
+    firstPlayer.resetLastAction()
+    secondPlayer.resetLastAction()
     val deck = new Deck()
     firstPlayer.replaceHand(new Hand(deck))
     secondPlayer.replaceHand(new Hand(deck))
