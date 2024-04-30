@@ -17,6 +17,10 @@ class TrucoPlayer(var hand: Hand) {
     hand = newHand
   }
 
+  def isValidCard(cardId: Int): Boolean = {
+    cardId >= 0 && cardId < hand.cards.length
+  }
+
   def play(cardIdx: Int): Card = {
     cardPlayed = Some(hand.playCardAt(cardIdx))
     cardPlayed.get

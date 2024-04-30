@@ -46,7 +46,7 @@ class TrucoMatch {
     }
   }
 
-  def play(cardIdx: Int): Unit = {
+  def play(cardId: Int): Unit = {
     if isGameOver then
       throw new IllegalStateException(
         "Cannot play card, waiting for next game start."
@@ -55,7 +55,9 @@ class TrucoMatch {
       throw new IllegalStateException(
         "Cannot play card, waiting for shouting to end."
       )
-    val cardPlayed = currentPlayer.play(cardIdx)
+    if !currentPlayer.isValidCard(cardId) then
+      throw new IllegalArgumentException("Cannot play card, invalid card id.")
+    val cardPlayed = currentPlayer.play(cardId)
     val currentRoundCards = getCurrentCardsPlayed()
     currentPlayer match {
       case `firstPlayer` => currentRoundCards.firstPlayerCard = Some(cardPlayed)
