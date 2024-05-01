@@ -12,6 +12,7 @@ object TrucoManagerCommand {
   final case class AskPlayersToStartMatch() extends Command
   final case class PlayerSyncedTrucoMatchStart(playerName: String)
       extends Command
+  final case class PlayerDisconnected(playerName: String) extends Command
 
   // Match
   final case class MakePlay(playerName: String, playId: Int, play: TrucoPlay)

@@ -58,6 +58,19 @@ object TrucoManagerRunningBehavior {
             Behaviors.same
           }
 
+          case PlayerDisconnected(playerName) => {
+            ctx.log.info("Player {} disconnected", playerName)
+            if !state.trucoMatch.isMatchOver then { // If the match is over then these messages are not necessary
+              playerName match {
+                case state.firstPlayer.playerName =>
+                  state.secondPlayer.player ! TrucoPlayerDisconnected()
+                case state.secondPlayer.playerName =>
+                  state.firstPlayer.player ! TrucoPlayerDisconnected()
+              }
+            }
+            Behaviors.stopped
+          }
+
           case _ => Behaviors.same
         }
       }

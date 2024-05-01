@@ -56,6 +56,21 @@ object PlayerTrucoBehavior {
           Behaviors.same
         }
 
+        case TrucoDisconnect() => {
+          ctx.log.info("Truco player disconnected! Resuming normal play")
+          trucoManager ! TrucoManager.PlayerDisconnected(
+            state.dState.playerName
+          )
+          PlayerRunningBehavior(
+            state
+          ) // TODO replace this with disconnect message to player on timer and wait for Player Disconnect message!
+        }
+
+        case TrucoPlayerDisconnected() => {
+          ctx.log.info("Opponent Truco player disconnected! Aborting Match")
+          PlayerRunningBehavior(state)
+        }
+
         case heartMessage @ (Heartbeat(_) | CheckHeartbeat()) => {
           PlayerUtils.handleHeartbeatMessage(
             ctx,

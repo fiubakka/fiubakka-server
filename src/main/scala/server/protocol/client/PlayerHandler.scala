@@ -23,6 +23,7 @@ import protobuf.client.map.change_map.PBPlayerChangeMap
 import protobuf.client.metadata.PBClientMetadata
 import protobuf.client.movement.player_movement.PBPlayerMovement
 import protobuf.client.truco.ack_play.PBTrucoAckPlay
+import protobuf.client.truco.disconnect.PBTrucoDisconnect
 import protobuf.client.truco.match_challenge.PBTrucoMatchChallenge
 import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReply
 import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReplyEnum
@@ -104,6 +105,7 @@ object PlayerHandler {
   ) extends Command
   final case class TrucoMatchPlay(playId: Int, play: TrucoPlay) extends Command
   final case class TrucoMatchAckPlay(playId: Int) extends Command
+  final case class TrucoDisconnect() extends Command
 
   def apply(
       connection: Tcp.IncomingConnection
@@ -278,6 +280,11 @@ object PlayerHandler {
 
         case TrucoMatchAckPlay(playId) => {
           state.player ! Player.TrucoMatchAckPlay(playId)
+          Behaviors.same
+        }
+
+        case TrucoDisconnect() => {
+          state.player ! Player.TrucoDisconnect()
           Behaviors.same
         }
 
@@ -586,5 +593,6 @@ object PlayerHandler {
         }
       )
     case PBTrucoAckPlay(playId, _) => TrucoMatchAckPlay(playId)
+    case PBTrucoDisconnect(_)      => TrucoDisconnect()
   }
 }

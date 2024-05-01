@@ -1,6 +1,7 @@
 package server.domain.entities.truco.behavior
 
 import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.scaladsl.Behaviors
 import server.domain.entities.truco.command.TrucoManagerCommand._
 import server.domain.entities.truco.command.TrucoManagerReplyCommand._
@@ -44,7 +45,7 @@ object TrucoManagerPlayAckBehavior {
             if firstPlayerAckPlay && secondPlayerAckPlay then {
               ctx.log.info("Both players acknowledged play {}", playId)
               timers.cancel("sendMatchState")
-              behaviorAfterAck(state)
+              behaviorAfterAck(ctx, state)
             } else
               playerName match {
                 case state.firstPlayer.playerName =>
@@ -68,14 +69,33 @@ object TrucoManagerPlayAckBehavior {
             Behaviors.same
           }
 
+          case PlayerDisconnected(playerName) => {
+            ctx.log.info("Player {} disconnected", playerName)
+            if !state.trucoMatch.isMatchOver then { // If the match is over then these messages are not necessary
+              playerName match {
+                case state.firstPlayer.playerName =>
+                  state.secondPlayer.player ! TrucoPlayerDisconnected()
+                case state.secondPlayer.playerName =>
+                  state.firstPlayer.player ! TrucoPlayerDisconnected()
+              }
+            }
+            Behaviors.stopped
+          }
+
           case _ => Behaviors.same
         }
       }
     }
   }
 
-  private def behaviorAfterAck(state: TrucoManagerState): Behavior[Command] = {
-    if state.trucoMatch.isGameOver then {
+  private def behaviorAfterAck(
+      ctx: ActorContext[Command],
+      state: TrucoManagerState
+  ): Behavior[Command] = {
+    if state.trucoMatch.isMatchOver then {
+      ctx.log.info("Match is over! Stopping the TrucoManager")
+      Behaviors.stopped
+    } else if state.trucoMatch.isGameOver then {
       state.trucoMatch.startNextGame()
       val newState = state.copy(playId = state.playId + 1)
       TrucoManagerPlayAckBehavior(newState)

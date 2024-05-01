@@ -8,6 +8,7 @@ import protobuf.client.map.change_map.PBPlayerChangeMap
 import protobuf.client.metadata.PBClientMessageType
 import protobuf.client.movement.player_movement.PBPlayerMovement
 import protobuf.client.truco.ack_play.PBTrucoAckPlay
+import protobuf.client.truco.disconnect.PBTrucoDisconnect
 import protobuf.client.truco.match_challenge.PBTrucoMatchChallenge
 import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReply
 import protobuf.client.truco.play.{PBTrucoPlay => PBClientTrucoPlay}
@@ -39,7 +40,8 @@ object ProtocolMessageMap {
       PBClientMessageType.PBTrucoMatchChallenge -> PBTrucoMatchChallenge,
       PBClientMessageType.PBTrucoMatchChallengeReply -> PBTrucoMatchChallengeReply,
       PBClientMessageType.PBTrucoPlay -> PBClientTrucoPlay,
-      PBClientMessageType.PBTrucoPlayAck -> PBTrucoAckPlay
+      PBClientMessageType.PBTrucoPlayAck -> PBTrucoAckPlay,
+      PBClientMessageType.PBTrucoDisconnect -> PBTrucoDisconnect
     )
 
   val serverMessageMap: Map[String, PBServerMessageType] =
