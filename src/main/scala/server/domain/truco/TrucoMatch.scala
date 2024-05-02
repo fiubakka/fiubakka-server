@@ -242,15 +242,35 @@ class TrucoMatch {
       case None =>
         round match {
           case TrucoMatch.LastRound
-              if currentCardsPlayed.firstPlayerCard.isDefined && currentCardsPlayed.secondPlayerCard.isDefined =>
+              if currentCardsPlayed.firstPlayerCard.isDefined && currentCardsPlayed.secondPlayerCard.isDefined => { // End of Last Round
+            val firstRoundCardsPlayed = cardsPlayed(
+              0
+            ) // It should always be defined
+
             if netScore > 0 then Some(firstPlayer)
             else if netScore < 0 then Some(secondPlayer)
-            else if startGamePlayer == firstPlayer then Some(firstPlayer)
+            else if firstRoundCardsPlayed.firstPlayerCard.get > firstRoundCardsPlayed.secondPlayerCard.get
+            then
+              Some(
+                firstPlayer
+              ) // If last round was a draw, the player that won the first round wins
+            else if firstRoundCardsPlayed.firstPlayerCard.get < firstRoundCardsPlayed.secondPlayerCard.get
+            then
+              Some(
+                secondPlayer
+              )
+            else if startGamePlayer == firstPlayer then
+              Some(firstPlayer) // If all cards were equal, the Mano wins
             else Some(secondPlayer)
-          case _ =>
-            if netScore == 2 then Some(firstPlayer)
-            else if netScore == -2 then Some(secondPlayer)
+          }
+
+          case TrucoMatch.LastRound => { // Beginning of Last Round
+            if netScore > 0 then Some(firstPlayer)
+            else if netScore < 0 then Some(secondPlayer)
             else None
+          }
+
+          case _ => None
         }
     }
   }
