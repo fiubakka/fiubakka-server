@@ -163,8 +163,9 @@ object TrucoManagerPlayAckBehavior {
         TrucoNextPlayInfo(
           nextPlayer = getNextPlayerName(state),
           isPlayCardAvailable = state.trucoMatch.isPlayingCardLegalMove,
-          availableShouts =
-            Seq(TrucoShoutEnum.Envido) // TODO fill with actual values
+          availableShouts = state.trucoMatch.availableShouts.map(
+            TrucoShoutEnum.fromShoutPlayEnum
+          )
         )
       )
     )

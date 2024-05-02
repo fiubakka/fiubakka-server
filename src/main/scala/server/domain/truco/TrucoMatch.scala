@@ -114,6 +114,11 @@ class TrucoMatch {
     secondPlayer.replaceHand(new Hand(deck))
   }
 
+  def availableShouts: List[EnvidoEnum | TrucoEnum] = {
+    // TODO add envido shouts
+    availableTrucoShouts
+  }
+
   def isPlayingCardLegalMove: Boolean = {
     !areShouting && !isGameOver
   }
@@ -125,6 +130,22 @@ class TrucoMatch {
   def isMatchOver: Boolean = {
     firstPlayer.points == TrucoMatch.MaxPoints ||
     secondPlayer.points == TrucoMatch.MaxPoints
+  }
+
+  private def availableTrucoShouts: List[TrucoEnum] = {
+    if shouts.isEmpty then {
+      List(TrucoEnum.Truco) // No shouts yet, so Truco is an available option
+    } else {
+      shouts.last match { // All shouts must be of the same type
+        case TrucoEnum.Truco =>
+          List(TrucoEnum.Retruco, TrucoEnum.Quiero, TrucoEnum.NoQuiero)
+        case TrucoEnum.Retruco =>
+          List(TrucoEnum.Valecuatro, TrucoEnum.Quiero, TrucoEnum.NoQuiero)
+        case TrucoEnum.Valecuatro => List(TrucoEnum.Quiero, TrucoEnum.NoQuiero)
+        case _ =>
+          List.empty // Envido shouting or Truco shouting is over, so there are no Truco options to shout
+      }
+    }
   }
 
   private def trucoShout(shout: TrucoEnum): Unit = {
