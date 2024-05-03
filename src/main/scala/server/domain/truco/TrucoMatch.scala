@@ -3,6 +3,7 @@ package server.domain.truco
 import server.domain.truco.cards.Card
 import server.domain.truco.cards.Deck
 import server.domain.truco.shouts.EnvidoEnum
+import server.domain.truco.shouts.Mazo
 import server.domain.truco.shouts.TrucoEnum
 import server.domain.truco.state.CardsRound
 
@@ -39,11 +40,27 @@ class TrucoMatch {
   var canPlayEnvido = true
   var shouts = List.empty: List[EnvidoEnum | TrucoEnum]
 
-  def lastPlay: Option[Card | EnvidoEnum | TrucoEnum] = {
+  def lastPlay: Option[Card | EnvidoEnum | TrucoEnum | Mazo] = {
     // Only one player at a time should have a lastAction defined
     if firstPlayer.lastAction.isDefined then firstPlayer.lastAction
     else if secondPlayer.lastAction.isDefined then secondPlayer.lastAction
     else None
+  }
+
+  def goToMazo(): Unit = {
+    if isGameOver then
+      throw new IllegalStateException(
+        "Cannot go to Mazo, waiting for next game start."
+      )
+    if areShouting then
+      throw new IllegalStateException(
+        "Cannot go to Mazo, waiting for shouting to end."
+      )
+    if !isMazoAvailable then
+      throw new IllegalStateException("Cannot go to Mazo now.")
+    currentPlayer.goToMazo()
+    resetLastPlayerAction()
+    currentPlayer = getNextPlayer()
   }
 
   def play(cardId: Int): Unit = {
@@ -114,9 +131,14 @@ class TrucoMatch {
     secondPlayer.replaceHand(new Hand(deck))
   }
 
+  // We don't consider "Mazo" as a Shout per se here
   def availableShouts: List[EnvidoEnum | TrucoEnum] = {
     // TODO add envido shouts
     availableTrucoShouts
+  }
+
+  def isMazoAvailable: Boolean = {
+    !isGameOver && !areShouting
   }
 
   def isPlayingCardLegalMove: Boolean = {
@@ -240,11 +262,19 @@ class TrucoMatch {
     // won, known as "mano" in Truco game rules (if 3 rounds played).
     // If the score is +-2, the game ends regardless of the rounds played (so it could end in the second round).
 
+    val maybePlayerWentToMazo =
+      if firstPlayer.wentToMazo then Some(secondPlayer)
+      else if secondPlayer.wentToMazo then Some(firstPlayer)
+      else None
+
     val maybePlayerDeniedTruco =
       if firstPlayer.shout == Some(TrucoEnum.NoQuiero) then Some(firstPlayer)
       else if secondPlayer.shout == Some(TrucoEnum.NoQuiero) then
         Some(secondPlayer)
       else None
+
+    val maybePlayerWonByMazoOrTrucoDenied =
+      maybePlayerWentToMazo.orElse(maybePlayerDeniedTruco)
 
     val netScore = cardsPlayed.foldLeft(0) { (acc, cardsRound) =>
       cardsRound match {
@@ -258,7 +288,7 @@ class TrucoMatch {
 
     val currentCardsPlayed = getCurrentCardsPlayed()
 
-    maybePlayerDeniedTruco match {
+    maybePlayerWonByMazoOrTrucoDenied match {
       case Some(player) => Some(player)
       case None =>
         round match {

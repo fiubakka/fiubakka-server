@@ -86,7 +86,11 @@ object TrucoManagerRunningBehavior {
       play match {
         case TrucoCardPlay(card) => state.trucoMatch.play(card)
         case TrucoShoutPlay(shout) =>
-          state.trucoMatch.shout(TrucoShoutEnum.toShoutPlayEnum(shout))
+          shout match {
+            case TrucoShoutEnum.Mazo => state.trucoMatch.goToMazo()
+            case _ =>
+              state.trucoMatch.shout(TrucoShoutEnum.toShoutPlayEnum(shout))
+          }
       }
       val newState = state.copy(
         playId = state.playId + 1

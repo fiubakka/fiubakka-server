@@ -2,10 +2,12 @@ package server.domain.truco
 
 import server.domain.truco.cards.Card
 import server.domain.truco.shouts.EnvidoEnum
+import server.domain.truco.shouts.Mazo
 import server.domain.truco.shouts.TrucoEnum
 
 class TrucoPlayer(var hand: Hand) {
   var points = 0
+  var wentToMazo = false // True if the player went to mazo in their last turn
   var shout =
     None: Option[
       TrucoEnum | EnvidoEnum
@@ -30,8 +32,14 @@ class TrucoPlayer(var hand: Hand) {
     this.shout = Some(shout)
   }
 
-  def lastAction: Option[Card | TrucoEnum | EnvidoEnum] = {
-    if (shout.isEmpty && cardPlayed.isEmpty) then {
+  def goToMazo(): Unit = {
+    wentToMazo = true
+  }
+
+  def lastAction: Option[Card | TrucoEnum | EnvidoEnum | Mazo] = {
+    if wentToMazo then {
+      Some(Mazo())
+    } else if (shout.isEmpty && cardPlayed.isEmpty) then {
       None
     } else {
       Some(shout.getOrElse(cardPlayed.get))
@@ -41,5 +49,6 @@ class TrucoPlayer(var hand: Hand) {
   def resetLastAction() = {
     shout = None
     cardPlayed = None
+    wentToMazo = false
   }
 }

@@ -114,7 +114,7 @@ object TrucoManagerPlayAckBehavior {
       playType = lastPlay match {
         case None           => TrucoPlayType.Update
         case Some(lp: Card) => TrucoPlayType.Card
-        case _              => TrucoPlayType.Shout
+        case _              => TrucoPlayType.Shout // Includes Mazo
       },
       playerCards = playerName match {
         case state.firstPlayer.playerName =>
@@ -163,9 +163,11 @@ object TrucoManagerPlayAckBehavior {
         TrucoNextPlayInfo(
           nextPlayer = getNextPlayerName(state),
           isPlayCardAvailable = state.trucoMatch.isPlayingCardLegalMove,
-          availableShouts = state.trucoMatch.availableShouts.map(
-            TrucoShoutEnum.fromShoutPlayEnum
-          )
+          availableShouts =
+            (if state.trucoMatch.isMazoAvailable then Seq(TrucoShoutEnum.Mazo)
+             else Seq.empty) ++ state.trucoMatch.availableShouts.map(
+              TrucoShoutEnum.fromShoutPlayEnum
+            )
         )
       )
     )

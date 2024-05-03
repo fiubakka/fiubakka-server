@@ -349,6 +349,7 @@ object PlayerHandler {
               )
             },
             shout = playState.shout.map {
+              case TrucoShoutEnum.Mazo       => PBServerTrucoShout.MAZO
               case TrucoShoutEnum.Envido     => PBServerTrucoShout.ENVIDO
               case TrucoShoutEnum.RealEnvido => PBServerTrucoShout.REAL_ENVIDO
               case TrucoShoutEnum.FaltaEnvido =>
@@ -370,6 +371,7 @@ object PlayerHandler {
                 nextPlayer = np.nextPlayer,
                 isPlayCardAvailable = np.isPlayCardAvailable,
                 availableShouts = np.availableShouts.map {
+                  case TrucoShoutEnum.Mazo   => PBServerTrucoShout.MAZO
                   case TrucoShoutEnum.Envido => PBServerTrucoShout.ENVIDO
                   case TrucoShoutEnum.RealEnvido =>
                     PBServerTrucoShout.REAL_ENVIDO
@@ -572,6 +574,7 @@ object PlayerHandler {
           case CARD => TrucoCardPlay(card.get)
           case SHOUT =>
             TrucoShoutPlay(shout.get match {
+              case PBClientTrucoShout.MAZO         => TrucoShoutEnum.Mazo
               case PBClientTrucoShout.ENVIDO       => TrucoShoutEnum.Envido
               case PBClientTrucoShout.REAL_ENVIDO  => TrucoShoutEnum.RealEnvido
               case PBClientTrucoShout.FALTA_ENVIDO => TrucoShoutEnum.FaltaEnvido
