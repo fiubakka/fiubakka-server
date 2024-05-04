@@ -55,5 +55,5 @@ final case class TrucoShoutPlay(
 )
 
 // We don't use a Union here because Jackson Databind serializes them in a weird way
-// that breaks the pattern matching.
+// that breaks the pattern matching. Unions from Scala 3 are not yet supported by Jackson.
 type TrucoPlay = Either[TrucoCardPlay, TrucoShoutPlay]
