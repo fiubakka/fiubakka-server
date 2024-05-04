@@ -68,6 +68,7 @@ lazy val root = (project in file("."))
       akkaKubernetesDiscovery,
       akkaKubernetesRollingUpdates,
       akkaSerialization,
+      jacksonModuleScala,
       akkaPersistence,
       akkaPersistenceJdbc,
       akkaPersistenceQuery,
