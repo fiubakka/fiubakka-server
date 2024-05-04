@@ -124,6 +124,7 @@ class TrucoMatch {
     canPlayEnvido = true
     trucoPoints = 1
     envidoPoints = 0
+    shouts = List.empty
     areShouting = false
     cardsPlayed = List.empty
     startGamePlayer = getNextStartGamePlayer()
@@ -216,8 +217,10 @@ class TrucoMatch {
             .contains(shouts.last) => // Quiero, NoQuiero
         areShouting = false
         if shout == TrucoEnum.NoQuiero then shouts = shouts.dropRight(1)
-        else if shout == TrucoEnum.Quiero then
+        else if shout == TrucoEnum.Quiero then {
           playerWithTrucoQuiero = Some(currentPlayer)
+          shouts = shouts :+ shout
+        }
         trucoPoints = calculateShoutPoints(shouts)
       case _ => throw new IllegalArgumentException("Invalid Truco shout")
     }
@@ -374,7 +377,7 @@ class TrucoMatch {
         case TrucoEnum.Retruco    => acc + TrucoMatch.RetrucoPoints
         case TrucoEnum.Valecuatro => acc + TrucoMatch.ValecuatroPoints
         case _ =>
-          acc // Quiero, NoQuiero should not be received anyway, as NoQuiero deletes the last shout in the list and Quiero confirms it
+          acc
       }
     }
   }
