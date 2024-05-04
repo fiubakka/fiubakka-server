@@ -29,6 +29,10 @@ class TrucoMatch {
   val secondPlayer = new TrucoPlayer(new Hand(deck))
   var currentPlayer = firstPlayer // Player with the current turn
   var startGamePlayer = firstPlayer // Player that started the current game
+  var playerWithTrucoQuiero =
+    None: Option[
+      TrucoPlayer
+    ] // Player that shouted Quiero in Truco, useful for keeping track of available shouts
 
   var cardsPlayed: List[CardsRound] = List.empty
   var areShouting =
@@ -124,6 +128,7 @@ class TrucoMatch {
     cardsPlayed = List.empty
     startGamePlayer = getNextStartGamePlayer()
     currentPlayer = startGamePlayer
+    playerWithTrucoQuiero = None
     firstPlayer.resetLastAction()
     secondPlayer.resetLastAction()
     val deck = new Deck()
@@ -164,8 +169,15 @@ class TrucoMatch {
         case TrucoEnum.Retruco =>
           List(TrucoEnum.Valecuatro, TrucoEnum.Quiero, TrucoEnum.NoQuiero)
         case TrucoEnum.Valecuatro => List(TrucoEnum.Quiero, TrucoEnum.NoQuiero)
+        case TrucoEnum.Quiero
+            if (playerWithTrucoQuiero.isDefined && currentPlayer == playerWithTrucoQuiero.get) =>
+          shouts.dropRight(1).last match {
+            case TrucoEnum.Truco   => List(TrucoEnum.Retruco)
+            case TrucoEnum.Retruco => List(TrucoEnum.Valecuatro)
+            case _                 => List.empty
+          }
         case _ =>
-          List.empty // Envido shouting or Truco shouting is over, so there are no Truco options to shout
+          List.empty // Truco shouting is over, so there are no Truco options to shout
       }
     }
   }
@@ -178,16 +190,35 @@ class TrucoMatch {
       case TrucoEnum.Retruco
           if !shouts.isEmpty && shouts.last == TrucoEnum.Truco =>
         shouts = shouts :+ shout
+      case TrucoEnum.Retruco
+          if !shouts.isEmpty && shouts.last == TrucoEnum.Quiero =>
+        if shouts.dropRight(1).last != TrucoEnum.Truco then
+          throw new IllegalArgumentException(
+            "Cannot shout Retruco when last accepted shout was not Truco!"
+          )
+        areShouting = true
+        shouts =
+          shouts.dropRight(1) :+ shout // Replace Quiero with the new shout
       case TrucoEnum.Valecuatro
           if !shouts.isEmpty && shouts.last == TrucoEnum.Retruco =>
         shouts = shouts :+ shout
+      case TrucoEnum.Valecuatro
+          if !shouts.isEmpty && shouts.last == TrucoEnum.Quiero =>
+        if shouts.dropRight(1).last != TrucoEnum.Retruco then
+          throw new IllegalArgumentException(
+            "Cannot shout Valecuatro when last accepted shout was not Retruco!"
+          )
+        areShouting = true
+        shouts =
+          shouts.dropRight(1) :+ shout // Replace Quiero with the new shout
       case _
           if !shouts.isEmpty && !List(TrucoEnum.Quiero, TrucoEnum.NoQuiero)
             .contains(shouts.last) => // Quiero, NoQuiero
         areShouting = false
         if shout == TrucoEnum.NoQuiero then shouts = shouts.dropRight(1)
+        else if shout == TrucoEnum.Quiero then
+          playerWithTrucoQuiero = Some(currentPlayer)
         trucoPoints = calculateShoutPoints(shouts)
-        shouts = List.empty
       case _ => throw new IllegalArgumentException("Invalid Truco shout")
     }
     canPlayEnvido = false
