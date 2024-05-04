@@ -67,6 +67,7 @@ import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 import server.domain.structs.truco.TrucoCardPlay
 import server.domain.structs.truco.TrucoMatchChallengeReplyEnum
+import server.domain.structs.truco.TrucoMatchChallengeReplyEnum.TrucoMatchChallengeReplyEnum
 import server.domain.structs.truco.TrucoPlay
 import server.domain.structs.truco.TrucoShoutEnum
 import server.domain.structs.truco.TrucoShoutPlay

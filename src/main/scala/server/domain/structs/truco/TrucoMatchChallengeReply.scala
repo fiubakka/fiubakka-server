@@ -1,5 +1,6 @@
 package server.domain.structs.truco
 
-enum TrucoMatchChallengeReplyEnum {
-  case Accepted, Rejected
+object TrucoMatchChallengeReplyEnum extends Enumeration {
+  type TrucoMatchChallengeReplyEnum = Value
+  val Accepted, Rejected = Value
 }

@@ -1,8 +1,6 @@
 package server.domain.truco.shouts
 
-enum EnvidoEnum:
-  case Envido
-  case RealEnvido
-  case FaltaEnvido
-  case Quiero
-  case NoQuiero
+object EnvidoEnum extends Enumeration {
+  type EnvidoEnum = Value
+  val Envido, RealEnvido, FaltaEnvido, Quiero, NoQuiero = Value
+}

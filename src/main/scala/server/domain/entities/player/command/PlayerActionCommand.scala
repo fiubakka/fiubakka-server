@@ -8,7 +8,7 @@ import server.domain.structs.DurablePlayerState
 import server.domain.structs.inventory.Equipment
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
-import server.domain.structs.truco.TrucoMatchChallengeReplyEnum
+import server.domain.structs.truco.TrucoMatchChallengeReplyEnum.TrucoMatchChallengeReplyEnum
 import server.domain.structs.truco.TrucoPlay
 import server.protocol.event.GameEventConsumer
 

@@ -1,23 +1,15 @@
 package server.domain.structs.truco
 
 import server.domain.truco.shouts.EnvidoEnum
+import server.domain.truco.shouts.EnvidoEnum.EnvidoEnum
 import server.domain.truco.shouts.TrucoEnum
+import server.domain.truco.shouts.TrucoEnum.TrucoEnum
 
-enum TrucoShoutEnum {
-  case Mazo
-  case Envido
-  case RealEnvido
-  case FaltaEnvido
-  case EnvidoQuiero
-  case EnvidoNoQuiero
-  case Truco
-  case Retruco
-  case Valecuatro
-  case TrucoQuiero
-  case TrucoNoQuiero
-}
+object TrucoShoutEnum extends Enumeration {
+  type TrucoShoutEnum = Value
+  val Mazo, Envido, RealEnvido, FaltaEnvido, EnvidoQuiero, EnvidoNoQuiero,
+      Truco, Retruco, Valecuatro, TrucoQuiero, TrucoNoQuiero = Value
 
-object TrucoShoutEnum {
   val toShoutPlayEnum
       : PartialFunction[TrucoShoutEnum, TrucoEnum | EnvidoEnum] = {
     case Envido         => EnvidoEnum.Envido
@@ -43,6 +35,10 @@ object TrucoShoutEnum {
     case TrucoEnum.Valecuatro   => Valecuatro
     case TrucoEnum.Quiero       => TrucoQuiero
     case TrucoEnum.NoQuiero     => TrucoNoQuiero
+    case _ =>
+      throw new IllegalArgumentException(
+        "Invalid shout enum"
+      ) // Should never happen, but Enumeration are ints so compiler complains otherwise
   }
 }
 
@@ -51,7 +47,7 @@ final case class TrucoCardPlay(
 )
 
 final case class TrucoShoutPlay(
-    shout: TrucoShoutEnum
+    shout: TrucoShoutEnum.TrucoShoutEnum
 )
 
 type TrucoPlay = TrucoCardPlay | TrucoShoutPlay

@@ -8,8 +8,8 @@ import server.domain.entities.truco.command.TrucoManagerReplyCommand._
 import server.domain.structs.truco.TrucoManagerState
 import server.domain.structs.truco.TrucoShoutEnum
 import server.domain.truco.cards.Card
-import server.domain.truco.shouts.EnvidoEnum
-import server.domain.truco.shouts.TrucoEnum
+import server.domain.truco.shouts.EnvidoEnum.EnvidoEnum
+import server.domain.truco.shouts.TrucoEnum.TrucoEnum
 import server.protocol.truco.TrucoCard
 import server.protocol.truco.TrucoNextPlayInfo
 import server.protocol.truco.TrucoPlayState

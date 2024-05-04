@@ -1,4 +1,6 @@
 package server.domain.truco.cards
 
-enum CardSuit:
-  case Cups, Swords, Coins, Clubs
+object CardSuit extends Enumeration {
+  type CardSuit = Value
+  val Cups, Swords, Coins, Clubs = Value
+}
