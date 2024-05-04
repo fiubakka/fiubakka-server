@@ -1,9 +1,9 @@
 package server.domain.truco
 
 import server.domain.truco.cards.Card
-import server.domain.truco.shouts.EnvidoEnum.EnvidoEnum
+import server.domain.truco.shouts.EnvidoEnum
 import server.domain.truco.shouts.Mazo
-import server.domain.truco.shouts.TrucoEnum.TrucoEnum
+import server.domain.truco.shouts.TrucoEnum
 
 class TrucoPlayer(var hand: Hand) {
   var points = 0

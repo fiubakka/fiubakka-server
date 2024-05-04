@@ -1,6 +1,4 @@
 package server.domain.truco.cards
 
-object CardNumber extends Enumeration {
-  type CardNumber = Value
-  val Ace, Two, Three, Four, Five, Six, Seven, Ten, Eleven, Twelve = Value
-}
+enum CardNumber:
+  case Ace, Two, Three, Four, Five, Six, Seven, Ten, Eleven, Twelve

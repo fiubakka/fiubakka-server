@@ -1,11 +1,11 @@
 package server.protocol.truco
 
-import server.domain.structs.truco.TrucoShoutEnum.TrucoShoutEnum
+import server.domain.structs.truco.TrucoShoutEnum
 import server.domain.truco.cards.Card
 
 final case class TrucoPlayState(
     playId: Int,
-    playType: TrucoPlayType.TrucoPlayType,
+    playType: TrucoPlayType,
     firstPlayerPoints: TrucoPoints,
     secondPlayerPoints: TrucoPoints,
     playerCards: Seq[TrucoCard],
@@ -35,11 +35,8 @@ final case class TrucoCard(
   }
 }
 
-// Jackson Serialization **does not support** out of the box serialization
-// for Scala 3 enums, so we need to use a Scala 2-style Enumeration
-object TrucoPlayType extends Enumeration {
-  type TrucoPlayType = Value
-  val Card, Shout, Update = Value
+enum TrucoPlayType {
+  case Card, Shout, Update
 }
 
 final case class TrucoNextPlayInfo(

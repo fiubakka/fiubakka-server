@@ -1,8 +1,7 @@
 package server.domain.truco.cards
 
 object Card {
-  private val CardOrder
-      : List[(CardNumber.CardNumber, Option[CardSuit.CardSuit])] = List(
+  private val CardOrder: List[(CardNumber, Option[CardSuit])] = List(
     (CardNumber.Ace, Some(CardSuit.Swords)),
     (CardNumber.Ace, Some(CardSuit.Clubs)),
     (CardNumber.Seven, Some(CardSuit.Swords)),
@@ -26,7 +25,7 @@ object Card {
   }
 }
 
-class Card(val number: CardNumber.CardNumber, val suit: CardSuit.CardSuit) {
+class Card(val number: CardNumber, val suit: CardSuit) {
   override def toString: String = s"${number} of ${suit}"
 
   def >(other: Card): Boolean = {
