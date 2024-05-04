@@ -84,8 +84,8 @@ object TrucoManagerRunningBehavior {
   ): TrucoManagerState = {
     try {
       play match {
-        case TrucoCardPlay(card) => state.trucoMatch.play(card)
-        case TrucoShoutPlay(shout) =>
+        case Left(TrucoCardPlay(card)) => state.trucoMatch.play(card)
+        case Right(TrucoShoutPlay(shout)) =>
           shout match {
             case TrucoShoutEnum.Mazo => state.trucoMatch.goToMazo()
             case _ =>

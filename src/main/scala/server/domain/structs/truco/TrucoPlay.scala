@@ -50,4 +50,6 @@ final case class TrucoShoutPlay(
     shout: TrucoShoutEnum.TrucoShoutEnum
 )
 
-type TrucoPlay = TrucoCardPlay | TrucoShoutPlay
+// We don't use a Union here because Jackson Databind serializes them in a weird way
+// that breaks the pattern matching.
+type TrucoPlay = Either[TrucoCardPlay, TrucoShoutPlay]

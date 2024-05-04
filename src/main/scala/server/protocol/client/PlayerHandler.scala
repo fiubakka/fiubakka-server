@@ -572,9 +572,9 @@ object PlayerHandler {
       TrucoMatchPlay(
         playId,
         playType match {
-          case CARD => TrucoCardPlay(card.get)
+          case CARD => Left(TrucoCardPlay(card.get))
           case SHOUT =>
-            TrucoShoutPlay(shout.get match {
+            Right(TrucoShoutPlay(shout.get match {
               case PBClientTrucoShout.MAZO         => TrucoShoutEnum.Mazo
               case PBClientTrucoShout.ENVIDO       => TrucoShoutEnum.Envido
               case PBClientTrucoShout.REAL_ENVIDO  => TrucoShoutEnum.RealEnvido
@@ -591,7 +591,7 @@ object PlayerHandler {
                 TrucoShoutEnum.TrucoNoQuiero
               case invalidShout =>
                 throw new Exception("Invalid TrucoShoutEnum: " + invalidShout)
-            })
+            }))
           case invalidPlayType =>
             throw new Exception("Invalid TrucoPlayType: " + invalidPlayType)
         }
