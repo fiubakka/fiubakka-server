@@ -2,6 +2,7 @@ package server.domain.structs.truco
 
 import server.domain.truco.shouts.EnvidoEnum
 import server.domain.truco.shouts.TrucoEnum
+import server.domain.truco.shouts.{Mazo => MazoEnum}
 
 enum TrucoShoutEnum {
   case Mazo
@@ -32,7 +33,9 @@ object TrucoShoutEnum {
     case TrucoNoQuiero  => TrucoEnum.NoQuiero
   }
 
-  def fromShoutPlayEnum: (shout: TrucoEnum | EnvidoEnum) => TrucoShoutEnum = {
+  def fromShoutPlayEnum
+      : (shout: TrucoEnum | EnvidoEnum | MazoEnum) => TrucoShoutEnum = {
+    case MazoEnum()             => Mazo
     case EnvidoEnum.Envido      => Envido
     case EnvidoEnum.RealEnvido  => RealEnvido
     case EnvidoEnum.FaltaEnvido => FaltaEnvido

@@ -9,6 +9,7 @@ import server.domain.structs.truco.TrucoManagerState
 import server.domain.structs.truco.TrucoShoutEnum
 import server.domain.truco.cards.Card
 import server.domain.truco.shouts.EnvidoEnum
+import server.domain.truco.shouts.Mazo
 import server.domain.truco.shouts.TrucoEnum
 import server.protocol.truco.TrucoCard
 import server.protocol.truco.TrucoNextPlayInfo
@@ -155,9 +156,9 @@ object TrucoManagerPlayAckBehavior {
         case _             => None
       }, // Card id is not actually used, so fill it with dummy value
       shout = lastPlay match {
-        case Some(s: TrucoEnum)  => Some(TrucoShoutEnum.fromShoutPlayEnum(s))
-        case Some(s: EnvidoEnum) => Some(TrucoShoutEnum.fromShoutPlayEnum(s))
-        case _                   => None
+        case (Some(shout: (TrucoEnum | EnvidoEnum | Mazo))) =>
+          Some(TrucoShoutEnum.fromShoutPlayEnum(shout))
+        case _ => None
       },
       nextPlayInfo = Some(
         TrucoNextPlayInfo(
