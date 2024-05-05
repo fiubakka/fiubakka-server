@@ -157,9 +157,16 @@ object PlayerHandler {
                   .map { _ =>
                     ctx.self ! InitSuccess(initInfo)
                   }
-                  .recover { case err =>
-                    println(err) // TODO see how to log this error better
-                    ctx.self ! InitFailure(PBPlayerInitErrorCode.UNKNOWN)
+                  .recover {
+                    case PlayerRepository.UserAlreadyExistsException(_) =>
+                      ctx.self ! InitFailure(
+                        PBPlayerInitErrorCode.PLAYER_ALREADY_EXISTS
+                      )
+                    case err =>
+                      Console.err.println(
+                        "Unkown error registering player: " + err
+                      )
+                      ctx.self ! InitFailure(PBPlayerInitErrorCode.UNKNOWN)
                   }
             }
 

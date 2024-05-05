@@ -10,13 +10,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 object PlayerRepository {
+  final case class UserAlreadyExistsException(username: String)
+      extends Exception(s"Player $username already exists")
+
   val db = DB()
   def players = TableQuery[Players]
 
   def create(username: String, password: String): Future[Int] = {
     findByPlayerName(username).flatMap {
       case Some(_) =>
-        Future.failed(new Exception(s"Player $username already exists"))
+        Future.failed(new UserAlreadyExistsException(username))
       case None =>
         val hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
         db.run(players += Player(None, username, hashedPassword))
