@@ -15,13 +15,16 @@ import scala.concurrent.duration._
 
 object TrucoManagerRunningBehavior {
   def apply(state: TrucoManagerState): Behavior[Command] = {
-    Behaviors.withTimers { timers =>
-      timers.startTimerWithFixedDelay(
-        "sendAllowPlay",
-        NotifyAllowPlay(),
-        2.seconds
-      )
-      behavior(state)
+    Behaviors.setup { ctx =>
+      Behaviors.withTimers { timers =>
+        timers.startTimerWithFixedDelay(
+          "sendAllowPlay",
+          NotifyAllowPlay(),
+          2.seconds
+        )
+        ctx.self ! NotifyAllowPlay() // Optimization to avoid waiting 2 seconds for first message
+        behavior(state)
+      }
     }
   }
 
