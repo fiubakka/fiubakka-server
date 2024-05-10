@@ -108,6 +108,9 @@ object PlayerInitBehavior {
     val (eventConsumer, eventProducer) =
       PlayerUtils.getEventHandlers(ctx, initialState.mapId)
 
+    persistor ! PlayerPersistor.Persist(
+      newState
+    ) // TODO use ask and fail if persist fails
     handler ! Ready(newState)
     PlayerRunningBehavior(
       PlayerState(
