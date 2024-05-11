@@ -30,7 +30,7 @@ jobs:
           command: pip install -r requirements.txt
       - add_ssh_keys:
           fingerprints:
-            - "SHA256:dUYf30mAyhOVOmtPkWPjOPwDNyOSriEdGGuq4SyR2gQ"
+            - "SHA256:bWTC5v/OZGJN2WvWl06MnB8vPgrGqIKaYssOD9TCkuM"
       - run:
           name: Release and deploy production image with Dagger
           command: $HOME/.local/bin/dagger --progress plain run python .dagger/build.py
