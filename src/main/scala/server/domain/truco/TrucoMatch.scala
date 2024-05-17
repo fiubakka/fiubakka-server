@@ -302,9 +302,9 @@ class TrucoMatch {
       else None
 
     val maybePlayerDeniedTruco =
-      if firstPlayer.shout == Some(TrucoEnum.NoQuiero) then Some(firstPlayer)
+      if firstPlayer.shout == Some(TrucoEnum.NoQuiero) then Some(secondPlayer)
       else if secondPlayer.shout == Some(TrucoEnum.NoQuiero) then
-        Some(secondPlayer)
+        Some(firstPlayer)
       else None
 
     val maybePlayerWonByMazoOrTrucoDenied =
