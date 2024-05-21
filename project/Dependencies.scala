@@ -1,11 +1,11 @@
 import sbt._
 
 object Dependencies {
-  val AkkaVersion = "2.9.2"
+  val AkkaVersion = "2.9.3"
   val AeronVersion = "1.44.1"
-  val AkkaManagementVersion = "1.5.1"
-  val SlickVersion = "3.5.0"
-  val AlpakkaKafkaVersion = "5.0.0"
+  val AkkaManagementVersion = "1.5.2"
+  val SlickVersion = "3.5.1"
+  val AlpakkaKafkaVersion = "6.0.0"
 
   // Use AeronUDP instead of TCP for network transport of Akka messages
   lazy val aeronDriver = "io.aeron" % "aeron-driver" % AeronVersion
@@ -29,12 +29,12 @@ object Dependencies {
   // akka-serialization-jackson has a transitive dependency to jackson-module-scala already but to version 2.15
   // which is not yet compatible with Scala 3 enums, so we override it with a compatible version
   // See https://github.com/akka/akka/issues/31399
-  lazy val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.17.0"
+  lazy val jacksonModuleScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.17.1"
 
   lazy val akkaPersistence = "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion
-  lazy val akkaPersistenceJdbc = "com.lightbend.akka" %% "akka-persistence-jdbc" % "5.4.0"
+  lazy val akkaPersistenceJdbc = "com.lightbend.akka" %% "akka-persistence-jdbc" % "5.4.1"
   lazy val akkaPersistenceQuery = "com.typesafe.akka" %% "akka-persistence-query" % AkkaVersion
-  lazy val postgresJdbc = "org.postgresql" % "postgresql" % "42.6.0"
+  lazy val postgresJdbc = "org.postgresql" % "postgresql" % "42.7.3"
 
   // These Slick dependencies are needed both for akka-persistence-jdbc and to access the database directly
   lazy val slick = "com.typesafe.slick" %% "slick" % SlickVersion
