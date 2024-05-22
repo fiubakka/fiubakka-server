@@ -42,7 +42,8 @@ object Dependencies {
 
   lazy val bcrypt = "org.mindrot" % "jbcrypt" % "0.4"
 
-  lazy val logback = "ch.qos.logback" % "logback-classic" % "1.2.13"
+  lazy val log4jApi = "org.slf4j" % "slf4j-api" % "2.0.13"
+  lazy val logback = "ch.qos.logback" % "logback-classic" % "1.5.6"
   // This is needed for conditional statements in logback configuration file
   lazy val janino = "org.codehaus.janino" % "janino" % "3.1.8"
 }

@@ -62,7 +62,12 @@ lazy val root = (project in file("."))
     // See https://stackoverflow.com/questions/31011243/no-configuration-setting-found-for-key-akka-version
     // We need to concat both reference.conf and version.conf files for Akka config to work 
     assembly / assemblyMergeStrategy := {
-      case PathList("META-INF", xs @ _*)   => MergeStrategy.discard
+      case PathList("META-INF", xs @ _*)   =>
+        (xs map {_.toLowerCase}) match {
+          // Necessary for Logback newer version to work, see https://stackoverflow.com/questions/73727791/sbt-assembly-logback-does-not-work-with-%C3%BCber-jar
+          case "services" :: xs            => MergeStrategy.filterDistinctLines
+          case _                           => MergeStrategy.discard
+        }
       case "reference.conf"                => MergeStrategy.concat
       case "version.conf"                  => MergeStrategy.concat
       case _                               => MergeStrategy.first
@@ -71,7 +76,6 @@ lazy val root = (project in file("."))
       scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"
     ),
     name := "fiubakka-server",
-    dependencyOverrides += "org.slf4j" % "slf4j-api" % "1.7.36", // See https://doc.akka.io/docs/akka/current/typed/logging.html#slf4j-api-compatibility
     libraryDependencies ++= Seq(
       aeronDriver,
       aeronClient,
@@ -100,6 +104,7 @@ lazy val root = (project in file("."))
       slick,
       slickHikaricp,
       bcrypt,
+      log4jApi,
       logback,
       janino,
     )
@@ -107,5 +112,3 @@ lazy val root = (project in file("."))
   .enablePlugins(
     Cinnamon
   )
-
-// See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
