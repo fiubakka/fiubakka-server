@@ -4,15 +4,15 @@
 # See https://kafka.apache.org/quickstart
 # for reference on Kafka installation
 
-FROM eclipse-temurin:11.0.21_9-jre-alpine
+FROM eclipse-temurin:21.0.3_9-jre-alpine
 
 WORKDIR /usr/app
 
-COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/scala-3.4.1/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
+COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/scala-3.4.2/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
 
 # Install PostgreSQL
 
-RUN apk update && apk add --no-cache postgresql curl
+RUN apk update && apk add --no-cache postgresql curl bash
 
 RUN mkdir /run/postgresql && \
     chown postgres:postgres /run/postgresql && \
@@ -37,13 +37,15 @@ RUN su - postgres -c " \
 
 # Install Kafka
 
-RUN curl https://dlcdn.apache.org/kafka/3.6.2/kafka_2.13-3.6.2.tgz -o kafka_2.13-3.6.2.tgz \
-    && tar -xzf kafka_2.13-3.6.2.tgz \
-    && cd kafka_2.13-3.6.2 \
+RUN bash -c ' \
+    curl https://dlcdn.apache.org/kafka/3.7.0/kafka_2.13-3.7.0.tgz -o kafka_2.13-3.7.0.tgz \
+    && tar -xzf kafka_2.13-3.7.0.tgz \
+    && cd kafka_2.13-3.7.0 \
     && KAFKA_CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)" \
     && bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c config/kraft/server.properties \
     && bin/kafka-server-start.sh -daemon config/kraft/server.properties \
-    && bin/kafka-topics.sh --create --topic game-zone --partitions 4 --bootstrap-server localhost:9092
+    && bin/kafka-topics.sh --create --topic game-zone --partitions 4 --bootstrap-server localhost:9092 \
+'
 
 # PostgreSQL
 EXPOSE 5432/tcp

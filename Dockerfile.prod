@@ -1,10 +1,10 @@
 # Compatible with both x86 and ARM architectures
-FROM eclipse-temurin:11.0.21_9-jre-jammy
+FROM eclipse-temurin:21.0.3_9-jre-alpine
 
 WORKDIR /usr/app
 
-COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/scala-3.4.1/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
+COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/scala-3.4.2/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
 
 EXPOSE 8080/tcp
 
-CMD ["java", "-jar", "app.jar"]
+CMD ["java", "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED", "-jar", "app.jar"]

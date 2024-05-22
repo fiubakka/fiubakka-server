@@ -1,10 +1,17 @@
 import Dependencies._
 
-ThisBuild / scalaVersion     := "3.4.1"
-ThisBuild / version          := "0.1.0-SNAPSHOT"
-ThisBuild / organization     := "com.github.MarcosRolando"
-ThisBuild / organizationName := "MarcosRolando"
-// Currently ScalaPB generates deprecation warnings for Scala 3.4.1
+inThisBuild(
+  List(
+    scalaVersion     := "3.4.2",
+    version          := "0.1.0-SNAPSHOT",
+    organization     := "com.github.MarcosRolando",
+    organizationName := "MarcosRolando",
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision
+    )
+  )
+
+// Currently ScalaPB generates deprecation warnings for Scala 3.4.2
 // -rewrite and -source:3.4-migration fixes them but they are not silenced.
 // These warnings cannot be silenced easily until https://github.com/scala/scala3/pull/18783 is merged.
 // For now as a workaround we silence them via regex (to avoid silencing other deprecation warnings).
@@ -22,23 +29,32 @@ ThisBuild / scalacOptions    ++= Seq(
 
 resolvers += "Akka library repository".at("https://repo.akka.io/maven")
 
-inThisBuild(
-  List(
-    scalaVersion := "3.4.1",
-    semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision
-    )
-  )
+val isMetricsEnabled = sys.env.isDefinedAt("METRICS_ENABLED")
 
 // See https://developer.lightbend.com/docs/telemetry/current//setup/cinnamon-agent-sbt.html
 // for reference
 // Lightbend Telemetry config
 cinnamonSuppressRepoWarnings := true
-run / cinnamon := false // Set to True to enable Cinnamon agent used for Telemetry
+run / cinnamon := isMetricsEnabled // Set to True to enable Cinnamon agent used for Telemetry
 cinnamonLogLevel := "INFO"
 
 lazy val root = (project in file("."))
   .settings(
+    run / fork := true, // These are only used in development mode, since production uses a JAR and not sbt
+    javaOptions ++= {
+      val defaultAkkaPort = 25520
+      val defaultPlayerAccepterPort = 2020
+      val akkaPort = sys.env.getOrElse("AKKA_PORT", defaultAkkaPort)
+      val playerAccepterPort = sys.env.getOrElse("PLAYER_ACCEPTER_PORT", defaultPlayerAccepterPort)
+
+      Seq(
+        "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED", // Required for Aeron to work in Java 17+
+        s"-Dakka.cluster.seed-nodes.0=akka://fiubakka-server@127.0.0.1:$defaultAkkaPort",
+        s"-Dakka.remote.artery.canonical.port=$akkaPort",
+        s"-Dakka.remote.artery.bind.port=$akkaPort",
+        s"-Dgame.player-accepter.port=$playerAccepterPort"
+      )
+    },
     assembly / mainClass := Some("Main"),
     // See https://stackoverflow.com/questions/25144484/sbt-assembly-deduplication-found-error
     // Basically we are telling sbt-assembly to ignore the META-INF folder for conflicting files
