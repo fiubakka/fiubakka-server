@@ -71,6 +71,7 @@ lazy val root = (project in file("."))
       scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"
     ),
     name := "fiubakka-server",
+    dependencyOverrides += "org.slf4j" % "slf4j-api" % "1.7.36", // See https://doc.akka.io/docs/akka/current/typed/logging.html#slf4j-api-compatibility
     libraryDependencies ++= Seq(
       aeronDriver,
       aeronClient,
@@ -99,7 +100,6 @@ lazy val root = (project in file("."))
       slick,
       slickHikaricp,
       bcrypt,
-      log4jApi,
       logback,
       janino,
     )
