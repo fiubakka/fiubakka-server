@@ -5,6 +5,6 @@ WORKDIR /usr/app
 
 COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/scala-3.4.2/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
 
-EXPOSE 8080/tcp
+EXPOSE 2020/tcp
 
 CMD ["java", "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED", "-jar", "app.jar"]
