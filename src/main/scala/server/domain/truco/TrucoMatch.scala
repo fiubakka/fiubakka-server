@@ -115,8 +115,12 @@ class TrucoMatch {
             "Cannot shout Truco when shouting Envido"
           )
       case e: EnvidoEnum =>
-        if canPlayEnvido then envidoShout(e)
-        else throw new IllegalArgumentException("Cannot shout Envido now")
+        if canPlayEnvido then {
+          // If the last shout was Truco, we reset the shouts
+          if !shouts.isEmpty && shouts.last == TrucoEnum.Truco then
+            shouts = List.empty
+          envidoShout(e)
+        } else throw new IllegalArgumentException("Cannot shout Envido now")
     }
 
     currentPlayer.shout(shout)
@@ -177,7 +181,7 @@ class TrucoMatch {
 
   private def availableEnvidoShouts: List[EnvidoEnum] = {
     if !canPlayEnvido then List.empty
-    else if shouts.isEmpty then {
+    else if shouts.isEmpty || shouts.last == TrucoEnum.Truco then {
       List(EnvidoEnum.Envido, EnvidoEnum.RealEnvido, EnvidoEnum.FaltaEnvido)
     } else {
       shouts.last match { // All shouts must be of the same type
@@ -263,10 +267,12 @@ class TrucoMatch {
           playerWithTrucoQuiero = Some(currentPlayer)
           shouts = shouts :+ shout
         }
-        trucoPoints = calculateShoutPoints(shouts)
+        trucoPoints = calculateShoutPoints()
       case _ => throw new IllegalArgumentException("Invalid Truco shout")
     }
-    canPlayEnvido = false
+    if round == 0 && currentPlayer != startGamePlayer
+    then // In the first round, a Truco shout can be countershouted by Envido
+      canPlayEnvido = false
   }
 
   private def envidoShout(shout: EnvidoEnum): Unit = {
@@ -293,9 +299,14 @@ class TrucoMatch {
             .contains(shouts.last) =>
         areShouting = false
         if shout == EnvidoEnum.NoQuiero then shouts = shouts.dropRight(1)
-        envidoPoints = calculateShoutPoints(shouts)
+        else if shout == EnvidoEnum.Quiero then shouts = shouts :+ shout
+        envidoPoints = calculateShoutPoints()
         if envidoPoints == 0 then
           envidoPoints += 1 // Base points for Envido denied
+        if envidoWinner.isDefined then {
+          val winner = envidoWinner.get
+          winner.points += envidoPoints
+        }
         shouts = List.empty
         canPlayEnvido = false
       case _ => throw new IllegalArgumentException("Invalid Envido shout")
@@ -307,6 +318,8 @@ class TrucoMatch {
       secondPlayerCard: Card
   ): Unit = {
     round += 1
+    if round >= 1 then
+      canPlayEnvido = false // Can't play envido after the first round
     if firstPlayerCard > secondPlayerCard then currentPlayer = firstPlayer
     else if firstPlayerCard < secondPlayerCard then currentPlayer = secondPlayer
     // If the cards are equal, the currentPlayer remains the same
@@ -333,6 +346,21 @@ class TrucoMatch {
   private def getNextStartGamePlayer(): TrucoPlayer = {
     if startGamePlayer == firstPlayer then secondPlayer
     else firstPlayer
+  }
+
+  private def envidoWinner: Option[TrucoPlayer] = {
+    val maybePlayerDeniedEnvido =
+      if firstPlayer.shout == Some(EnvidoEnum.NoQuiero) then Some(secondPlayer)
+      else if secondPlayer.shout == Some(EnvidoEnum.NoQuiero) then
+        Some(firstPlayer)
+      else None
+
+    maybePlayerDeniedEnvido match {
+      case Some(player) => Some(player)
+      case None         =>
+        // TODO calculate the winner based on score logic
+        Some(currentPlayer)
+    }
   }
 
   private def gameWinner: Option[TrucoPlayer] = {
@@ -408,9 +436,7 @@ class TrucoMatch {
     }
   }
 
-  private def calculateShoutPoints(
-      shouts: List[EnvidoEnum | TrucoEnum]
-  ): Int = {
+  private def calculateShoutPoints(): Int = {
     // In practice the List should only contain a single type of Shout because of rules checking when shouting
     shouts.foldLeft(0) { (acc, shout) =>
       shout match {
