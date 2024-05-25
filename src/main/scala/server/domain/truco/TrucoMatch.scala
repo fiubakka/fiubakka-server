@@ -176,7 +176,8 @@ class TrucoMatch {
   }
 
   private def availableEnvidoShouts: List[EnvidoEnum] = {
-    if shouts.isEmpty then {
+    if !canPlayEnvido then List.empty
+    else if shouts.isEmpty then {
       List(EnvidoEnum.Envido, EnvidoEnum.RealEnvido, EnvidoEnum.FaltaEnvido)
     } else {
       shouts.last match { // All shouts must be of the same type
