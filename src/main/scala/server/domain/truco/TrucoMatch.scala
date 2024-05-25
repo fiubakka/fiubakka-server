@@ -182,16 +182,15 @@ class TrucoMatch {
     } else {
       shouts.last match { // All shouts must be of the same type
         case EnvidoEnum.Envido =>
-          if (shouts.dropRight(1).last == EnvidoEnum.Envido) then
-            List(EnvidoEnum.Envido)
-          else
-            List.empty ++
-              List(
-                EnvidoEnum.RealEnvido,
-                EnvidoEnum.FaltaEnvido,
-                EnvidoEnum.Quiero,
-                EnvidoEnum.NoQuiero
-              )
+          (if (shouts.dropRight(1).last == EnvidoEnum.Envido) then
+             List(EnvidoEnum.Envido)
+           else List.empty) ++
+            List(
+              EnvidoEnum.RealEnvido,
+              EnvidoEnum.FaltaEnvido,
+              EnvidoEnum.Quiero,
+              EnvidoEnum.NoQuiero
+            )
         case EnvidoEnum.RealEnvido =>
           List(EnvidoEnum.FaltaEnvido, EnvidoEnum.Quiero, EnvidoEnum.NoQuiero)
         case EnvidoEnum.FaltaEnvido =>
