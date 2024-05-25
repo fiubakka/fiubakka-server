@@ -29,6 +29,8 @@ class TrucoMatch {
   val secondPlayer = new TrucoPlayer(new Hand(deck))
   var currentPlayer = firstPlayer // Player with the current turn
   var startGamePlayer = firstPlayer // Player that started the current game
+  var startedShoutingPlayer: Option[TrucoPlayer] =
+    None // Player that started the shouting phase
   var playerWithTrucoQuiero =
     None: Option[
       TrucoPlayer
@@ -101,6 +103,9 @@ class TrucoMatch {
       throw new IllegalStateException(
         "Cannot shout, waiting for next game start."
       )
+
+    val wereShouting = areShouting
+
     shout match {
       case e: TrucoEnum =>
         if shouts.isEmpty || shouts.last.isInstanceOf[TrucoEnum] then
@@ -113,9 +118,19 @@ class TrucoMatch {
         if canPlayEnvido then envidoShout(e)
         else throw new IllegalArgumentException("Cannot shout Envido now")
     }
+
     currentPlayer.shout(shout)
     resetLastPlayerAction()
-    currentPlayer = getNextPlayer()
+
+    // Store the player that initiated the shouting, needed for determining
+    // which player should play after shouting is over
+    if !wereShouting && areShouting then
+      startedShoutingPlayer = Some(currentPlayer)
+      currentPlayer = getNextPlayer()
+    else if wereShouting && !areShouting then
+      currentPlayer = getNextPlayer()
+      startedShoutingPlayer = None // Reset after shouting is over
+    else currentPlayer = getNextPlayer()
   }
 
   def startNextGame(): Unit = {
@@ -128,6 +143,7 @@ class TrucoMatch {
     areShouting = false
     cardsPlayed = List.empty
     startGamePlayer = getNextStartGamePlayer()
+    startedShoutingPlayer = None
     currentPlayer = startGamePlayer
     playerWithTrucoQuiero = None
     firstPlayer.resetLastAction()
@@ -278,7 +294,9 @@ class TrucoMatch {
   }
 
   private def getNextPlayer(): TrucoPlayer = {
-    if currentPlayer == firstPlayer then secondPlayer
+    if !areShouting && startedShoutingPlayer.isDefined then
+      startedShoutingPlayer.get
+    else if currentPlayer == firstPlayer then secondPlayer
     else firstPlayer
   }
 
