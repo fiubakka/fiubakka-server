@@ -182,7 +182,8 @@ class TrucoMatch {
     } else {
       shouts.last match { // All shouts must be of the same type
         case EnvidoEnum.Envido =>
-          (if (shouts.dropRight(1).last == EnvidoEnum.Envido) then
+          (if (shouts.length == 1)
+           then // Envido is available also if the first shout was Envido, but only once more
              List(EnvidoEnum.Envido)
            else List.empty) ++
             List(
