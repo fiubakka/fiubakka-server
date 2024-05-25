@@ -155,8 +155,7 @@ class TrucoMatch {
 
   // We don't consider "Mazo" as a Shout per se here
   def availableShouts: List[EnvidoEnum | TrucoEnum] = {
-    // TODO add envido shouts
-    availableTrucoShouts
+    availableEnvidoShouts ++ availableTrucoShouts
   }
 
   def isMazoAvailable: Boolean = {
@@ -174,6 +173,32 @@ class TrucoMatch {
   def isMatchOver: Boolean = {
     firstPlayer.points == TrucoMatch.MaxPoints ||
     secondPlayer.points == TrucoMatch.MaxPoints
+  }
+
+  private def availableEnvidoShouts: List[EnvidoEnum] = {
+    if shouts.isEmpty then {
+      List(EnvidoEnum.Envido, EnvidoEnum.RealEnvido, EnvidoEnum.FaltaEnvido)
+    } else {
+      shouts.last match { // All shouts must be of the same type
+        case EnvidoEnum.Envido =>
+          if (shouts.dropRight(1).last == EnvidoEnum.Envido) then
+            List(EnvidoEnum.Envido)
+          else
+            List.empty ++
+              List(
+                EnvidoEnum.RealEnvido,
+                EnvidoEnum.FaltaEnvido,
+                EnvidoEnum.Quiero,
+                EnvidoEnum.NoQuiero
+              )
+        case EnvidoEnum.RealEnvido =>
+          List(EnvidoEnum.FaltaEnvido, EnvidoEnum.Quiero, EnvidoEnum.NoQuiero)
+        case EnvidoEnum.FaltaEnvido =>
+          List(EnvidoEnum.Quiero, EnvidoEnum.NoQuiero)
+        case _ =>
+          List.empty // Envido shouting is over, so there are no Envido options to shout
+      }
+    }
   }
 
   private def availableTrucoShouts: List[TrucoEnum] = {
@@ -254,13 +279,17 @@ class TrucoMatch {
         areShouting = true
         shouts = shouts :+ shout
       case EnvidoEnum.FaltaEnvido
-          if shouts.isEmpty || !List(EnvidoEnum.Quiero, EnvidoEnum.NoQuiero)
+          if shouts.isEmpty || !List(
+            EnvidoEnum.Quiero,
+            EnvidoEnum.NoQuiero,
+            EnvidoEnum.FaltaEnvido
+          )
             .contains(shouts.last) =>
         areShouting = true
         shouts = shouts :+ shout
-      case _
+      case EnvidoEnum.Quiero | EnvidoEnum.NoQuiero
           if !shouts.isEmpty && !List(EnvidoEnum.Quiero, EnvidoEnum.NoQuiero)
-            .contains(shouts.last) => // Quiero, NoQuiero
+            .contains(shouts.last) =>
         areShouting = false
         if shout == EnvidoEnum.NoQuiero then shouts = shouts.dropRight(1)
         envidoPoints = calculateShoutPoints(shouts)
