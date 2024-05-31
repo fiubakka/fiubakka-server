@@ -26,7 +26,7 @@ object PlayerPersistor {
       persistenceId,
       emptyState = DurablePlayerState(
         "",
-        Position(150, 230),
+        Position(845, 1730),
         Equipment(0, 0, 0, 0, 0, 0, 0),
         0
       ),
