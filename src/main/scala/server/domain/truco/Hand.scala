@@ -2,6 +2,7 @@ package server.domain.truco
 
 import server.domain.truco.cards.Card
 import server.domain.truco.cards.Deck
+import server.domain.truco.cards.CardNumber
 
 object Hand {
   val InitialCardAmount = 3
@@ -23,7 +24,7 @@ class Hand(deck: Deck) {
 
     val envidoScore = envidoGroups.values.flatten
       .map(_.number match
-        case CardNumber.One   => 1
+        case CardNumber.Ace   => 1
         case CardNumber.Two   => 2
         case CardNumber.Three => 3
         case CardNumber.Four  => 4
