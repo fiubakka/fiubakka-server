@@ -20,7 +20,7 @@ class TrucoPlayer(var hand: Hand) {
   }
 
   def isValidCard(cardId: Int): Boolean = {
-    cardId >= 0 && cardId < hand.cards.length && hand.cards(cardId).isDefined
+    cardId >= 0 && cardId < hand.cards.length && !hand.cards(cardId)._2
   }
 
   def play(cardIdx: Int): Card = {
@@ -50,5 +50,9 @@ class TrucoPlayer(var hand: Hand) {
     shout = None
     cardPlayed = None
     wentToMazo = false
+  }
+
+  def calculateEnvidoScore(): Int = {
+    hand.calculateEnvidoScore()
   }
 }
