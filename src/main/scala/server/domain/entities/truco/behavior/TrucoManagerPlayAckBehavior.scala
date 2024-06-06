@@ -122,16 +122,16 @@ object TrucoManagerPlayAckBehavior {
           state.trucoMatch.firstPlayer.hand.cards.zipWithIndex.map {
             case ((card, hasBeenPlayed), idx) =>
               hasBeenPlayed match {
-                case true  => Some(TrucoCard(idx, card))
-                case false => None
+                case false => Some(TrucoCard(idx, card))
+                case true  => None
               }
           }.flatten
         case state.secondPlayer.playerName =>
           state.trucoMatch.secondPlayer.hand.cards.zipWithIndex.map {
             case ((card, hasBeenPlayed), idx) =>
               hasBeenPlayed match {
-                case true  => Some(TrucoCard(idx, card))
-                case false => None
+                case false => Some(TrucoCard(idx, card))
+                case true  => None
               }
           }.flatten
       },
