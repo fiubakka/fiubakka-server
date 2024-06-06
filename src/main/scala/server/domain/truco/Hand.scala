@@ -41,7 +41,7 @@ class Hand(deck: Deck) {
       .takeRight(2)
 
     val envidoScore =
-      envidoCards.map(_.number.envidoValue).reduce((a, b) => a + b)
+      envidoCards.map(_.number.envidoValue).sum
 
     if envidoCards.length == 2 then envidoScore + Hand.BaseEnvidoScore
     else envidoScore
