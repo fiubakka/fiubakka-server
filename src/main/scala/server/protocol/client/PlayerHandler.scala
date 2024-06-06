@@ -56,6 +56,7 @@ import protobuf.server.truco.play.PBTrucoPlayType
 import protobuf.server.truco.play.PBTrucoPoints
 import protobuf.server.truco.play.{PBTrucoPlay => PBServerTrucoPlay}
 import protobuf.server.truco.play.{PBTrucoShout => PBServerTrucoShout}
+import protobuf.server.truco.player_disconnected.PBTrucoPlayerDisconnected
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
 import server.domain.entities.player.Player
@@ -406,6 +407,12 @@ object PlayerHandler {
 
         case Player.NotifyTrucoAllowPlay(playId) => {
           val message = PBTrucoAllowPlay.of(playId)
+          state.conQueue.offer(message)
+          Behaviors.same
+        }
+
+        case Player.NotifyTrucoPlayerDisconnected(opponentUsername) => {
+          val message = PBTrucoPlayerDisconnected.of(opponentUsername)
           state.conQueue.offer(message)
           Behaviors.same
         }

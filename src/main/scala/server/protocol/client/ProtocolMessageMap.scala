@@ -23,6 +23,7 @@ import protobuf.server.truco.allow_play.PBTrucoAllowPlay
 import protobuf.server.truco.match_challenge_denied.PBTrucoMatchChallengeDenied
 import protobuf.server.truco.match_challenge_request.PBTrucoMatchChallengeRequest
 import protobuf.server.truco.play.{PBTrucoPlay => PBServerTrucoPlay}
+import protobuf.server.truco.player_disconnected.PBTrucoPlayerDisconnected
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
 
@@ -55,6 +56,7 @@ object ProtocolMessageMap {
       PBTrucoMatchChallengeRequest.getClass.toString -> PBServerMessageType.PBTrucoMatchChallengeRequest,
       PBTrucoMatchChallengeDenied.getClass.toString -> PBServerMessageType.PBTrucoMatchChallengeDenied,
       PBServerTrucoPlay.getClass.toString -> PBServerMessageType.PBTrucoPlay,
-      PBTrucoAllowPlay.getClass.toString -> PBServerMessageType.PBTrucoAllowPlay
+      PBTrucoAllowPlay.getClass.toString -> PBServerMessageType.PBTrucoAllowPlay,
+      PBTrucoPlayerDisconnected.getClass.toString -> PBServerMessageType.PBTrucoPlayerDisconnected
     )
 }

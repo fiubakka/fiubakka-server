@@ -75,9 +75,13 @@ object TrucoManagerPlayAckBehavior {
             if !state.trucoMatch.isMatchOver then { // If the match is over then these messages are not necessary
               playerName match {
                 case state.firstPlayer.playerName =>
-                  state.secondPlayer.player ! TrucoPlayerDisconnected()
+                  state.secondPlayer.player ! TrucoPlayerDisconnected(
+                    state.firstPlayer.playerName
+                  )
                 case state.secondPlayer.playerName =>
-                  state.firstPlayer.player ! TrucoPlayerDisconnected()
+                  state.firstPlayer.player ! TrucoPlayerDisconnected(
+                    state.secondPlayer.playerName
+                  )
               }
             }
             Behaviors.stopped

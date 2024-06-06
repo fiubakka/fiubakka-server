@@ -75,4 +75,6 @@ object PlayerActionCommand {
       extends ActionCommand
   final case class TrucoMatchAckPlay(playId: Int) extends ActionCommand
   final case class TrucoDisconnect() extends ActionCommand
+  final case class TrucoPlayerDisconnectedNotification(opponentUsername: String)
+      extends ActionCommand
 }

@@ -16,7 +16,7 @@ object TrucoManagerInitBehavior {
         AskPlayersToStartMatch(),
         250.milli
       )
-      timers.startTimerAtFixedRate(
+      timers.startTimerWithFixedDelay(
         "failMatchPlayersSync",
         FailMatchPlayersSync(),
         10.seconds
