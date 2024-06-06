@@ -357,10 +357,12 @@ class TrucoMatch {
 
     maybePlayerDeniedEnvido match {
       case Some(player) => Some(player)
-      case None         =>
+      case None =>
         val firstPlayerScore = firstPlayer.calculateEnvidoScore()
         val secondPlayerScore = secondPlayer.calculateEnvidoScore()
-        val envidoWinner = if firstPlayerScore >= secondPlayerScore then firstPlayer else secondPlayer
+        val envidoWinner =
+          if firstPlayerScore >= secondPlayerScore then firstPlayer
+          else secondPlayer
         Some(envidoWinner)
     }
   }
