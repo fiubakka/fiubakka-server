@@ -51,4 +51,8 @@ class TrucoPlayer(var hand: Hand) {
     cardPlayed = None
     wentToMazo = false
   }
+
+  def calculateEnvidoScore(): Int = {
+    hand.calculateEnvidoScore()
+  }
 }
