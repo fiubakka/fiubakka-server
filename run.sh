@@ -52,6 +52,7 @@ check_port "$player_accepter_port"
 
 export AKKA_PORT=$akka_port
 export PLAYER_ACCEPTER_PORT=$player_accepter_port
+[ -n "$debug_option" ] && export DEBUG_PORT=5005
 [ -n "$metrics_enabled" ] && export METRICS_ENABLED=$metrics_enabled
 
-sbt $debug_option run
+sbt run

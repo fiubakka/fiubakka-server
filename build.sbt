@@ -45,6 +45,7 @@ lazy val root = (project in file("."))
       val defaultAkkaPort = 25520
       val defaultPlayerAccepterPort = 2020
       val akkaPort = sys.env.getOrElse("AKKA_PORT", defaultAkkaPort)
+      val debugPort = sys.env.getOrElse("DEBUG_PORT", "")
       val playerAccepterPort = sys.env.getOrElse("PLAYER_ACCEPTER_PORT", defaultPlayerAccepterPort)
 
       Seq(
@@ -53,7 +54,7 @@ lazy val root = (project in file("."))
         s"-Dakka.remote.artery.canonical.port=$akkaPort",
         s"-Dakka.remote.artery.bind.port=$akkaPort",
         s"-Dgame.player-accepter.port=$playerAccepterPort"
-      )
+      ) ++ (if (debugPort.nonEmpty) Seq(s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$debugPort") else Seq.empty)
     },
     assembly / mainClass := Some("Main"),
     // See https://stackoverflow.com/questions/25144484/sbt-assembly-deduplication-found-error
