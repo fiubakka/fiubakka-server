@@ -28,6 +28,7 @@ class TrucoMatch {
     new TrucoPlayer(new Hand(deck)) // Player that starts the match
   val secondPlayer = new TrucoPlayer(new Hand(deck))
   var currentPlayer = firstPlayer // Player with the current turn
+  var previousPlayer = firstPlayer
   var startGamePlayer = firstPlayer // Player that started the current game
   var startedShoutingPlayer: Option[TrucoPlayer] =
     None // Player that started the shouting phase
@@ -66,6 +67,7 @@ class TrucoMatch {
       throw new IllegalStateException("Cannot go to Mazo now.")
     currentPlayer.goToMazo()
     resetLastPlayerAction()
+    previousPlayer = currentPlayer
     currentPlayer = getNextPlayer()
   }
 
@@ -80,6 +82,9 @@ class TrucoMatch {
       )
     if !currentPlayer.isValidCard(cardId) then
       throw new IllegalArgumentException("Cannot play card, invalid card id.")
+
+    resetLastPlayerAction()
+
     val cardPlayed = currentPlayer.play(cardId)
     val currentRoundCards = getCurrentCardsPlayed()
     currentPlayer match {
@@ -87,7 +92,7 @@ class TrucoMatch {
       case `secondPlayer` =>
         currentRoundCards.secondPlayerCard = Some(cardPlayed)
     }
-    resetLastPlayerAction()
+    previousPlayer = currentPlayer
     currentPlayer = getNextPlayer()
     currentRoundCards match {
       case CardsRound(Some(_), Some(_))
@@ -123,8 +128,9 @@ class TrucoMatch {
         } else throw new IllegalArgumentException("Cannot shout Envido now")
     }
 
-    currentPlayer.shout(shout)
     resetLastPlayerAction()
+    currentPlayer.shout(shout)
+    previousPlayer = currentPlayer
 
     // Store the player that initiated the shouting, needed for determining
     // which player should play after shouting is over
@@ -149,6 +155,7 @@ class TrucoMatch {
     startGamePlayer = getNextStartGamePlayer()
     startedShoutingPlayer = None
     currentPlayer = startGamePlayer
+    previousPlayer = startGamePlayer
     playerWithTrucoQuiero = None
     firstPlayer.resetLastAction()
     secondPlayer.resetLastAction()
@@ -361,7 +368,8 @@ class TrucoMatch {
         val firstPlayerScore = firstPlayer.calculateEnvidoScore()
         val secondPlayerScore = secondPlayer.calculateEnvidoScore()
         val envidoWinner =
-          if firstPlayerScore >= secondPlayerScore then firstPlayer
+          if firstPlayerScore >= secondPlayerScore then
+            firstPlayer // TODO take into account the mano
           else secondPlayer
         Some(envidoWinner)
     }
@@ -468,9 +476,9 @@ class TrucoMatch {
   }
 
   private def resetLastPlayerAction(): Unit = {
-    currentPlayer match {
-      case `firstPlayer`  => secondPlayer.resetLastAction()
-      case `secondPlayer` => firstPlayer.resetLastAction()
+    previousPlayer match {
+      case `firstPlayer`  => firstPlayer.resetLastAction()
+      case `secondPlayer` => secondPlayer.resetLastAction()
     }
   }
 }
