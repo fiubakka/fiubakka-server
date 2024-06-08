@@ -373,9 +373,10 @@ class TrucoMatch {
         val firstPlayerScore = firstPlayer.calculateEnvidoScore()
         val secondPlayerScore = secondPlayer.calculateEnvidoScore()
         val envidoWinner =
-          if firstPlayerScore >= secondPlayerScore then
-            firstPlayer // TODO take into account the mano
-          else secondPlayer
+          if firstPlayerScore > secondPlayerScore then firstPlayer
+          else if secondPlayerScore < firstPlayerScore then secondPlayer
+          else
+            startGamePlayer // When scores are equal, the player that started the game (Mano) wins
         Some(envidoWinner)
     }
   }
