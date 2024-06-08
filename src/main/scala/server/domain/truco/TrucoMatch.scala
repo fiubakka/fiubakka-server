@@ -115,6 +115,8 @@ class TrucoMatch {
       case e: TrucoEnum =>
         if shouts.isEmpty || shouts.last.isInstanceOf[TrucoEnum] then
           trucoShout(e)
+          resetLastPlayerAction()
+          currentPlayer.shout(shout)
         else
           throw new IllegalArgumentException(
             "Cannot shout Truco when shouting Envido"
@@ -125,11 +127,15 @@ class TrucoMatch {
           if !shouts.isEmpty && shouts.last == TrucoEnum.Truco then
             shouts = List.empty
           envidoShout(e)
+          resetLastPlayerAction()
+          currentPlayer.shout(shout)
+          if envidoWinner.isDefined then {
+            val winner = envidoWinner.get
+            winner.points += envidoPoints
+          }
         } else throw new IllegalArgumentException("Cannot shout Envido now")
     }
 
-    resetLastPlayerAction()
-    currentPlayer.shout(shout)
     previousPlayer = currentPlayer
 
     // Store the player that initiated the shouting, needed for determining
@@ -310,10 +316,6 @@ class TrucoMatch {
         envidoPoints = calculateShoutPoints()
         if envidoPoints == 0 then
           envidoPoints += 1 // Base points for Envido denied
-        if envidoWinner.isDefined then {
-          val winner = envidoWinner.get
-          winner.points += envidoPoints
-        }
         shouts = List.empty
         canPlayEnvido = false
       case _ => throw new IllegalArgumentException("Invalid Envido shout")
