@@ -65,8 +65,11 @@ class TrucoMatch {
       )
     if !isMazoAvailable then
       throw new IllegalStateException("Cannot go to Mazo now.")
-    currentPlayer.goToMazo()
     resetLastPlayerAction()
+    currentPlayer.goToMazo()
+    if round == 0 && currentPlayer == startGamePlayer then
+      trucoPoints =
+        2 // If the first player goes to Mazo, the game is worth 2 points because it skipped envido
     previousPlayer = currentPlayer
     currentPlayer = getNextPlayer()
   }
