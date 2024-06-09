@@ -3,7 +3,11 @@ version: 2.1
 workflows:
   build-and-deploy:
     jobs:
-      - prod-deploy
+      - prod-deploy:
+          filters:
+            branches:
+              only:
+                - /^main$/
 
 jobs:
   prod-deploy:
