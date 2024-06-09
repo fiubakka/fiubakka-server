@@ -1,7 +1,7 @@
 package server.protocol.event.kafka
 
 import akka.NotUsed
-import akka.actor.typed.scaladsl.ActorContext
+import akka.actor.typed.ActorSystem
 import akka.cluster.typed.Cluster
 import akka.kafka.ConsumerSettings
 import akka.kafka.Subscriptions
@@ -13,7 +13,6 @@ import akka.stream.scaladsl.Source
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
-import server.GameServer
 
 object KafkaConsumer {
   private var consumers
@@ -36,23 +35,22 @@ object KafkaConsumer {
   // We are not using a single underlying KafkaConsumer for different Consumer.plainExternalSource
   // because the performance is terrible. Instead, we manually filter the messages
   // based on their partition for each broadcasted source.
-  def configure(ctx: ActorContext[GameServer.Command]) = {
-    implicit val system = ctx.system
+  def configure(implicit system: ActorSystem[?]) = {
     val nodeId =
       Cluster(
-        ctx.system
+        system
       ).selfMember.uniqueAddress.longUid // Node Id in the Akka Cluster
 
-    val gameZoneTopic = ctx.system.settings.config.getString("game.kafka.topic")
+    val gameZoneTopic = system.settings.config.getString("game.kafka.topic")
     val gameZonePartitions =
-      ctx.system.settings.config.getInt("game.kafka.partitions")
+      system.settings.config.getInt("game.kafka.partitions")
     val groupPrefix =
-      ctx.system.settings.config.getString("game.kafka.consumer.group-prefix")
+      system.settings.config.getString("game.kafka.consumer.group-prefix")
 
     val kafkaConsumerSource = Consumer
       .plainSource(
         ConsumerSettings(
-          ctx.system.settings.config.getConfig("akka.kafka-consumer"),
+          system.settings.config.getConfig("akka.kafka-consumer"),
           new StringDeserializer,
           new ByteArrayDeserializer
         )

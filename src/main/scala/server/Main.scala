@@ -5,6 +5,8 @@ import akka.rollingupdate.kubernetes.AppVersionRevision
 import akka.rollingupdate.kubernetes.PodDeletionCost
 import server.GameServer
 import server.infra.DB
+import server.protocol.event.kafka.KafkaConsumer
+import server.protocol.event.kafka.KafkaProducer
 import server.sharding.Sharding
 
 import scala.concurrent.Await
@@ -15,6 +17,7 @@ object Main extends App {
     ActorSystem(GameServer(), "fiubakka-server")
   DB.configure()
   Sharding.configure(system)
+
   // Only needed for Kubernetes
   if sys.env.getOrElse("ENV", "") == "production" then {
     AkkaManagement(system).start()
@@ -22,6 +25,9 @@ object Main extends App {
     PodDeletionCost(system).start()
     AppVersionRevision(system).start()
   }
+
+  KafkaProducer.configure(system)
+  KafkaConsumer.configure(system)
 
   system ! GameServer.Run()
   Await.result(system.whenTerminated, Duration.Inf)
