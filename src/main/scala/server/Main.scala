@@ -5,7 +5,6 @@ import akka.rollingupdate.kubernetes.AppVersionRevision
 import akka.rollingupdate.kubernetes.PodDeletionCost
 import server.GameServer
 import server.infra.DB
-import server.protocol.event.kafka.KafkaProducer
 import server.sharding.Sharding
 
 import scala.concurrent.Await
@@ -25,7 +24,7 @@ object Main extends App {
     AppVersionRevision(system).start()
   }
 
-  KafkaProducer.configure(system)
+  // KafkaProducer.configure(system)
   // KafkaConsumer.configure(system)
 
   system ! GameServer.Run()
