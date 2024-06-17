@@ -48,7 +48,7 @@ spec:
           protocol: TCP
         env:
         - name: ENV
-          value: production
+          value: prod
         - name: DB_HOST
           value: fiubakka-postgres-postgresql.fiubakka-server-1.svc.cluster.local:5432
         - name: KAFKA_BOOTSTRAP_SERVERS

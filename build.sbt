@@ -41,6 +41,9 @@ cinnamonLogLevel := "INFO"
 enablePlugins(JavaAppPackaging)
 
 lazy val root = (project in file("."))
+  .enablePlugins(
+    Cinnamon
+  )
   .settings(
     run / fork := true, // These are only used in development mode, since production uses a JAR and not sbt
     javaOptions ++= {
@@ -95,6 +98,4 @@ lazy val root = (project in file("."))
       janino,
     )
   )
-  .enablePlugins(
-    Cinnamon
-  )
+
