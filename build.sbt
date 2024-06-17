@@ -38,6 +38,8 @@ cinnamonSuppressRepoWarnings := true
 run / cinnamon := isMetricsEnabled // Set to True to enable Cinnamon agent used for Telemetry
 cinnamonLogLevel := "INFO"
 
+enablePlugins(JavaAppPackaging)
+
 lazy val root = (project in file("."))
   .settings(
     run / fork := true, // These are only used in development mode, since production uses a JAR and not sbt
@@ -55,23 +57,6 @@ lazy val root = (project in file("."))
         s"-Dakka.remote.artery.bind.port=$akkaPort",
         s"-Dgame.player-accepter.port=$playerAccepterPort"
       ) ++ (if (debugPort.nonEmpty) Seq(s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$debugPort") else Seq.empty)
-    },
-    assembly / mainClass := Some("Main"),
-    // See https://stackoverflow.com/questions/25144484/sbt-assembly-deduplication-found-error
-    // Basically we are telling sbt-assembly to ignore the META-INF folder for conflicting files
-    //
-    // See https://stackoverflow.com/questions/31011243/no-configuration-setting-found-for-key-akka-version
-    // We need to concat both reference.conf and version.conf files for Akka config to work 
-    assembly / assemblyMergeStrategy := {
-      case PathList("META-INF", xs @ _*)   =>
-        (xs map {_.toLowerCase}) match {
-          // Necessary for Logback newer version to work, see https://stackoverflow.com/questions/73727791/sbt-assembly-logback-does-not-work-with-%C3%BCber-jar
-          case "services" :: xs            => MergeStrategy.filterDistinctLines
-          case _                           => MergeStrategy.discard
-        }
-      case "reference.conf"                => MergeStrategy.concat
-      case "version.conf"                  => MergeStrategy.concat
-      case _                               => MergeStrategy.first
     },
     Compile / PB.targets := Seq(
       scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"

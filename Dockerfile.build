@@ -12,5 +12,5 @@ RUN sbt update
 
 COPY ./src src/
 
-# Generate JAR bundle
-RUN sbt clean assembly
+# Generate binary
+RUN sbt stage

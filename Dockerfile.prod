@@ -3,8 +3,11 @@ FROM eclipse-temurin:21.0.3_9-jre-alpine
 
 WORKDIR /usr/app
 
-COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/scala-3.4.2/fiubakka-server-assembly-0.1.0-SNAPSHOT.jar /usr/app/app.jar
+# Bin script requires bash to work
+RUN apk add --no-cache bash
+
+COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/universal/stage /usr/app/stage
 
 EXPOSE 2020/tcp
 
-CMD ["java", "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED", "-jar", "app.jar"]
+CMD ["bash", "-c", "JAVA_OPTS='--add-opens=java.base/sun.nio.ch=ALL-UNNAMED' ./stage/bin/fiubakka-server"]
