@@ -8,11 +8,9 @@ FROM eclipse-temurin:21.0.3_9-jre-alpine
 
 WORKDIR /usr/app
 
-COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/universal/stage /usr/app/stage
-
 # Install PostgreSQL
 
-RUN apk update && apk add --no-cache postgresql curl bash
+RUN apk update && apk add --no-cache postgresql curl bash sed
 
 RUN mkdir /run/postgresql && \
     chown postgres:postgres /run/postgresql && \
@@ -55,6 +53,11 @@ EXPOSE 9092/tcp
 EXPOSE 2020/tcp
 
 ENV KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+
+COPY --from=mrmarcosrolando/fiubakka-server:build-latest /usr/app/target/universal/stage /usr/app/stage
+
+# Remove Java agent from the start script
+RUN sed -i '/addJava "-javaagent:/d' stage/bin/fiubakka-server
 
 COPY ./.docker/dev-entrypoint.sh /
 
