@@ -2,7 +2,7 @@
 <configuration>
     <!-- See https://doc.akka.io/docs/akka/current/typed/logging.html for reference -->
 
-    <if condition='property("ENV").contains("production")'>
+    <if condition='property("ENV").contains("prod")'>
         <then>
             <!-- Production configuration -->
             <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">

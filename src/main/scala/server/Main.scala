@@ -19,7 +19,7 @@ object Main extends App {
   Sharding.configure(system)
 
   // Only needed for Kubernetes
-  if sys.env.getOrElse("ENV", "") == "production" then {
+  if sys.env.getOrElse("ENV", "") == "prod" then {
     AkkaManagement(system).start()
     ClusterBootstrap(system).start()
     PodDeletionCost(system).start()
