@@ -16,6 +16,7 @@ kind: Pod
 metadata:
   name: grafana-plugins-tmp
 spec:
+  restartPolicy: Never
   containers:
   - name: grafana-plugins-tmp
     image: busybox
