@@ -46,7 +46,7 @@ spec:
         - name: http
           containerPort: 8080
           protocol: TCP
-        - name: cinnamon-prometheus
+        - name: cinnamon
           containerPort: 9001
           protocol: TCP
         - name: player-accepter

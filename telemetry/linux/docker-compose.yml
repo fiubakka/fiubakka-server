@@ -1,7 +1,4 @@
-version: "3"
-
 services:
-
   prometheus:
     image: prom/prometheus:v2.8.1
     volumes:
@@ -18,7 +15,9 @@ services:
     network_mode: "host"
 
   grafana:
-    image: grafana/grafana:6.0.2
-    volumes: ["../grafana/plugins/cinnamon-prometheus-app:/var/lib/grafana/plugins/cinnamon-prometheus-app"]
+    image: grafana/grafana:9.5.19
+    volumes: 
+      - ../grafana/plugins/cinnamon-prometheus-app:/var/lib/grafana/plugins/cinnamon-prometheus-app
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
     network_mode: "host"
     depends_on: ["prometheus"]
