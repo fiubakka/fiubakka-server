@@ -2,10 +2,6 @@ listeners:
   client:
     protocol: PLAINTEXT
 
-extraConfig:
-  log:
-    retention:
-      minutes: 2
-      check:
-        interval:
-          ms: 30000
+extraConfig: |
+  log.retention.minutes=2
+  log.retention.check.interval.ms=30000
