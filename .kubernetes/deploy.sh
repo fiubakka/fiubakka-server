@@ -38,6 +38,7 @@ if ! helm list -n "$NAMESPACE" | grep -q "$PROMETHEUS_RELEASE_NAME"; then
     echo "Installing Helm release '$PROMETHEUS_RELEASE_NAME' in namespace '$NAMESPACE'."
     helm install \
         "$PROMETHEUS_RELEASE_NAME" prometheus-community/prometheus \
+        -f .kubernetes/helm/prometheus.yaml \
         --namespace "$NAMESPACE"
 fi
 

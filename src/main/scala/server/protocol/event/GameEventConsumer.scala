@@ -35,6 +35,7 @@ object GameEventConsumer {
         player.path.name // The Player Entity Id is its Actor's name
 
       KafkaConsumer(partition)
+        .named("GameEventConsumer")
         .buffer(1024, OverflowStrategy.dropHead)
         .filter(record => {
           (record.key == null || record.key != playerId)

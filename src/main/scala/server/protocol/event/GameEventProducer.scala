@@ -47,6 +47,7 @@ object GameEventProducer {
         .preMaterialize()
 
       conSource
+        .named("GameEventProducer")
         .via(
           OutMessageFlow(
             (length: Int, `type`: GeneratedEnum) =>

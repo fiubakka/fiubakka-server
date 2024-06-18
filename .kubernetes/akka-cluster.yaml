@@ -15,7 +15,7 @@ spec:
       labels:
         app: fiubakka-server
       annotations:
-        prometheus.io/scrape: "true"
+        prometheus.io/fast-scrape: "true"
         prometheus.io/port: "9001" # Default Cinnamon Prometheus HTTP server port
     spec:
       containers:
