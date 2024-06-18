@@ -1,6 +1,10 @@
 image:
   tag: 9.5.19 # Latest compatible version with the Cinnamon plugin
 
+service:
+  type: LoadBalancer
+  port: 3000
+
 grafana.ini:
   plugins:
     allow_loading_unsigned_plugins: "cinnamon-prometheus-app" # Required for unsigned plugins such as Cinnamon

@@ -1,0 +1,11 @@
+listeners:
+  client:
+    protocol: PLAINTEXT
+
+extraConfig:
+  log:
+    retention:
+      minutes: 2
+      check:
+        interval:
+          ms: 30000
