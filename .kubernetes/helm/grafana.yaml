@@ -8,11 +8,10 @@ grafana.ini:
 persistence:
   enabled: true
 
-extraVolumes:
-  - name: grafana-plugins
-    persistentVolumeClaim:
-      claimName: grafana-plugins-pvc
-
 extraVolumeMounts:
   - name: grafana-plugins
     mountPath: /var/lib/grafana/plugins
+
+extraVolumes:
+  - name: grafana-plugins
+    existingClaim: grafana-plugins-pvc

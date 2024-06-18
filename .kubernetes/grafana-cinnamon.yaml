@@ -9,3 +9,22 @@ spec:
   resources:
     requests:
       storage: 1Mi
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: grafana-plugins-tmp
+spec:
+  containers:
+  - name: grafana-plugins-tmp
+    image: busybox
+    command: ['sh', '-c', 'sleep 120']
+    volumeMounts:
+    - mountPath: /var/lib/grafana/plugins
+      name: grafana-plugins
+  volumes:
+  - name: grafana-plugins
+    persistentVolumeClaim:
+      claimName: grafana-plugins-pvc

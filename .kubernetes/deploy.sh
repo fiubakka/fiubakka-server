@@ -11,7 +11,12 @@ if ! kubectl get namespace "$NAMESPACE" &> /dev/null; then
     kubectl create namespace "$NAMESPACE"
 fi
 
-kubectl apply -f .kubernetes/grafana-cinnamon.yaml -n "$NAMESPACE"
+if ! kubectl get pvc grafana-plugins -n "$NAMESPACE" &> /dev/null; then
+    echo "Creating PVC 'grafana-plugins' in namespace '$NAMESPACE'."
+    kubectl apply -f .kubernetes/grafana-cinnamon.yaml -n "$NAMESPACE"
+    kubectl wait --for=condition=ready pod/grafana-plugins-tmp -n "$NAMESPACE" --timeout=60s
+    kubectl cp telemetry/grafana/plugins/cinnamon-prometheus-app grafana-plugins-tmp:/var/lib/grafana/plugins/
+fi
 
 if ! helm list -n "$NAMESPACE" | grep -q "$KAFKA_RELEASE_NAME"; then
     echo "Installing Helm release '$KAFKA_RELEASE_NAME' in namespace '$NAMESPACE'."
