@@ -16,7 +16,7 @@ object GameServer {
           ctx.spawn(PlayerAccepter(), "PlayerAccepter")
 
           println("Spawning bots...")
-          (1 to 10).foreach(i => ctx.spawn(Bot(), s"Bot$i"))
+          (1 to 20).foreach(i => ctx.spawn(Bot(), s"Bot$i"))
           Behaviors.same
 
         }
