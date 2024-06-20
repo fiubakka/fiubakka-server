@@ -13,11 +13,10 @@ object GameServer {
 
   def apply(): Behavior[Command] = {
     Behaviors.withTimers { timers =>
-      timers.startTimerAtFixedRate(SpawnBot(1), 3.seconds)
-
       Behaviors.receive((ctx, msg) => {
         msg match {
           case Run() => {
+            timers.startTimerAtFixedRate(SpawnBot(1), 3.seconds)
             println("Game server is running...")
             ctx.spawn(PlayerAccepter(), "PlayerAccepter")
             Behaviors.same
