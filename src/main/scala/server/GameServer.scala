@@ -16,7 +16,7 @@ object GameServer {
       Behaviors.receive((ctx, msg) => {
         msg match {
           case Run() => {
-            timers.startTimerAtFixedRate(SpawnBot(1), 3.seconds)
+            timers.startSingleTimer(SpawnBot(0), 3.second)
             println("Game server is running...")
             ctx.spawn(PlayerAccepter(), "PlayerAccepter")
             Behaviors.same
@@ -24,8 +24,8 @@ object GameServer {
 
           case SpawnBot(number) => {
             ctx.spawn(Bot(), s"Bot$number")
-            if number > 20 then {
-              timers.cancelAll()
+            if number < 20 then {
+              timers.startSingleTimer(SpawnBot(number + 1), 3.second)
             }
             Behaviors.same
           }
