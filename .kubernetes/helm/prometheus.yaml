@@ -1,5 +1,16 @@
-# See https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus/values.yaml#L1126 for reference
+prometheus-node-exporter:
+  enabled: false
 
+prometheus-pushgateway:
+  enabled: false
+
+alertmanager:
+  enabled: false
+
+kube-state-metrics:
+  enabled: false
+
+# See https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus/values.yaml#L1126 for reference
 extraScrapeConfigs: |
   - job_name: 'kubernetes-pods-fast'
     honor_labels: true

@@ -24,7 +24,7 @@ object GameServer {
 
           case SpawnBot(number) => {
             ctx.spawn(Bot(), s"Bot$number")
-            if number < 10 then {
+            if number < 15 then {
               timers.startSingleTimer(SpawnBot(number + 1), 20.second)
             }
             Behaviors.same
