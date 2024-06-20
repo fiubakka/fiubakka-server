@@ -44,7 +44,7 @@ object GameEventProducer {
           .withProducer(KafkaProducer())
 
       val (conQueue, conSource) = Source
-        .queue[GeneratedMessage](256, OverflowStrategy.dropHead)
+        .queue[GeneratedMessage](1024, OverflowStrategy.dropHead)
         .preMaterialize()
 
       conSource
