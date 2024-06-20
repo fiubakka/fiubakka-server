@@ -89,6 +89,7 @@ lazy val root = (project in file("."))
       Cinnamon.library.cinnamonPrometheus,
       Cinnamon.library.cinnamonAkkaCluster,
       Cinnamon.library.cinnamonPrometheusHttpServer,
+      Cinnamon.library.cinnamonJvmMetricsProducer,
       postgresJdbc,
       slick,
       slickHikaricp,
