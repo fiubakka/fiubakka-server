@@ -15,6 +15,7 @@ import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.SourceQueueWithComplete
 import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
+import com.lightbend.cinnamon.akka.stream.CinnamonAttributes.FlowWithInstrumented
 import protobuf.client.chat.message.{PBPlayerMessage => PBPlayerMessageClient}
 import protobuf.client.init.player_login.PBPlayerLogin
 import protobuf.client.init.player_register.PBPlayerRegister
@@ -510,6 +511,11 @@ object PlayerHandler {
             )
           )
         )
+      )
+      .instrumentedPartial(
+        name = "PlayerHandlerConnection",
+        traceable = true,
+        reportByName = true
       )
       .watchTermination() { (_, done) =>
         done.onComplete(_ => {

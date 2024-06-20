@@ -6,7 +6,9 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.serialization.jackson.CborSerializable
 import akka.stream.Materializer
 import akka.stream.OverflowStrategy
+import akka.stream.scaladsl.Sink
 import akka.util.ByteString
+import com.lightbend.cinnamon.akka.stream.CinnamonAttributes.SourceWithInstrumented
 import protobuf.event.chat.message.PBPlayerMessage
 import protobuf.event.metadata.PBEventMetadata
 import protobuf.event.state.game_entity_disconnect.PBGameEntityDisconnect
@@ -35,7 +37,6 @@ object GameEventConsumer {
         player.path.name // The Player Entity Id is its Actor's name
 
       KafkaConsumer(partition)
-        .named("GameEventConsumer")
         .buffer(1024, OverflowStrategy.dropHead)
         .filter(record => {
           (record.key == null || record.key != playerId)
@@ -52,7 +53,10 @@ object GameEventConsumer {
         .map { msg =>
           ctx.self ! EventReceived(msg)
         }
-        .run()
+        .instrumentedRunWith(Sink.ignore)(
+          name = "GameEventConsumer",
+          reportByName = true
+        )
 
       Behaviors.receiveMessage {
         case EventReceived(msg) => {

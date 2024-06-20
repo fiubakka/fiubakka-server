@@ -7,6 +7,7 @@ import akka.kafka.scaladsl.Producer
 import akka.stream.Materializer
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Source
+import com.lightbend.cinnamon.akka.stream.CinnamonAttributes.SourceWithInstrumented
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringSerializer
@@ -47,7 +48,6 @@ object GameEventProducer {
         .preMaterialize()
 
       conSource
-        .named("GameEventProducer")
         .via(
           OutMessageFlow(
             (length: Int, `type`: GeneratedEnum) =>
@@ -59,7 +59,10 @@ object GameEventProducer {
         .map(value =>
           new ProducerRecord(gameZoneTopic, partition, playerId, value)
         )
-        .runWith(Producer.plainSink(producerSettings))
+        .instrumentedRunWith(Producer.plainSink(producerSettings))(
+          name = "GameEventProducer",
+          reportByName = true
+        )
 
       Behaviors.receiveMessage {
         case PlayerStateUpdate(playerState) => {
