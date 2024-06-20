@@ -4,23 +4,34 @@ import akka.actor.typed.scaladsl.Behaviors
 import server.misc.Bot
 import server.protocol.client.PlayerAccepter
 
+import scala.concurrent.duration.DurationInt
+
 object GameServer {
   sealed trait Command
   final case class Run() extends Command
+  final case class SpawnBot(number: Int) extends Command
 
   def apply(): Behavior[Command] = {
-    Behaviors.receive((ctx, msg) => {
-      msg match {
-        case Run() => {
-          println("Game server is running...")
-          ctx.spawn(PlayerAccepter(), "PlayerAccepter")
+    Behaviors.withTimers { timers =>
+      timers.startTimerAtFixedRate(SpawnBot(1), 3.seconds)
 
-          println("Spawning bots...")
-          (1 to 20).foreach(i => ctx.spawn(Bot(), s"Bot$i"))
-          Behaviors.same
+      Behaviors.receive((ctx, msg) => {
+        msg match {
+          case Run() => {
+            println("Game server is running...")
+            ctx.spawn(PlayerAccepter(), "PlayerAccepter")
+            Behaviors.same
+          }
 
+          case SpawnBot(number) => {
+            ctx.spawn(Bot(), s"Bot$number")
+            if number > 20 then {
+              timers.cancelAll()
+            }
+            Behaviors.same
+          }
         }
-      }
-    })
+      })
+    }
   }
 }
