@@ -16,6 +16,7 @@ if ! kubectl get pvc grafana-plugins-pvc -n "$NAMESPACE" &> /dev/null; then
     kubectl apply -f .kubernetes/grafana-cinnamon.yaml -n "$NAMESPACE"
     kubectl wait --for=condition=ready pod/grafana-plugins-tmp -n "$NAMESPACE" --timeout=60s
     kubectl cp telemetry/grafana/plugins/cinnamon-prometheus-app grafana-plugins-tmp:/var/lib/grafana/plugins/
+    kubectl delete pod grafana-plugins-tmp -n "$NAMESPACE"
 fi
 
 if ! helm list -n "$NAMESPACE" | grep -q "$KAFKA_RELEASE_NAME"; then
