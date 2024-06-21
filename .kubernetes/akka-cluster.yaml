@@ -61,6 +61,10 @@ spec:
           value: fiubakka-kafka.fiubakka-server-1.svc.cluster.local:9092
         - name: GAME_KAFKA_TOPIC
           value: game-zone
+        - name: GAME_BOTS_PER_NODE
+          value: "0"
+        - name: GAME_BOTS_PER_CREATION_DELAY_SECONDS
+          value: "20"
         - name: KUBERNETES_POD_NAME
           valueFrom:
             fieldRef:

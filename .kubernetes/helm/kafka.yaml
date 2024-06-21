@@ -2,6 +2,13 @@ listeners:
   client:
     protocol: PLAINTEXT
 
+provisioning:
+  enabled: true
+
+  topics:
+    - name: game-zone
+      partitions: 4
+
 extraConfig: |
   log.retention.minutes=2
   log.retention.check.interval.ms=30000
