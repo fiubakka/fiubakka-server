@@ -81,7 +81,7 @@ spec:
           # We don't set cpu limit because is not recommended in JVM
           # See https://doc.akka.io/docs/akka-management/current/kubernetes-deployment/preparing-for-production.html
           limits:
-            memory: 2048Mi
+            memory: 2500Mi
           requests:
             cpu: 1200m
             memory: 1024Mi
