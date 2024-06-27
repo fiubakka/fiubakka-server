@@ -70,6 +70,7 @@ lazy val root = (project in file("."))
       aeronClient,
       akkaTyped,
       akkaStream,
+      akkaStreamTyped,
       akkaStreamAlpakkaKafka,
       akkaCluster,
       akkaClusterSharding,

@@ -5,7 +5,7 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.scaladsl.Behaviors
 import server.domain.entities.player.Player
-import server.domain.entities.player.Player._
+import server.domain.entities.player.Player.*
 import server.domain.structs.PlayerState
 import server.protocol.event.GameEventConsumer
 import server.protocol.event.GameEventProducer

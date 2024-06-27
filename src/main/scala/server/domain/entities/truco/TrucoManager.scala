@@ -12,8 +12,8 @@ import server.domain.truco.TrucoMatch
 import server.sharding.Sharding
 
 object TrucoManager {
-  export TrucoManagerCommand._
-  export TrucoManagerReplyCommand._
+  export TrucoManagerCommand.*
+  export TrucoManagerReplyCommand.*
 
   def apply(
       firstPlayerName: String,

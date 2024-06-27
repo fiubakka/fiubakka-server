@@ -4,12 +4,12 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityRef
 import server.domain.entities.player.Player
-import server.domain.entities.player.Player._
+import server.domain.entities.player.Player.*
 import server.domain.structs.movement.Position
 import server.domain.structs.movement.Velocity
 import server.sharding.Sharding
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.Random
 
 object Bot {

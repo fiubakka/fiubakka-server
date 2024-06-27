@@ -3,15 +3,15 @@ package server.domain.entities.truco.behavior
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.ActorContext
 import akka.actor.typed.scaladsl.Behaviors
-import server.domain.entities.truco.command.TrucoManagerCommand._
-import server.domain.entities.truco.command.TrucoManagerReplyCommand._
+import server.domain.entities.truco.command.TrucoManagerCommand.*
+import server.domain.entities.truco.command.TrucoManagerReplyCommand.*
 import server.domain.structs.truco.TrucoCardPlay
 import server.domain.structs.truco.TrucoManagerState
 import server.domain.structs.truco.TrucoPlay
 import server.domain.structs.truco.TrucoShoutEnum
 import server.domain.structs.truco.TrucoShoutPlay
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 object TrucoManagerRunningBehavior {
   def apply(state: TrucoManagerState): Behavior[Command] = {

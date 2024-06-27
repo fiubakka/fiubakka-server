@@ -4,7 +4,7 @@ import org.mindrot.jbcrypt.BCrypt
 import server.infra.DB
 import server.infra.model.Player
 import server.infra.model.Players
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

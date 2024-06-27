@@ -6,7 +6,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.util.Timeout
 import server.domain.entities.player.behavior.PlayerInitBehavior
-import server.domain.entities.player.command._
+import server.domain.entities.player.command.*
 import server.domain.entities.truco.TrucoManager
 import server.domain.structs.DurablePlayerState
 import server.domain.structs.inventory.Equipment
@@ -14,14 +14,14 @@ import server.infra.PlayerPersistor
 import server.sharding.Sharding
 
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.Failure
 import scala.util.Success
 
 object Player {
-  export PlayerActionCommand._
-  export PlayerEventCommand._
-  export PlayerReplyCommand._
+  export PlayerActionCommand.*
+  export PlayerEventCommand.*
+  export PlayerReplyCommand.*
 
   final case class InitData(
       handler: ActorRef[PlayerReplyCommand.ReplyCommand],

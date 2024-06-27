@@ -4,19 +4,20 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.EntityRef
 import server.domain.entities.player.Player
-import server.domain.entities.player.command.PlayerActionCommand._
-import server.domain.entities.player.command.PlayerEventCommand._
-import server.domain.entities.player.command.PlayerReplyCommand._
+import server.domain.entities.player.command.PlayerActionCommand.*
+import server.domain.entities.player.command.PlayerEventCommand.*
+import server.domain.entities.player.command.PlayerReplyCommand.*
 import server.domain.entities.player.utils.PlayerUtils
 import server.domain.entities.truco.TrucoManager
 import server.domain.structs.PlayerState
 import server.domain.structs.truco.TrucoMatchChallengeReplyEnum
 import server.infra.PlayerPersistor
+import server.protocol.event.GameEventConsumer
 import server.protocol.event.GameEventProducer
 import server.sharding.Sharding
 
 import java.time.LocalDateTime
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 object PlayerRunningBehavior {
   def apply(
@@ -48,9 +49,30 @@ object PlayerRunningBehavior {
             Behaviors.same
           }
 
-          case GameEventConsumerCommand(command, consumerRef) => {
+          case GameEventConsumerReady(ackRef, mapId) => {
+            ackRef ! GameEventConsumer.Ack
+
+            ctx.log.info(
+              s"Consumer ready for player ${state.dState.playerName} on map $mapId"
+            )
+            val previousMapId = state.dState.mapId
+            val newState = state.copy(
+              dState = state.dState.copy(
+                mapId = mapId
+              )
+            )
+            state.tState.persistor ! PlayerPersistor.Persist(newState.dState)
+            if previousMapId != mapId then {
+              state.tState.handler ! ChangeMapReady(mapId)
+            }
+
+            apply(newState)
+          }
+
+          case GameEventConsumerCommand(command, consumerRef, ackRef) => {
             consumerRef match {
               case state.tState.eventConsumer => {
+                ackRef ! GameEventConsumer.Ack
                 handleConsumerMessage(command, state)
               }
               // If the consumer doesn't match, it means it corresponds to the previous Map consumer buffered messages. Ignore it.
@@ -60,19 +82,48 @@ object PlayerRunningBehavior {
             }
           }
 
+          case GameEventConsumerFailure(consumerRef, errorMsg) => {
+            // If the consumers do not match its ok to ignore the error, since its an older consumer (ie. changing maps)
+            if state.tState.eventConsumer == consumerRef then {
+              ctx.log.error(
+                s"Failure in GameEventConsumer for player ${state.dState.playerName} and consumer ${consumerRef}: $errorMsg"
+              )
+              ctx.log.info(
+                s"Restarting consumer and producer for player ${state.dState.playerName}"
+              )
+
+              ctx.stop(state.tState.eventConsumer)
+              ctx.stop(state.tState.eventProducer)
+
+              val (newEventConsumer, newEventProducer) =
+                PlayerUtils.getEventHandlers(ctx, state.dState.mapId)
+              val newState = state.copy(
+                tState = state.tState.copy(
+                  eventProducer = newEventProducer,
+                  eventConsumer = newEventConsumer
+                )
+              )
+              state.tState.persistor ! PlayerPersistor.Persist(newState.dState)
+              apply(newState)
+            } else {
+              Behaviors.same
+            }
+
+          }
+
           case AddMessage(msg) => {
             state.tState.eventProducer ! GameEventProducer.AddMessage(msg)
             Behaviors.same
           }
 
           case ChangeMap(newMapId) => {
-            ctx.log.info(
-              s"Changing ${ctx.self.path.name} from map ${state.dState.mapId} to $newMapId"
-            )
             if newMapId == state.dState.mapId then {
               state.tState.handler ! ChangeMapReady(newMapId)
               Behaviors.same
             } else {
+              ctx.log.info(
+                s"Changing ${ctx.self.path.name} from map ${state.dState.mapId} to $newMapId"
+              )
               ctx.stop(state.tState.eventConsumer)
               ctx.stop(state.tState.eventProducer)
 
@@ -80,9 +131,6 @@ object PlayerRunningBehavior {
                 PlayerUtils.getEventHandlers(ctx, newMapId)
 
               val newState = state.copy(
-                dState = state.dState.copy(
-                  mapId = newMapId
-                ),
                 tState = state.tState.copy(
                   eventProducer = newEventProducer,
                   eventConsumer = newEventConsumer
@@ -90,7 +138,6 @@ object PlayerRunningBehavior {
               )
 
               state.tState.persistor ! PlayerPersistor.Persist(newState.dState)
-              state.tState.handler ! ChangeMapReady(newMapId)
 
               apply(
                 newState

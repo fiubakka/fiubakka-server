@@ -1,6 +1,6 @@
 package server.infra.model
 
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 
 final case class Player(id: Option[Long], playerName: String, password: String)
 

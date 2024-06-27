@@ -51,9 +51,18 @@ object PlayerActionCommand {
       newMapId: Int
   ) extends ActionCommand
 
+  final case class GameEventConsumerReady(
+      consumerRef: ActorRef[GameEventConsumer.Ack],
+      mapId: Int
+  ) extends ActionCommand
+  final case class GameEventConsumerFailure(
+      consumerRef: ActorRef[GameEventConsumer.Command],
+      errorMsg: String
+  ) extends ActionCommand
   final case class GameEventConsumerCommand(
       command: PlayerEventCommand.EventCommand,
-      consumerRef: ActorRef[GameEventConsumer.Command]
+      consumerRef: ActorRef[GameEventConsumer.Command],
+      ackRef: ActorRef[GameEventConsumer.Ack]
   ) extends ActionCommand
 
   // Truco messages

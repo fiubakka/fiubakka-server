@@ -1,8 +1,8 @@
 package server.domain.structs.truco
 
 import server.domain.truco.shouts.EnvidoEnum
+import server.domain.truco.shouts.Mazo as MazoEnum
 import server.domain.truco.shouts.TrucoEnum
-import server.domain.truco.shouts.{Mazo => MazoEnum}
 
 enum TrucoShoutEnum {
   case Mazo

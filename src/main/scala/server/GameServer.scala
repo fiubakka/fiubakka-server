@@ -16,7 +16,7 @@ object GameServer {
       Behaviors.receive((ctx, msg) => {
         msg match {
           case Run() => {
-            timers.startSingleTimer(SpawnBot(0), 20.second)
+            // timers.startSingleTimer(SpawnBot(0), 20.second)
             println("Game server is running...")
             ctx.spawn(PlayerAccepter(), "PlayerAccepter")
             Behaviors.same

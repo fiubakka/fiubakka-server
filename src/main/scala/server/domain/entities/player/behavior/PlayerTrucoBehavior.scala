@@ -4,14 +4,14 @@ import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import server.domain.entities.player.Player
-import server.domain.entities.player.command.PlayerActionCommand._
-import server.domain.entities.player.command.PlayerReplyCommand._
+import server.domain.entities.player.command.PlayerActionCommand.*
+import server.domain.entities.player.command.PlayerReplyCommand.*
 import server.domain.entities.player.utils.PlayerUtils
 import server.domain.entities.truco.TrucoManager
-import server.domain.entities.truco.command.TrucoManagerReplyCommand._
+import server.domain.entities.truco.command.TrucoManagerReplyCommand.*
 import server.domain.structs.PlayerState
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 object PlayerTrucoBehavior {
   def apply(

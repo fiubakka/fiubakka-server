@@ -16,7 +16,7 @@ import akka.stream.scaladsl.SourceQueueWithComplete
 import akka.stream.scaladsl.Tcp
 import akka.util.ByteString
 import com.lightbend.cinnamon.akka.stream.CinnamonAttributes.FlowWithInstrumented
-import protobuf.client.chat.message.{PBPlayerMessage => PBPlayerMessageClient}
+import protobuf.client.chat.message.PBPlayerMessage as PBPlayerMessageClient
 import protobuf.client.init.player_login.PBPlayerLogin
 import protobuf.client.init.player_register.PBPlayerRegister
 import protobuf.client.inventory.update_equipment.PBPlayerUpdateEquipment
@@ -28,11 +28,11 @@ import protobuf.client.truco.disconnect.PBTrucoDisconnect
 import protobuf.client.truco.match_challenge.PBTrucoMatchChallenge
 import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReply
 import protobuf.client.truco.match_challenge_reply.PBTrucoMatchChallengeReplyEnum
+import protobuf.client.truco.play.PBTrucoPlay as PBClientTrucoPlay
 import protobuf.client.truco.play.PBTrucoPlayType.CARD
 import protobuf.client.truco.play.PBTrucoPlayType.SHOUT
-import protobuf.client.truco.play.{PBTrucoPlay => PBClientTrucoPlay}
-import protobuf.client.truco.play.{PBTrucoShout => PBClientTrucoShout}
-import protobuf.server.chat.message.{PBPlayerMessage => PBPlayerMessageServer}
+import protobuf.client.truco.play.PBTrucoShout as PBClientTrucoShout
+import protobuf.server.chat.message.PBPlayerMessage as PBPlayerMessageServer
 import protobuf.server.init.player_init.PBPlayerEquipment
 import protobuf.server.init.player_init.PBPlayerInitError
 import protobuf.server.init.player_init.PBPlayerInitErrorCode
@@ -53,10 +53,10 @@ import protobuf.server.truco.match_challenge_request.PBTrucoMatchChallengeReques
 import protobuf.server.truco.play.PBTrucoCard
 import protobuf.server.truco.play.PBTrucoCardSuit
 import protobuf.server.truco.play.PBTrucoNextPlay
+import protobuf.server.truco.play.PBTrucoPlay as PBServerTrucoPlay
 import protobuf.server.truco.play.PBTrucoPlayType
 import protobuf.server.truco.play.PBTrucoPoints
-import protobuf.server.truco.play.{PBTrucoPlay => PBServerTrucoPlay}
-import protobuf.server.truco.play.{PBTrucoShout => PBServerTrucoShout}
+import protobuf.server.truco.play.PBTrucoShout as PBServerTrucoShout
 import protobuf.server.truco.player_disconnected.PBTrucoPlayerDisconnected
 import scalapb.GeneratedEnum
 import scalapb.GeneratedMessage
@@ -80,7 +80,7 @@ import server.protocol.truco.TrucoPlayType
 import server.sharding.Sharding
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 object PlayerHandler {
   final case class State(

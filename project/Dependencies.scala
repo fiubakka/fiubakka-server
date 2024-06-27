@@ -14,6 +14,7 @@ object Dependencies {
   lazy val akkaTyped = "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion
 
   lazy val akkaStream = "com.typesafe.akka" %% "akka-stream" % AkkaVersion
+  lazy val akkaStreamTyped = "com.typesafe.akka" %% "akka-stream-typed" % AkkaVersion
   lazy val akkaStreamAlpakkaKafka = "com.typesafe.akka" %% "akka-stream-kafka" % AlpakkaKafkaVersion
 
   lazy val akkaCluster = "com.typesafe.akka" %% "akka-cluster-typed" % AkkaVersion

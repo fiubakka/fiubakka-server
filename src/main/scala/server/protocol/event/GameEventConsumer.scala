@@ -1,5 +1,6 @@
 package server.protocol.event
 
+import akka.NotUsed
 import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
@@ -7,6 +8,7 @@ import akka.serialization.jackson.CborSerializable
 import akka.stream.Materializer
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Sink
+import akka.stream.typed.scaladsl.ActorSink
 import akka.util.ByteString
 import com.lightbend.cinnamon.akka.stream.CinnamonAttributes.SourceWithInstrumented
 import protobuf.event.chat.message.PBPlayerMessage
@@ -24,8 +26,9 @@ import server.protocol.flows.InMessageFlow
 
 object GameEventConsumer {
   sealed trait Command extends CborSerializable
-  final case class EventReceived(msg: GeneratedMessage) extends Command
-  final case class Start() extends Command
+
+  sealed trait Ack extends CborSerializable
+  object Ack extends Ack
 
   def apply(
       player: ActorRef[Player.Command],
@@ -35,6 +38,26 @@ object GameEventConsumer {
       implicit val mat = Materializer(ctx)
       val playerId =
         player.path.name // The Player Entity Id is its Actor's name
+
+      val playerSink: Sink[Player.EventCommand, NotUsed] =
+        ActorSink.actorRefWithBackpressure(
+          ref = player,
+          messageAdapter = (responseRef: ActorRef[Ack], gameEvent) =>
+            Player.GameEventConsumerCommand(
+              gameEvent,
+              ctx.self,
+              responseRef
+            ),
+          onInitMessage = (responseRef: ActorRef[Ack]) =>
+            Player.GameEventConsumerReady(responseRef, partition),
+          ackMessage = Ack,
+          onCompleteMessage = Player.GameEventConsumerFailure(
+            ctx.self,
+            "Stream completed when it's not supposed to"
+          ),
+          onFailureMessage = (error) =>
+            Player.GameEventConsumerFailure(ctx.self, error.getMessage())
+        )
 
       KafkaConsumer(partition)
         .buffer(1024, OverflowStrategy.dropHead)
@@ -50,30 +73,13 @@ object GameEventConsumer {
             ProtocolMessageMap.eventConsumerMessageMap
           )
         )
-        .map { msg =>
-          ctx.self ! EventReceived(msg)
-        }
-        .instrumentedRunWith(Sink.ignore)(
+        .map { eventCommandFromEventMessage }
+        .instrumentedRunWith(playerSink)(
           name = "GameEventConsumer",
           reportByName = true
         )
 
-      Behaviors.receiveMessage {
-        case EventReceived(msg) => {
-          ctx.log.debug(s"$playerId: Event received: $msg")
-          player ! Player.GameEventConsumerCommand(
-            eventCommandFromEventMessage(msg),
-            ctx.self
-          )
-          Behaviors.same
-        }
-        case Start() => {
-          ctx.log.info(
-            s"Starting consumer for ${player}"
-          )
-          Behaviors.same
-        }
-      }
+      Behaviors.empty
     })
   }
 
