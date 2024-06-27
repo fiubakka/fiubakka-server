@@ -232,6 +232,10 @@ object PlayerHandler {
             runningBehavior(State(player, conQueue))
           }
 
+          case ConnectionClosed() => {
+            Behaviors.stopped
+          }
+
           case _ => {
             Behaviors.same
           }
@@ -244,7 +248,6 @@ object PlayerHandler {
     Behaviors.receive { (ctx, msg) =>
       msg match {
         case ConnectionClosed() => {
-          ctx.log.info("Closing connection!")
           state.player ! Player.Stop()
           Behaviors.stopped
         }

@@ -14,18 +14,25 @@ object GameServer {
   def apply(): Behavior[Command] = {
     Behaviors.withTimers { timers =>
       Behaviors.receive((ctx, msg) => {
+        val maxBots = ctx.system.settings.config.getInt("game.bots.perNode")
+        val delayPerBotCreation =
+          ctx.system.settings.config.getInt("game.bots.perCreationDelaySeconds")
+
         msg match {
           case Run() => {
-            // timers.startSingleTimer(SpawnBot(0), 20.second)
-            println("Game server is running...")
+            timers.startSingleTimer(SpawnBot(0), 20.second)
+            ctx.log.info("Game server is running...")
             ctx.spawn(PlayerAccepter(), "PlayerAccepter")
             Behaviors.same
           }
 
           case SpawnBot(number) => {
-            ctx.spawn(Bot(), s"Bot$number")
-            if number < 10 then {
-              timers.startSingleTimer(SpawnBot(number + 1), 20.second)
+            if number < maxBots then {
+              ctx.spawn(Bot(), s"Bot$number")
+              timers.startSingleTimer(
+                SpawnBot(number + 1),
+                delayPerBotCreation.second
+              )
             }
             Behaviors.same
           }
