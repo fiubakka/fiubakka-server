@@ -12,7 +12,6 @@ import server.domain.entities.truco.TrucoManager
 import server.domain.structs.PlayerState
 import server.domain.structs.truco.TrucoMatchChallengeReplyEnum
 import server.infra.PlayerPersistor
-import server.protocol.event.GameEventConsumer
 import server.protocol.event.GameEventProducer
 import server.sharding.Sharding
 
@@ -49,30 +48,9 @@ object PlayerRunningBehavior {
             Behaviors.same
           }
 
-          case GameEventConsumerReady(ackRef, mapId) => {
-            ackRef ! GameEventConsumer.Ack
-
-            ctx.log.info(
-              s"Consumer ready for player ${state.dState.playerName} on map $mapId"
-            )
-            val previousMapId = state.dState.mapId
-            val newState = state.copy(
-              dState = state.dState.copy(
-                mapId = mapId
-              )
-            )
-            state.tState.persistor ! PlayerPersistor.Persist(newState.dState)
-            if previousMapId != mapId then {
-              state.tState.handler ! ChangeMapReady(mapId)
-            }
-
-            apply(newState)
-          }
-
-          case GameEventConsumerCommand(command, consumerRef, ackRef) => {
+          case GameEventConsumerCommand(command, consumerRef) => {
             consumerRef match {
               case state.tState.eventConsumer => {
-                ackRef ! GameEventConsumer.Ack
                 handleConsumerMessage(command, state)
               }
               // If the consumer doesn't match, it means it corresponds to the previous Map consumer buffered messages. Ignore it.
@@ -104,6 +82,7 @@ object PlayerRunningBehavior {
                 )
               )
               state.tState.persistor ! PlayerPersistor.Persist(newState.dState)
+
               apply(newState)
             } else {
               Behaviors.same
@@ -134,10 +113,14 @@ object PlayerRunningBehavior {
                 tState = state.tState.copy(
                   eventProducer = newEventProducer,
                   eventConsumer = newEventConsumer
+                ),
+                dState = state.dState.copy(
+                  mapId = newMapId
                 )
               )
 
               state.tState.persistor ! PlayerPersistor.Persist(newState.dState)
+              state.tState.handler ! ChangeMapReady(newMapId)
 
               apply(
                 newState

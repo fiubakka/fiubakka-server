@@ -27,9 +27,6 @@ import server.protocol.flows.InMessageFlow
 object GameEventConsumer {
   sealed trait Command extends CborSerializable
 
-  sealed trait Ack extends CborSerializable
-  object Ack extends Ack
-
   def apply(
       player: ActorRef[Player.Command],
       partition: Int
@@ -39,18 +36,9 @@ object GameEventConsumer {
       val playerId =
         player.path.name // The Player Entity Id is its Actor's name
 
-      val playerSink: Sink[Player.EventCommand, NotUsed] =
-        ActorSink.actorRefWithBackpressure(
+      val playerSink: Sink[Player.Command, NotUsed] =
+        ActorSink.actorRef(
           ref = player,
-          messageAdapter = (responseRef: ActorRef[Ack], gameEvent) =>
-            Player.GameEventConsumerCommand(
-              gameEvent,
-              ctx.self,
-              responseRef
-            ),
-          onInitMessage = (responseRef: ActorRef[Ack]) =>
-            Player.GameEventConsumerReady(responseRef, partition),
-          ackMessage = Ack,
           onCompleteMessage = Player.GameEventConsumerFailure(
             ctx.self,
             "Stream completed when it's not supposed to"
@@ -73,7 +61,12 @@ object GameEventConsumer {
             ProtocolMessageMap.eventConsumerMessageMap
           )
         )
-        .map { eventCommandFromEventMessage }
+        .map { msg =>
+          Player.GameEventConsumerCommand(
+            eventCommandFromEventMessage(msg),
+            ctx.self
+          )
+        }
         .instrumentedRunWith(playerSink)(
           name = "GameEventConsumer",
           reportByName = true
