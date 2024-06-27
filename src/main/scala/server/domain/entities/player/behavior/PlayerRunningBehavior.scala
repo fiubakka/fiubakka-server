@@ -224,6 +224,9 @@ object PlayerRunningBehavior {
             )
             state.tState.eventProducer ! GameEventProducer
               .PlayerDisconnect() // Removes player from map
+            ctx.stop(state.tState.eventConsumer)
+            // We don't stop the Producer because we need to send the PlayerDisconnect event
+            // and it doesnt add any unnecessary overhead
             PlayerTrucoBehavior(state, trucoManager)
           }
 

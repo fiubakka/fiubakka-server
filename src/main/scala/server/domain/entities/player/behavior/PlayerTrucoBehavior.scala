@@ -65,8 +65,18 @@ object PlayerTrucoBehavior {
             trucoManager ! TrucoManager.PlayerDisconnected(
               state.dState.playerName
             )
+
+            // We now restart the Consumer
+            val (eventConsumer, eventProducer) =
+              PlayerUtils.getEventHandlers(ctx, state.dState.mapId)
+
             PlayerRunningBehavior(
-              state
+              state.copy(
+                tState = state.tState.copy(
+                  eventConsumer = eventConsumer,
+                  eventProducer = eventProducer
+                )
+              )
             )
           }
 
