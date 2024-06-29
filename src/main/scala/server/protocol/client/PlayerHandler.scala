@@ -10,10 +10,10 @@ import akka.serialization.jackson.CborSerializable
 import akka.stream.Materializer
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
-import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.SourceQueueWithComplete
 import akka.stream.scaladsl.Tcp
+import akka.stream.typed.scaladsl.ActorSink
 import akka.util.ByteString
 import com.lightbend.cinnamon.akka.stream.CinnamonAttributes.FlowWithInstrumented
 import protobuf.client.chat.message.PBPlayerMessage as PBPlayerMessageClient
@@ -500,9 +500,11 @@ object PlayerHandler {
       .map(commandFromClientMessage)
       .via(
         Flow.fromSinkAndSourceCoupled(
-          Sink.foreach { msg =>
-            ctx.self ! msg
-          },
+          ActorSink.actorRef(
+            ref = ctx.self,
+            onCompleteMessage = ConnectionClosed(),
+            onFailureMessage = (_) => ConnectionClosed()
+          ),
           conSource.via(
             OutMessageFlow(
               (length: Int, `type`: GeneratedEnum) =>
@@ -520,11 +522,6 @@ object PlayerHandler {
         traceable = true,
         reportByName = true
       )
-      .watchTermination() { (_, done) =>
-        done.onComplete(_ => {
-          ctx.self ! ConnectionClosed()
-        })
-      }
   }
 
   private val commandFromClientMessage
