@@ -48,17 +48,17 @@ lazy val root = (project in file("."))
     run / fork := true, // These are only used in development mode, since production uses a JAR and not sbt
     javaOptions ++= {
       val defaultAkkaPort = 25520
-      val defaultPlayerAccepterPort = 2020
+      val defaultPlayerAcceptorPort = 2020
       val akkaPort = sys.env.getOrElse("AKKA_PORT", defaultAkkaPort)
       val debugPort = sys.env.getOrElse("DEBUG_PORT", "")
-      val playerAccepterPort = sys.env.getOrElse("PLAYER_ACCEPTER_PORT", defaultPlayerAccepterPort)
+      val PlayerAcceptorPort = sys.env.getOrElse("PLAYER_ACCEPTOR_PORT", defaultPlayerAcceptorPort)
 
       Seq(
         "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED", // Required for Aeron to work in Java 17+
         s"-Dakka.cluster.seed-nodes.0=akka://fiubakka-server@127.0.0.1:$defaultAkkaPort",
         s"-Dakka.remote.artery.canonical.port=$akkaPort",
         s"-Dakka.remote.artery.bind.port=$akkaPort",
-        s"-Dgame.player-accepter.port=$playerAccepterPort"
+        s"-Dgame.player-acceptor.port=$PlayerAcceptorPort"
       ) ++ (if (debugPort.nonEmpty) Seq(s"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$debugPort") else Seq.empty)
     },
     Compile / PB.targets := Seq(

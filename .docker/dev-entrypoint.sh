@@ -10,4 +10,4 @@ exec ./stage/bin/fiubakka-server \
   -Dakka.cluster.seed-nodes.0=akka://fiubakka-server@127.0.0.1:25520 \
   -Dakka.remote.artery.canonical.port=25520 \
   -Dakka.remote.artery.bind.port=25520 \
-  -Dplayer-accepter.port=2020 \
+  -Dplayer-acceptor.port=2020 \

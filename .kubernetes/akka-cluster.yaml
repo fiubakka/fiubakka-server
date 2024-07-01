@@ -49,7 +49,7 @@ spec:
         - name: cinnamon
           containerPort: 9001
           protocol: TCP
-        - name: player-accepter
+        - name: player-acceptor
           containerPort: 2020
           protocol: TCP
         env:

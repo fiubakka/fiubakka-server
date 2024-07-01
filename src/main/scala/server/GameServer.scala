@@ -2,7 +2,7 @@ package server
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import server.misc.Bot
-import server.protocol.client.PlayerAccepter
+import server.protocol.client.PlayerAcceptor
 
 import scala.concurrent.duration.DurationInt
 
@@ -22,7 +22,7 @@ object GameServer {
           case Run() => {
             timers.startSingleTimer(SpawnBot(0), 20.second)
             ctx.log.info("Game server is running...")
-            ctx.spawn(PlayerAccepter(), "PlayerAccepter")
+            ctx.spawn(PlayerAcceptor(), "PlayerAcceptor")
             Behaviors.same
           }
 

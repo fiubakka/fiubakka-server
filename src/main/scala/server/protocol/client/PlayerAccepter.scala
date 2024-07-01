@@ -7,7 +7,7 @@ import akka.stream.scaladsl.Tcp
 
 import scala.concurrent.Future
 
-object PlayerAccepter {
+object PlayerAcceptor {
   sealed trait Command
   final case class Accept(connection: Tcp.IncomingConnection) extends Command
 
@@ -19,7 +19,7 @@ object PlayerAccepter {
           : Source[Tcp.IncomingConnection, Future[Tcp.ServerBinding]] =
         Tcp(ctx.system).bind(
           "0.0.0.0",
-          ctx.system.settings.config.getInt("game.player-accepter.port")
+          ctx.system.settings.config.getInt("game.player-acceptor.port")
         )
       connections.runForeach { connection =>
         ctx.self ! Accept(connection)

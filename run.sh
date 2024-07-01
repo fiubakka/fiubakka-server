@@ -1,13 +1,13 @@
 #!/bin/bash
 
 DEFAULT_AKKA_PORT=25520
-DEFAULT_PLAYER_ACCEPTER_PORT=2020
+DEFAULT_PLAYER_ACCEPTOR_PORT=2020
 
 show_help() {
-    echo "Usage: $0 [AKKA_PORT] [PLAYER_ACCEPTER_PORT] [--debug, -d] [--metrics, -m] [--help, -h]"
+    echo "Usage: $0 [AKKA_PORT] [PLAYER_ACCEPTOR_PORT] [--debug, -d] [--metrics, -m] [--help, -h]"
     echo "ATTENTION! Run without port arguments for first node execution!"
     echo "  AKKA_PORT: Port for Akka communication (default: $DEFAULT_AKKA_PORT)"
-    echo "  PLAYER_ACCEPTER_PORT: Port for player accepter (default: $DEFAULT_PLAYER_ACCEPTER_PORT)"
+    echo "  PLAYER_ACCEPTOR_PORT: Port for player acceptor (default: $DEFAULT_PLAYER_ACCEPTOR_PORT)"
     echo "  --debug: Enable JVM debug mode on port 5005"
     echo "  --metrics: Enable Cinnamon metrics on port 3000"
     echo "  --help, -h: Show this help message"
@@ -37,7 +37,7 @@ done
 set -- "${ports[@]}"
 
 akka_port=${1:-$DEFAULT_AKKA_PORT}
-player_accepter_port=${2:-$DEFAULT_PLAYER_ACCEPTER_PORT}
+player_acceptor_port=${2:-$DEFAULT_PLAYER_ACCEPTOR_PORT}
 
 check_port() {
     local port_to_check=$1
@@ -48,10 +48,10 @@ check_port() {
 }
 
 check_port "$akka_port"
-check_port "$player_accepter_port"
+check_port "$player_acceptor_port"
 
 export AKKA_PORT=$akka_port
-export PLAYER_ACCEPTER_PORT=$player_accepter_port
+export PLAYER_ACCEPTOR_PORT=$player_acceptor_port
 [ -n "$debug_option" ] && export DEBUG_PORT=5005
 [ -n "$metrics_enabled" ] && export METRICS_ENABLED=$metrics_enabled
 
