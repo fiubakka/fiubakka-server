@@ -39,7 +39,7 @@ object Bot {
           )
         )
         timers.startTimerWithFixedDelay(Heartbeat(), 2.seconds)
-        timers.startTimerWithFixedDelay(RandomMove(), 16.millis)
+        timers.startTimerAtFixedRate(RandomMove(), 16.millis)
 
         runningBehavior(
           State(
