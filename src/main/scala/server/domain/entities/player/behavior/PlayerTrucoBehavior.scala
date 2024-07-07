@@ -70,6 +70,8 @@ object PlayerTrucoBehavior {
             val (eventConsumer, eventProducer) =
               PlayerUtils.getEventHandlers(ctx, state.dState.mapId)
 
+            state.tState.handler ! TrucoDisconnectAck() // Acknowledge the disconnection
+
             PlayerRunningBehavior(
               state.copy(
                 tState = state.tState.copy(

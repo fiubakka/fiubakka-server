@@ -37,4 +37,5 @@ object PlayerReplyCommand {
   final case class NotifyTrucoPlayerDisconnected(
       opponentUsername: String
   ) extends ReplyCommand
+  final case class TrucoDisconnectAck() extends ReplyCommand
 }

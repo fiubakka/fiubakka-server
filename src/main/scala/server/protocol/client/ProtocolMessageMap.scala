@@ -57,6 +57,7 @@ object ProtocolMessageMap {
       PBTrucoMatchChallengeDenied.getClass.toString -> PBServerMessageType.PBTrucoMatchChallengeDenied,
       PBServerTrucoPlay.getClass.toString -> PBServerMessageType.PBTrucoPlay,
       PBTrucoAllowPlay.getClass.toString -> PBServerMessageType.PBTrucoAllowPlay,
-      PBTrucoPlayerDisconnected.getClass.toString -> PBServerMessageType.PBTrucoPlayerDisconnected
+      PBTrucoPlayerDisconnected.getClass.toString -> PBServerMessageType.PBTrucoPlayerDisconnected,
+      PBTrucoDisconnect.getClass.toString -> PBServerMessageType.PBTrucoDisconnectAck
     )
 }

@@ -213,6 +213,11 @@ object PlayerRunningBehavior {
             PlayerTrucoBehavior(state, trucoManager)
           }
 
+          case TrucoDisconnect() => {
+            state.tState.handler ! TrucoDisconnectAck()
+            Behaviors.same
+          }
+
           case heartMessage @ (Heartbeat(_) | CheckHeartbeat()) => {
             PlayerUtils.handleHeartbeatMessage(ctx, heartMessage, state, apply)
           }

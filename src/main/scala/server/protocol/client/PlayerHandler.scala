@@ -48,6 +48,7 @@ import protobuf.server.state.game_entity_state.PBGameEntityPosition
 import protobuf.server.state.game_entity_state.PBGameEntityState
 import protobuf.server.state.game_entity_state.PBGameEntityVelocity
 import protobuf.server.truco.allow_play.PBTrucoAllowPlay
+import protobuf.server.truco.disconnect_ack.PBTrucoDisconnectAck
 import protobuf.server.truco.match_challenge_denied.PBTrucoMatchChallengeDenied
 import protobuf.server.truco.match_challenge_request.PBTrucoMatchChallengeRequest
 import protobuf.server.truco.play.PBTrucoCard
@@ -417,6 +418,12 @@ object PlayerHandler {
 
         case Player.NotifyTrucoPlayerDisconnected(opponentUsername) => {
           val message = PBTrucoPlayerDisconnected.of(opponentUsername)
+          state.conQueue.offer(message)
+          Behaviors.same
+        }
+
+        case Player.TrucoDisconnectAck() => {
+          val message = PBTrucoDisconnectAck.of()
           state.conQueue.offer(message)
           Behaviors.same
         }
