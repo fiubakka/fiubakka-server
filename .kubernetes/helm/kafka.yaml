@@ -2,6 +2,11 @@ listeners:
   client:
     protocol: PLAINTEXT
 
+controller:
+  resources:
+    limits:
+      memory: 2048Mi
+
 provisioning:
   enabled: true
 
