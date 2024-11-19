@@ -1,11 +1,11 @@
 import sbt._
 
 object Dependencies {
-  val AkkaVersion = "2.9.3"
-  val AeronVersion = "1.44.1"
-  val AkkaManagementVersion = "1.5.2"
-  val SlickVersion = "3.5.1"
-  val AlpakkaKafkaVersion = "6.0.0"
+  val AkkaVersion = "2.10.0"
+  val AeronVersion = "1.46.7"
+  val AkkaManagementVersion = "1.6.0"
+  val SlickVersion = "3.5.2"
+  val AlpakkaKafkaVersion = "7.0.0"
 
   // Use AeronUDP instead of TCP for network transport of Akka messages
   lazy val aeronDriver = "io.aeron" % "aeron-driver" % AeronVersion
