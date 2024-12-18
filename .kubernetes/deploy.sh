@@ -15,7 +15,7 @@ if ! kubectl get pvc grafana-plugins-pvc -n "$NAMESPACE" &> /dev/null; then
     echo "Creating PVC 'grafana-plugins' in namespace '$NAMESPACE'."
     kubectl apply -f .kubernetes/grafana-cinnamon.yaml -n "$NAMESPACE"
     kubectl wait --for=condition=ready pod/grafana-plugins-tmp -n "$NAMESPACE" --timeout=60s
-    kubectl cp telemetry/grafana/plugins/cinnamon-prometheus-app grafana-plugins-tmp:/var/lib/grafana/plugins/
+    kubectl cp telemetry/grafana/plugins/cinnamon-prometheus-app grafana-plugins-tmp:/var/lib/grafana/plugins/ -n "$NAMESPACE"
     kubectl delete pod grafana-plugins-tmp -n "$NAMESPACE"
 fi
 
